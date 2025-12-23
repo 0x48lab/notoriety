@@ -1,0 +1,25 @@
+# Notoriety Configuration
+
+# Language setting (ja or en)
+locale: ja
+
+# Database configuration
+database:
+  # Database type: sqlite or mysql
+  type: sqlite
+
+  # SQLite settings (used when type: sqlite)
+  sqlite:
+    file: "data.db"
+
+  # MySQL settings (used when type: mysql)
+  mysql:
+    host: "localhost"
+    port: 3306
+    database: "notoriety"
+    username: "minecraft"
+    password: "password"
+    pool:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000

@@ -1,0 +1,65 @@
+# Notoriety Japanese Language File
+
+# Crime types
+crime:
+  theft: "窃盗"
+  destroy: "破壊"
+  attack: "攻撃"
+  pk: "殺人"
+  kill_villager: "村人殺害"
+  kill_animal: "動物殺害"
+  harvest_crop: "作物収穫"
+
+# Status names
+status:
+  innocent: "Innocent（青）"
+  criminal: "Criminal（灰）"
+  murderer: "Murderer（赤）"
+
+# Villager messages
+villager:
+  murderer: "人殺しが来た！"
+  destroy: "%sが物を壊した！"
+  theft: "%sが泥棒だ！"
+  kill_animal: "%sが家畜を殺した！"
+  dying: "%sは人殺しだ！"
+  witness_murder: "%sが村人を殺した！"
+
+# Bounty messages
+bounty:
+  set: "%s に %d の懸賞金をかけました"
+  claimed: "%s が %s を倒して懸賞金 %d を獲得しました！"
+  not_found: "懸賞金が見つかりません"
+  invalid_target: "対象は赤プレイヤーではありません"
+  minimum: "最低懸賞金額は 100 です"
+
+# Trust messages
+trust:
+  added: "%s を信頼リストに追加しました"
+  removed: "%s を信頼リストから削除しました"
+  list_empty: "信頼しているプレイヤーはいません"
+
+# Title names (blue)
+title:
+  trustworthy: "義人"
+  notable: "功士"
+  famous: "豪傑"
+  lord: "聖騎士"
+  great_lord: "聖将"
+  glorious_lord: "勇者"
+
+# Title names (red)
+  outcast: "罪人"
+  notorious: "凶漢"
+  infamous: "悪鬼"
+  wicked: "外道"
+  dark_lord: "殺人鬼"
+  dread_lord: "殺戮者"
+
+# Common messages
+message:
+  no_permission: "権限がありません"
+  player_not_found: "プレイヤーが見つかりません"
+  invalid_amount: "無効な金額です"
+  trade_refused: "村人は取引を拒否しました"
+  discount_applied: "(%d%%割引が適用されました)"

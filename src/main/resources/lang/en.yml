@@ -1,0 +1,65 @@
+# Notoriety English Language File
+
+# Crime types
+crime:
+  theft: "Theft"
+  destroy: "Destruction"
+  attack: "Attack"
+  pk: "Murder"
+  kill_villager: "Villager Murder"
+  kill_animal: "Animal Killing"
+  harvest_crop: "Crop Harvesting"
+
+# Status names
+status:
+  innocent: "Innocent (Blue)"
+  criminal: "Criminal (Gray)"
+  murderer: "Murderer (Red)"
+
+# Villager messages
+villager:
+  murderer: "A murderer is coming!"
+  destroy: "%s destroyed property!"
+  theft: "%s is a thief!"
+  kill_animal: "%s killed livestock!"
+  dying: "%s is a murderer!"
+  witness_murder: "%s killed a villager!"
+
+# Bounty messages
+bounty:
+  set: "Placed a bounty of %d on %s"
+  claimed: "%s defeated %s and claimed the bounty of %d!"
+  not_found: "Bounty not found"
+  invalid_target: "Target is not a red player"
+  minimum: "Minimum bounty amount is 100"
+
+# Trust messages
+trust:
+  added: "Added %s to your trust list"
+  removed: "Removed %s from your trust list"
+  list_empty: "You are not trusting anyone"
+
+# Title names (blue)
+title:
+  trustworthy: "Trustworthy"
+  notable: "Notable"
+  famous: "Famous"
+  lord: "Lord"
+  great_lord: "Great Lord"
+  glorious_lord: "Glorious Lord"
+
+# Title names (red)
+  outcast: "Outcast"
+  notorious: "Notorious"
+  infamous: "Infamous"
+  wicked: "Wicked"
+  dark_lord: "Dark Lord"
+  dread_lord: "Dread Lord"
+
+# Common messages
+message:
+  no_permission: "You don't have permission"
+  player_not_found: "Player not found"
+  invalid_amount: "Invalid amount"
+  trade_refused: "The villager refused to trade"
+  discount_applied: "(%d%% discount applied)"

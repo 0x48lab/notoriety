@@ -1,0 +1,1 @@
+A classic MMORPG-style notoriety system for Minecraft. Track player reputation through crimes, protect ownership, and let villagers witness criminal acts.

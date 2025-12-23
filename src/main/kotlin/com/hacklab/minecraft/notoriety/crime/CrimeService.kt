@@ -1,0 +1,69 @@
+package com.hacklab.minecraft.notoriety.crime
+
+import com.hacklab.minecraft.notoriety.core.player.PlayerManager
+import com.hacklab.minecraft.notoriety.event.PlayerCrimeEvent
+import com.hacklab.minecraft.notoriety.reputation.NameColor
+import org.bukkit.Bukkit
+import org.bukkit.Location
+import java.time.Instant
+import java.util.*
+
+class CrimeService(
+    private val repository: CrimeRepository,
+    private val playerManager: PlayerManager
+) {
+    fun commitCrime(
+        criminal: UUID,
+        crimeType: CrimeType,
+        crimePoint: Int,
+        victim: UUID? = null,
+        location: Location? = null,
+        detail: String? = null
+    ) {
+        val player = playerManager.getPlayer(criminal) ?: return
+        val oldColor = player.getNameColor()
+
+        // CrimePoint加算
+        player.addCrimePoint(crimePoint)
+
+        // 状態遷移時のKarmaリセット
+        val newColor = player.getNameColor()
+        if (oldColor == NameColor.BLUE && newColor != NameColor.BLUE) {
+            player.resetKarma()
+        }
+
+        // 赤プレイヤーの悪名加算
+        if (newColor == NameColor.RED) {
+            player.addKarma(crimePoint)
+        }
+
+        // 被害者名を取得
+        val victimName = victim?.let { Bukkit.getOfflinePlayer(it).name }
+
+        // 犯罪履歴に記録
+        repository.recordCrime(CrimeRecord(
+            criminalUuid = criminal,
+            crimeType = crimeType,
+            victimUuid = victim,
+            victimName = victimName,
+            world = location?.world?.name,
+            x = location?.blockX,
+            y = location?.blockY,
+            z = location?.blockZ,
+            detail = detail,
+            crimePoint = crimePoint,
+            committedAt = Instant.now()
+        ))
+
+        // カスタムイベント発火
+        Bukkit.getPluginManager().callEvent(
+            PlayerCrimeEvent(criminal, crimeType, crimePoint)
+        )
+    }
+
+    fun getHistory(player: UUID, page: Int, pageSize: Int = 10): List<CrimeRecord> =
+        repository.getHistory(player, page, pageSize)
+
+    fun getHistoryCount(player: UUID): Int =
+        repository.getHistoryCount(player)
+}

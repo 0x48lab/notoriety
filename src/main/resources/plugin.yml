@@ -1,0 +1,34 @@
+name: Notoriety
+version: ${version}
+main: com.hacklab.minecraft.notoriety.Notoriety
+api-version: '1.21'
+description: Classic MMORPG-style notoriety system for Minecraft
+author: hacklab
+website: https://github.com/hacklab
+depend: []
+softdepend:
+  - Vault
+
+commands:
+  notoriety:
+    description: Main command for Notoriety plugin
+    usage: /<command> <subcommand>
+    aliases:
+      - noty
+  bounty:
+    description: Bounty system commands
+    usage: /<command> <set|list|check>
+  trust:
+    description: Trust system commands
+    usage: /<command> <add|remove|list|check>
+  wanted:
+    description: Alias for bounty command
+    usage: /<command> <set|list|check>
+
+permissions:
+  notoriety.admin:
+    description: Allows use of admin commands
+    default: op
+  notoriety.bounty.sign:
+    description: Allows placing bounty ranking signs
+    default: op
