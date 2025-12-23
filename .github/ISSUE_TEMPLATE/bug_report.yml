@@ -1,0 +1,71 @@
+name: バグ報告
+description: プラグインの不具合を報告する
+title: "[バグ] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        バグの報告ありがとうございます！
+        下の項目を埋めてね。
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: なにがおきた？
+      description: おかしかったことを教えてね
+      placeholder: 例）ゲームが始まらなかった
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 本当はどうなるはず？
+      description: 正しくはどう動くはずだった？
+      placeholder: 例）ゲームが始まるはず
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: どうやったらおきる？
+      description: 同じバグを出すやり方を順番に書いてね
+      placeholder: |
+        1. /hs join と入力した
+        2. ゲームが始まるのを待った
+        3. エラーが出た
+    validations:
+      required: true
+
+  - type: input
+    id: server-version
+    attributes:
+      label: サーバーのバージョン
+      description: /version コマンドで確認できるよ
+      placeholder: 例）Paper 1.21.5
+    validations:
+      required: true
+
+  - type: input
+    id: plugin-version
+    attributes:
+      label: プラグインのバージョン
+      description: /hs version や /plugins で確認できるよ
+      placeholder: 例）1.0.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: error-log
+    attributes:
+      label: エラーログ（あれば）
+      description: コンソールにエラーが出ていたら貼ってね
+      render: shell
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: その他
+      description: 他に伝えたいことがあれば書いてね
