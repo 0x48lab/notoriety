@@ -49,7 +49,7 @@
 
 ## インストール
 
-1. [Releases](https://github.com/hacklab/notoriety/releases)から最新のJARをダウンロード
+1. [Releases](https://github.com/0x48lab/notoriety/releases)から最新のJARをダウンロード
 2. サーバーの`plugins`フォルダに配置
 3. サーバーを再起動
 
