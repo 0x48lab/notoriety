@@ -8,6 +8,7 @@ import com.hacklab.minecraft.notoriety.reputation.NameColor
 import com.hacklab.minecraft.notoriety.reputation.ReputationService
 import com.hacklab.minecraft.notoriety.trust.TrustService
 import org.bukkit.entity.Player
+import org.bukkit.entity.Tameable
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
@@ -42,6 +43,47 @@ class CombatListener(
             )
             reputationService.updateDisplay(attacker)
         }
+    }
+
+    // ペット攻撃判定
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    fun onPetDamage(event: EntityDamageByEntityEvent) {
+        val attacker = event.damager as? Player ?: return
+        val pet = event.entity as? Tameable ?: return
+
+        // テイムされていなければ対象外
+        if (!pet.isTamed) return
+
+        // 所有者がオンラインプレイヤーでなければ対象外
+        val owner = pet.owner as? Player ?: return
+
+        // 自分のペットは対象外
+        if (owner.uniqueId == attacker.uniqueId) return
+
+        // 所有者が攻撃者を信頼していれば犯罪にならない
+        if (trustService.isTrusted(owner.uniqueId, attacker.uniqueId)) return
+
+        val ownerData = playerManager.getPlayer(owner) ?: return
+
+        // 青色プレイヤーのペットのみ保護
+        if (ownerData.getNameColor() != NameColor.BLUE) return
+
+        // CrimePoint +150
+        crimeService.commitCrime(
+            criminal = attacker.uniqueId,
+            crimeType = CrimeType.ATTACK,
+            crimePoint = 150,
+            victim = owner.uniqueId,
+            detail = "Pet: ${pet.type.name}"
+        )
+
+        // 赤プレイヤーは Karma +150 も加算
+        val attackerData = playerManager.getPlayer(attacker) ?: return
+        if (attackerData.getNameColor() == NameColor.RED) {
+            attackerData.addKarma(150)
+        }
+
+        reputationService.updateDisplay(attacker)
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

@@ -66,4 +66,33 @@ class CrimeService(
 
     fun getHistoryCount(player: UUID): Int =
         repository.getHistoryCount(player)
+
+    /**
+     * 犯罪履歴のみを記録する（CrimePoint加算なし）
+     * 動物殺害など、履歴は残すがCrimePointを加算しない場合に使用
+     */
+    fun recordCrimeHistory(
+        criminal: UUID,
+        crimeType: CrimeType,
+        crimePoint: Int = 0,
+        victim: UUID? = null,
+        location: Location? = null,
+        detail: String? = null
+    ) {
+        val victimName = victim?.let { Bukkit.getOfflinePlayer(it).name }
+
+        repository.recordCrime(CrimeRecord(
+            criminalUuid = criminal,
+            crimeType = crimeType,
+            victimUuid = victim,
+            victimName = victimName,
+            world = location?.world?.name,
+            x = location?.blockX,
+            y = location?.blockY,
+            z = location?.blockZ,
+            detail = detail,
+            crimePoint = crimePoint,
+            committedAt = Instant.now()
+        ))
+    }
 }

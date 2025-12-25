@@ -7,6 +7,7 @@ import com.hacklab.minecraft.notoriety.reputation.NameColor
 import org.bukkit.Material
 import org.bukkit.entity.Animals
 import org.bukkit.entity.Player
+import org.bukkit.entity.Tameable
 import org.bukkit.entity.Villager
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -74,7 +75,7 @@ class VillagerListener(
         plugin.reputationService.updateDisplay(killer)
     }
 
-    // 灰プレイヤーの動物殺害
+    // 灰色・赤色プレイヤーの動物殺害
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onAnimalDeath(event: EntityDeathEvent) {
         val killer = event.entity.killer ?: return
@@ -83,19 +84,28 @@ class VillagerListener(
         // 動物のみ
         if (entity !is Animals) return
 
-        val data = plugin.playerManager.getPlayer(killer) ?: return
-        if (data.getNameColor() != NameColor.GRAY) return
+        // ペットは別処理（CombatListener）
+        if (entity is Tameable && entity.isTamed) return
 
-        // 村人に目撃されたかチェック
+        val data = plugin.playerManager.getPlayer(killer) ?: return
+
+        // 青色プレイヤーは犯罪にならない
+        if (data.getNameColor() == NameColor.BLUE) return
+
+        // 灰色・赤色プレイヤーのみ処理
         val witness = villagerService.checkGrayCrimeWitness(killer, entity.location)
         if (witness != null) {
             villagerService.shoutCrime(witness, killer.name, "kill_animal")
             golemService.callGolemToAttack(killer, witness.location)
 
-            crimeService.commitCrime(
+            // Karma +20 のみ（CrimePointは加算しない）
+            data.addKarma(20)
+
+            // 犯罪履歴には記録（CrimePoint 0で）
+            crimeService.recordCrimeHistory(
                 criminal = killer.uniqueId,
                 crimeType = CrimeType.KILL_ANIMAL,
-                crimePoint = 20,
+                crimePoint = 0,
                 location = entity.location,
                 detail = entity.type.name
             )
