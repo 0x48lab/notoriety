@@ -16,6 +16,7 @@ class ReputationService(
         val color = data.getNameColor()
         val title = TitleResolver.getTitle(data)
         teamManager.updatePlayerTeam(player, color, title)
+        teamManager.updateSidebar(player, data, title)
     }
 
     fun onGoodDeed(playerUuid: UUID, karmaGain: Int, fameGain: Int, crimeReduction: Int) {
