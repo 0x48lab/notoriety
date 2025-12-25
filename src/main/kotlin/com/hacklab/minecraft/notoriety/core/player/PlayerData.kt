@@ -20,7 +20,12 @@ data class PlayerData(
     }
 
     fun addCrimePoint(amount: Int) {
-        crimePoint = (crimePoint + amount).coerceIn(0, 1000)
+        crimePoint = if (pkCount >= 1) {
+            // 赤プレイヤーはマイナス可（PKCount減少のため）
+            (crimePoint + amount).coerceAtMost(1000)
+        } else {
+            (crimePoint + amount).coerceIn(0, 1000)
+        }
     }
 
     fun addKarma(amount: Int) {

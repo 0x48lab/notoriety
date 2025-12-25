@@ -143,25 +143,27 @@ class Notoriety : JavaPlugin() {
         // 1時間ごとの定期処理
         server.scheduler.runTaskTimer(this, Runnable {
             playerManager.getOnlinePlayers().forEach { data ->
+                val oldColor = data.getNameColor()
+
                 // Fame減少
                 data.addFame(-1)
 
-                // プレイ時間加算とPKCount減少
-                data.playTimeMinutes += 60
-                if (data.playTimeMinutes >= 2400) {  // 40時間
-                    data.playTimeMinutes -= 2400
-                    if (data.pkCount > 0) {
-                        val oldColor = data.getNameColor()
-                        data.pkCount--
-                        val newColor = data.getNameColor()
+                // CrimePoint減少（1時間ごとに-10）
+                data.addCrimePoint(-10)
 
-                        if (oldColor != newColor) {
-                            data.resetKarma()
-                            Bukkit.getPluginManager().callEvent(
-                                PlayerColorChangeEvent(data.uuid, oldColor, newColor)
-                            )
-                        }
-                    }
+                // 赤プレイヤーのPKCount減少チェック
+                if (data.pkCount > 0 && data.crimePoint <= -1000) {
+                    data.crimePoint += 1000  // 0にリセット
+                    data.pkCount--
+                }
+
+                // 状態変化チェック
+                val newColor = data.getNameColor()
+                if (oldColor != newColor) {
+                    data.resetKarma()
+                    Bukkit.getPluginManager().callEvent(
+                        PlayerColorChangeEvent(data.uuid, oldColor, newColor)
+                    )
                 }
 
                 // 表示更新
