@@ -1,0 +1,50 @@
+# Changelog
+
+このプロジェクトの全ての注目すべき変更はこのファイルに記録されます。
+
+フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいています。
+
+## [Unreleased]
+
+### Changed
+- CrimePoint/KarmaをAlignment(-1000〜+1000)に統合
+- 称号ロジック変更: 青はFameのみ、赤はPKCountのみで決定
+- BELOW_NAMEを使用した称号表示に変更（プレフィックス廃止）
+- 村人取引の価格調整を実装（灰は1.5倍、高Alignmentで割引）
+
+### Added
+- 灰色プレイヤー用の称号を追加（Scoundrel, Rogue, Outlaw, Renegade）
+
+### Removed
+- サイドバー表示機能を削除
+
+## [0.2.0] - 2024-12-26
+
+### Added
+- サイドバーに称号・ステータス表示機能（2行固定）
+- ペット攻撃ルール: 青色プレイヤーのペット攻撃でCrimePoint+150
+
+### Changed
+- 動物殺害ルール変更: 青色プレイヤーはペナルティなし、灰色/赤色はKarma+20のみ
+- CrimePoint時間減少: 1時間ごとに-10、赤プレイヤーは-1000でPKCount-1
+
+### Fixed
+- PlayerData.addCrimePoint()を修正し赤プレイヤーのマイナス値を許可
+- Skillsプラグインとの競合回避（既存Objectiveを共有）
+
+## [0.1.0] - 2024-12-25
+
+### Added
+- 初期リリース
+- 名声システム（Notoriety System）の実装
+  - ネームカラー: 青（Innocent）、灰（Criminal）、赤（Murderer）
+  - CrimePoint、PKCount、Karma、Fame パラメータ
+  - 称号システム（Trustworthy, Notable, Famous, Lord 等）
+- 所有権システム
+- 信頼システム
+- 犯罪履歴システム
+- 懸賞金システム
+- 村人・アイアンゴーレム連携
+- コマンド: `/noty status`, `/noty history`, `/noty bounty`, `/noty trust`, `/noty admin`
+- サードパーティAPI
+- GitHub Actions によるビルド自動化
