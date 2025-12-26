@@ -31,9 +31,8 @@ class StatusCommand(private val plugin: Notoriety) : SubCommand {
         sender.sendMessage("=== [$playerName] の名声情報 ===")
         sender.sendMessage("状態: ${color.name}")
         sender.sendMessage("称号: ${title ?: "なし"}")
-        sender.sendMessage("CrimePoint: ${data.crimePoint} / 1000")
+        sender.sendMessage("Alignment: ${data.alignment} (-1000〜+1000)")
         sender.sendMessage("PKCount: ${data.pkCount}")
-        sender.sendMessage("Karma: ${data.karma} / 1000")
         sender.sendMessage("Fame: ${data.fame} / 1000")
 
         return true

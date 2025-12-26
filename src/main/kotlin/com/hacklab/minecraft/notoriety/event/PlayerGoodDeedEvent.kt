@@ -8,9 +8,8 @@ import java.util.*
 
 class PlayerGoodDeedEvent(
     val playerUuid: UUID,
-    val karmaGain: Int,
-    val fameGain: Int,
-    val crimeReduction: Int
+    val alignmentGain: Int,
+    val fameGain: Int
 ) : Event() {
     val player: Player? get() = Bukkit.getPlayer(playerUuid)
 

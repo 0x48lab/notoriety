@@ -32,8 +32,7 @@ class PlayerListener(
         // プレイヤーデータを保存してアンロード
         playerManager.unloadPlayer(player.uniqueId)
 
-        // Team・サイドバーから削除
+        // Teamから削除
         reputationService.teamManager.removePlayerTeam(player)
-        reputationService.teamManager.removeSidebar(player)
     }
 }

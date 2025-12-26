@@ -13,7 +13,7 @@ class AdminCommand(private val plugin: Notoriety) : SubCommand {
         }
 
         if (args.size < 4) {
-            sender.sendMessage("Usage: /noty admin <player> <karma|fame|crime|pk> <set|add> <value>")
+            sender.sendMessage("Usage: /noty admin <player> <alignment|fame|pk> <set|add> <value>")
             return true
         }
 
@@ -31,12 +31,10 @@ class AdminCommand(private val plugin: Notoriety) : SubCommand {
         }
 
         when (param) {
-            "karma" -> if (operation == "set") data.karma = value.coerceIn(0, 1000)
-                       else data.addKarma(value)
+            "alignment" -> if (operation == "set") data.alignment = value.coerceIn(-1000, 1000)
+                           else data.addAlignment(value)
             "fame" -> if (operation == "set") data.fame = value.coerceIn(0, 1000)
                       else data.addFame(value)
-            "crime" -> if (operation == "set") data.crimePoint = value.coerceIn(0, 1000)
-                       else data.addCrimePoint(value)
             "pk" -> if (operation == "set") data.pkCount = maxOf(0, value)
                     else data.pkCount = maxOf(0, data.pkCount + value)
             else -> {
@@ -56,7 +54,7 @@ class AdminCommand(private val plugin: Notoriety) : SubCommand {
         return when (args.size) {
             1 -> Bukkit.getOnlinePlayers().map { it.name }
                 .filter { it.lowercase().startsWith(args[0].lowercase()) }
-            2 -> listOf("karma", "fame", "crime", "pk")
+            2 -> listOf("alignment", "fame", "pk")
                 .filter { it.startsWith(args[1].lowercase()) }
             3 -> listOf("set", "add")
                 .filter { it.startsWith(args[2].lowercase()) }

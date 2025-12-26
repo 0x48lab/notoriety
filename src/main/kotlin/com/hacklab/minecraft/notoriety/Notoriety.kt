@@ -148,19 +148,13 @@ class Notoriety : JavaPlugin() {
                 // Fame減少
                 data.addFame(-1)
 
-                // CrimePoint減少（1時間ごとに-10）
-                data.addCrimePoint(-10)
-
-                // 赤プレイヤーのPKCount減少チェック
-                if (data.pkCount > 0 && data.crimePoint <= -1000) {
-                    data.crimePoint += 1000  // 0にリセット
-                    data.pkCount--
-                }
+                // Alignment回復（0に向かって+10/時間）
+                // 赤プレイヤーはAlignmentが0になるとPKCount -1、Alignment -1000にリセット
+                val stateChanged = data.decayAlignment(10)
 
                 // 状態変化チェック
                 val newColor = data.getNameColor()
-                if (oldColor != newColor) {
-                    data.resetKarma()
+                if (oldColor != newColor || stateChanged) {
                     Bukkit.getPluginManager().callEvent(
                         PlayerColorChangeEvent(data.uuid, oldColor, newColor)
                     )

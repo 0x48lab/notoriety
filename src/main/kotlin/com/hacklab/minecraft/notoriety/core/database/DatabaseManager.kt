@@ -32,14 +32,20 @@ class DatabaseManager(
                 stmt.executeUpdate("""
                     CREATE TABLE IF NOT EXISTS player_data (
                         uuid VARCHAR(36) PRIMARY KEY,
-                        crime_point INT DEFAULT 0,
+                        alignment INT DEFAULT 0,
                         pk_count INT DEFAULT 0,
-                        karma INT DEFAULT 0,
                         fame INT DEFAULT 0,
                         play_time_minutes BIGINT DEFAULT 0,
                         last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                 """.trimIndent())
+
+                // Migration: If old schema exists, migrate to new schema
+                try {
+                    stmt.executeUpdate("ALTER TABLE player_data ADD COLUMN alignment INT DEFAULT 0")
+                } catch (e: Exception) {
+                    // Column already exists, ignore
+                }
 
                 // Block ownership table
                 stmt.executeUpdate("""
