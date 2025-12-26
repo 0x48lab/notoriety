@@ -6,7 +6,8 @@
 # Gradle
 /.gradle/
 /build/
-/gradle/
+# gradle wrapperは追跡する
+!/gradle/wrapper/
 
 # IDE
 /.idea/
