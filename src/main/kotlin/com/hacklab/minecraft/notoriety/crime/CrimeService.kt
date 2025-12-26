@@ -2,7 +2,6 @@ package com.hacklab.minecraft.notoriety.crime
 
 import com.hacklab.minecraft.notoriety.core.player.PlayerManager
 import com.hacklab.minecraft.notoriety.event.PlayerCrimeEvent
-import com.hacklab.minecraft.notoriety.reputation.NameColor
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import java.time.Instant
@@ -21,21 +20,9 @@ class CrimeService(
         detail: String? = null
     ) {
         val player = playerManager.getPlayer(criminal) ?: return
-        val oldColor = player.getNameColor()
 
-        // CrimePoint加算
-        player.addCrimePoint(crimePoint)
-
-        // 状態遷移時のKarmaリセット
-        val newColor = player.getNameColor()
-        if (oldColor == NameColor.BLUE && newColor != NameColor.BLUE) {
-            player.resetKarma()
-        }
-
-        // 赤プレイヤーの悪名加算
-        if (newColor == NameColor.RED) {
-            player.addKarma(crimePoint)
-        }
+        // Alignment減少（悪行なのでマイナス）
+        player.addAlignment(-crimePoint)
 
         // 被害者名を取得
         val victimName = victim?.let { Bukkit.getOfflinePlayer(it).name }

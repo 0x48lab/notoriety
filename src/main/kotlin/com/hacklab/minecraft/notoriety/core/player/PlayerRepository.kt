@@ -18,9 +18,8 @@ class PlayerRepository(private val databaseManager: DatabaseManager) {
             if (rs.next()) {
                 PlayerData(
                     uuid = uuid,
-                    crimePoint = rs.getInt("crime_point"),
+                    alignment = rs.getInt("alignment"),
                     pkCount = rs.getInt("pk_count"),
-                    karma = rs.getInt("karma"),
                     fame = rs.getInt("fame"),
                     playTimeMinutes = rs.getLong("play_time_minutes"),
                     lastSeen = rs.getTimestamp("last_seen")?.toInstant() ?: Instant.now()
@@ -34,24 +33,22 @@ class PlayerRepository(private val databaseManager: DatabaseManager) {
     fun save(data: PlayerData) {
         databaseManager.provider.useConnection { conn ->
             val stmt = conn.prepareStatement("""
-                INSERT INTO player_data (uuid, crime_point, pk_count, karma, fame, play_time_minutes, last_seen)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO player_data (uuid, alignment, pk_count, fame, play_time_minutes, last_seen)
+                VALUES (?, ?, ?, ?, ?, ?)
                 ON CONFLICT(uuid) DO UPDATE SET
-                    crime_point = excluded.crime_point,
+                    alignment = excluded.alignment,
                     pk_count = excluded.pk_count,
-                    karma = excluded.karma,
                     fame = excluded.fame,
                     play_time_minutes = excluded.play_time_minutes,
                     last_seen = excluded.last_seen
             """.trimIndent())
 
             stmt.setString(1, data.uuid.toString())
-            stmt.setInt(2, data.crimePoint)
+            stmt.setInt(2, data.alignment)
             stmt.setInt(3, data.pkCount)
-            stmt.setInt(4, data.karma)
-            stmt.setInt(5, data.fame)
-            stmt.setLong(6, data.playTimeMinutes)
-            stmt.setTimestamp(7, Timestamp.from(data.lastSeen))
+            stmt.setInt(4, data.fame)
+            stmt.setLong(5, data.playTimeMinutes)
+            stmt.setTimestamp(6, Timestamp.from(data.lastSeen))
             stmt.executeUpdate()
         }
     }

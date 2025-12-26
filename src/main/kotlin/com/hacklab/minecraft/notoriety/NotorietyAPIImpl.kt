@@ -10,20 +10,20 @@ import java.util.*
 
 class NotorietyAPIImpl(private val plugin: Notoriety) : NotorietyAPI {
 
-    // === CrimePoint ===
-    override fun getCrimePoint(player: UUID): Int =
-        plugin.playerManager.getPlayer(player)?.crimePoint ?: 0
+    // === Alignment ===
+    override fun getAlignment(player: UUID): Int =
+        plugin.playerManager.getPlayer(player)?.alignment ?: 0
 
-    override fun setCrimePoint(player: UUID, value: Int) {
+    override fun setAlignment(player: UUID, value: Int) {
         plugin.playerManager.getPlayer(player)?.let {
-            it.crimePoint = value.coerceIn(0, 1000)
+            it.alignment = value.coerceIn(-1000, 1000)
             updateDisplayIfOnline(player)
         }
     }
 
-    override fun addCrimePoint(player: UUID, amount: Int) {
+    override fun addAlignment(player: UUID, amount: Int) {
         plugin.playerManager.getPlayer(player)?.let {
-            it.addCrimePoint(amount)
+            it.addAlignment(amount)
             updateDisplayIfOnline(player)
         }
     }
@@ -42,24 +42,6 @@ class NotorietyAPIImpl(private val plugin: Notoriety) : NotorietyAPI {
     override fun addPKCount(player: UUID, amount: Int) {
         plugin.playerManager.getPlayer(player)?.let {
             it.pkCount = maxOf(0, it.pkCount + amount)
-            updateDisplayIfOnline(player)
-        }
-    }
-
-    // === Karma ===
-    override fun getKarma(player: UUID): Int =
-        plugin.playerManager.getPlayer(player)?.karma ?: 0
-
-    override fun setKarma(player: UUID, value: Int) {
-        plugin.playerManager.getPlayer(player)?.let {
-            it.karma = value.coerceIn(0, 1000)
-            updateDisplayIfOnline(player)
-        }
-    }
-
-    override fun addKarma(player: UUID, amount: Int) {
-        plugin.playerManager.getPlayer(player)?.let {
-            it.addKarma(amount)
             updateDisplayIfOnline(player)
         }
     }

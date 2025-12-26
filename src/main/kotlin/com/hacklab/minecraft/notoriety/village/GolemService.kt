@@ -11,7 +11,7 @@ class GolemService(private val playerManager: PlayerManager) {
     companion object {
         const val GOLEM_SEARCH_RANGE = 64.0
         const val GOLEM_TELEPORT_THRESHOLD = 16.0
-        const val ESCORT_KARMA_THRESHOLD = 500
+        const val ESCORT_ALIGNMENT_THRESHOLD = 500
         const val ESCORT_VILLAGER_RANGE = 32.0
     }
 
@@ -40,7 +40,7 @@ class GolemService(private val playerManager: PlayerManager) {
     fun orderGolemToProtect(protectedPlayer: Player, monster: Monster) {
         val data = playerManager.getPlayer(protectedPlayer) ?: return
         if (data.getNameColor() != NameColor.BLUE) return
-        if (data.karma < ESCORT_KARMA_THRESHOLD) return
+        if (data.alignment < ESCORT_ALIGNMENT_THRESHOLD) return
 
         // Check if player is near a villager
         val nearVillager = protectedPlayer.world.getNearbyEntities(

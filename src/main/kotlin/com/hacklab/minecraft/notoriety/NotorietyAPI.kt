@@ -7,20 +7,15 @@ import org.bukkit.Location
 import java.util.*
 
 interface NotorietyAPI {
-    // === CrimePoint操作 ===
-    fun getCrimePoint(player: UUID): Int
-    fun setCrimePoint(player: UUID, value: Int)
-    fun addCrimePoint(player: UUID, amount: Int)
+    // === Alignment操作（善悪軸: -1000〜+1000） ===
+    fun getAlignment(player: UUID): Int
+    fun setAlignment(player: UUID, value: Int)
+    fun addAlignment(player: UUID, amount: Int)
 
     // === PKCount操作 ===
     fun getPKCount(player: UUID): Int
     fun setPKCount(player: UUID, value: Int)
     fun addPKCount(player: UUID, amount: Int)
-
-    // === Karma操作 ===
-    fun getKarma(player: UUID): Int
-    fun setKarma(player: UUID, value: Int)
-    fun addKarma(player: UUID, amount: Int)
 
     // === Fame操作 ===
     fun getFame(player: UUID): Int

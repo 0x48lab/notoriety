@@ -18,20 +18,16 @@ class ReputationService(
         teamManager.updatePlayerTeam(player, color, title)
     }
 
-    fun onGoodDeed(playerUuid: UUID, karmaGain: Int, fameGain: Int, crimeReduction: Int) {
+    fun onGoodDeed(playerUuid: UUID, alignmentGain: Int, fameGain: Int) {
         val data = playerManager.getPlayer(playerUuid) ?: return
         val oldColor = data.getNameColor()
 
-        // 青プレイヤーのみKarmaが増加
-        if (oldColor == NameColor.BLUE) {
-            data.addKarma(karmaGain)
-        }
+        // Alignment増加（善行）
+        data.addAlignment(alignmentGain)
         data.addFame(fameGain)
-        data.addCrimePoint(-crimeReduction)
 
         val newColor = data.getNameColor()
         if (oldColor != newColor) {
-            data.resetKarma()
             Bukkit.getPluginManager().callEvent(
                 PlayerColorChangeEvent(playerUuid, oldColor, newColor)
             )
@@ -39,7 +35,7 @@ class ReputationService(
 
         // イベント発火
         Bukkit.getPluginManager().callEvent(
-            PlayerGoodDeedEvent(playerUuid, karmaGain, fameGain, crimeReduction)
+            PlayerGoodDeedEvent(playerUuid, alignmentGain, fameGain)
         )
 
         // 表示を更新
@@ -55,7 +51,8 @@ class ReputationService(
             NameColor.BLUE -> {
                 // PKカウント増加
                 killerData.pkCount++
-                killerData.resetKarma()
+                // 赤になるとAlignment -1000からスタート
+                killerData.alignment = -1000
 
                 // 赤になったらイベント発火
                 val newColor = killerData.getNameColor()
@@ -64,17 +61,10 @@ class ReputationService(
                         PlayerColorChangeEvent(killerUuid, oldColor, newColor)
                     )
                 }
-
-                // 赤なら悪名も増加
-                if (killerData.getNameColor() == NameColor.RED) {
-                    killerData.addKarma(50)
-                }
             }
             NameColor.RED -> {
-                // 賞金稼ぎ報酬（青プレイヤーのみ）
-                if (oldColor == NameColor.BLUE) {
-                    killerData.addKarma(50)
-                }
+                // 賞金稼ぎ報酬: Alignment増加
+                killerData.addAlignment(50)
                 killerData.addFame(50)
 
                 // Fame継承

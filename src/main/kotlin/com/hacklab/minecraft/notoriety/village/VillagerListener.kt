@@ -98,10 +98,10 @@ class VillagerListener(
             villagerService.shoutCrime(witness, killer.name, "kill_animal")
             golemService.callGolemToAttack(killer, witness.location)
 
-            // Karma +20 のみ（CrimePointは加算しない）
-            data.addKarma(20)
+            // Alignment -20（動物殺害の軽微な犯罪）
+            data.addAlignment(-20)
 
-            // 犯罪履歴には記録（CrimePoint 0で）
+            // 犯罪履歴には記録
             crimeService.recordCrimeHistory(
                 criminal = killer.uniqueId,
                 crimeType = CrimeType.KILL_ANIMAL,
