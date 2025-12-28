@@ -8,6 +8,7 @@ import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.entity.Animals
 import org.bukkit.entity.IronGolem
+import org.bukkit.entity.Monster
 import org.bukkit.entity.Player
 import org.bukkit.entity.Projectile
 import org.bukkit.entity.Tameable
@@ -266,7 +267,7 @@ class VillagerListener(
         }
     }
 
-    // 灰・赤プレイヤーの村人ベッド破壊（村人が紐づいているベッドを壊すと犯罪）
+    // 村人ベッド破壊（村人が紐づいているベッドを壊すと犯罪）- 全プレイヤー対象
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onVillagerBedBreak(event: BlockBreakEvent) {
         val player = event.player
@@ -279,10 +280,7 @@ class VillagerListener(
         // ベッドのみ対象
         if (!isBed(block.type)) return
 
-        val data = plugin.playerManager.getPlayer(player) ?: return
-
-        // 青プレイヤーは犯罪にならない
-        if (data.getNameColor() == NameColor.BLUE) return
+        plugin.playerManager.getPlayer(player) ?: return
 
         // このベッドに紐づいている村人を探す
         val affectedVillager = findVillagerWithBed(block.location) ?: return
@@ -293,17 +291,17 @@ class VillagerListener(
         // ゴーレムを呼ぶ
         golemService.callGolemToAttack(player, affectedVillager.location)
 
-        // 犯罪記録
+        // 犯罪記録（Alignment -5）
         crimeService.commitCrime(
             criminal = player.uniqueId,
             crimeType = CrimeType.DESTROY_VILLAGER_BED,
-            alignmentPenalty = 30,
+            alignmentPenalty = 5,
             location = block.location
         )
         plugin.reputationService.updateDisplay(player)
     }
 
-    // 灰・赤プレイヤーの村人仕事場破壊（村人が紐づいている職業ブロックを壊すと犯罪）
+    // 村人仕事場破壊（村人が紐づいている職業ブロックを壊すと犯罪）- 全プレイヤー対象
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onVillagerWorkstationBreak(event: BlockBreakEvent) {
         val player = event.player
@@ -312,10 +310,7 @@ class VillagerListener(
         if (player.gameMode == GameMode.CREATIVE) return
 
         val block = event.block
-        val data = plugin.playerManager.getPlayer(player) ?: return
-
-        // 青プレイヤーは犯罪にならない
-        if (data.getNameColor() == NameColor.BLUE) return
+        plugin.playerManager.getPlayer(player) ?: return
 
         // この職業ブロックに紐づいている村人を探す
         val affectedVillager = findVillagerWithWorkstation(block.location) ?: return
@@ -326,11 +321,11 @@ class VillagerListener(
         // ゴーレムを呼ぶ
         golemService.callGolemToAttack(player, affectedVillager.location)
 
-        // 犯罪記録
+        // 犯罪記録（Alignment -10）
         crimeService.commitCrime(
             criminal = player.uniqueId,
             crimeType = CrimeType.DESTROY_VILLAGER_WORKSTATION,
-            alignmentPenalty = 30,
+            alignmentPenalty = 10,
             location = block.location,
             detail = block.type.name
         )
@@ -430,11 +425,101 @@ class VillagerListener(
             .forEach { golemService.returnGolemToHome(it) }
     }
 
-    // ゴーレムが死亡した時
+    // ゴーレムが死亡した時（ホーム位置管理）
     @EventHandler(priority = EventPriority.MONITOR)
     fun onGolemDeath(event: EntityDeathEvent) {
         val golem = event.entity as? IronGolem ?: return
         golemService.onGolemDeath(golem)
+    }
+
+    // ゴーレム殺害（全プレイヤー対象）- Alignment -100
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    fun onGolemKill(event: EntityDeathEvent) {
+        val golem = event.entity as? IronGolem ?: return
+        val killer = golem.killer ?: return
+
+        // クリエイティブモードは犯罪判定をスキップ
+        if (killer.gameMode == GameMode.CREATIVE) return
+
+        plugin.playerManager.getPlayer(killer) ?: return
+
+        // 目撃した村人の叫び
+        val witness = golem.world.getNearbyEntities(
+            golem.location, 32.0, 32.0, 32.0
+        ).filterIsInstance<Villager>()
+            .firstOrNull { it.hasLineOfSight(killer) }
+
+        witness?.let {
+            villagerService.shoutCrime(it, killer.name, "kill_golem")
+        }
+
+        // 周囲のゴーレムを全て召集して強化
+        golemService.callAllGolemsToAttack(killer, golem.location)
+
+        // 犯罪記録（Alignment -100）
+        crimeService.commitCrime(
+            criminal = killer.uniqueId,
+            crimeType = CrimeType.KILL_GOLEM,
+            alignmentPenalty = 100,
+            location = golem.location
+        )
+        plugin.reputationService.updateDisplay(killer)
+    }
+
+    // 村人攻撃（全プレイヤー対象）- Alignment -5（攻撃の度）
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    fun onVillagerAttack(event: EntityDamageByEntityEvent) {
+        val villager = event.entity as? Villager ?: return
+
+        // 攻撃者を特定（直接攻撃または飛び道具）
+        val attacker = when (val damager = event.damager) {
+            is Player -> damager
+            is Projectile -> damager.shooter as? Player
+            else -> null
+        } ?: return
+
+        // クリエイティブモードは犯罪判定をスキップ
+        if (attacker.gameMode == GameMode.CREATIVE) return
+
+        plugin.playerManager.getPlayer(attacker) ?: return
+
+        // 目撃した村人の叫び（攻撃された村人以外）
+        val witness = villager.world.getNearbyEntities(
+            villager.location, 32.0, 32.0, 32.0
+        ).filterIsInstance<Villager>()
+            .firstOrNull { it != villager && it.hasLineOfSight(attacker) }
+
+        witness?.let {
+            villagerService.shoutCrime(it, attacker.name, "attack_villager")
+        }
+
+        // ゴーレムを呼ぶ
+        golemService.callGolemToAttack(attacker, villager.location)
+
+        // 犯罪記録（Alignment -5）
+        crimeService.commitCrime(
+            criminal = attacker.uniqueId,
+            crimeType = CrimeType.ATTACK_VILLAGER,
+            alignmentPenalty = 5,
+            location = villager.location
+        )
+        plugin.reputationService.updateDisplay(attacker)
+    }
+
+    // モンスター討伐（全プレイヤー対象）- Alignment +1
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    fun onMonsterKill(event: EntityDeathEvent) {
+        val monster = event.entity as? Monster ?: return
+        val killer = monster.killer ?: return
+
+        // クリエイティブモードはスキップ
+        if (killer.gameMode == GameMode.CREATIVE) return
+
+        val data = plugin.playerManager.getPlayer(killer) ?: return
+
+        // Alignment +1
+        data.addAlignment(1)
+        plugin.reputationService.updateDisplay(killer)
     }
 
     // ゴーレムがスポーンした時に強化（攻撃された時にテレポートできるように）

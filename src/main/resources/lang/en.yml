@@ -11,6 +11,8 @@ crime:
   harvest_crop: "Crop Harvesting"
   destroy_villager_bed: "Villager Bed Destruction"
   destroy_villager_workstation: "Villager Workstation Destruction"
+  attack_villager: "Villager Attack"
+  kill_golem: "Golem Killing"
 
 # Status names
 status:
@@ -29,6 +31,8 @@ villager:
   witness_murder: "%s killed a villager!"
   destroy_bed: "%s destroyed my bed!"
   destroy_workstation: "%s destroyed my workstation!"
+  attack_villager: "%s attacked a villager!"
+  kill_golem: "%s killed a golem!"
   # Gray player warning messages (random selection)
   gray_warning_1: "Hey %s... I'm watching you"
   gray_warning_2: "Look, the thief %s is here!"

@@ -11,6 +11,8 @@ crime:
   harvest_crop: "作物収穫"
   destroy_villager_bed: "村人のベッド破壊"
   destroy_villager_workstation: "村人の仕事場破壊"
+  attack_villager: "村人への攻撃"
+  kill_golem: "ゴーレム殺害"
 
 # Status names
 status:
@@ -29,6 +31,8 @@ villager:
   witness_murder: "%sが村人を殺した！"
   destroy_bed: "%sが私のベッドを壊した！"
   destroy_workstation: "%sが私の仕事場を壊した！"
+  attack_villager: "%sが村人を攻撃した！"
+  kill_golem: "%sがゴーレムを殺した！"
   # Gray player warning messages (random selection)
   gray_warning_1: "おい、%s...お前のこと見てるからな"
   gray_warning_2: "あっ、泥棒の%sが来たぞ！"
