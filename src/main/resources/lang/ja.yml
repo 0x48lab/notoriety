@@ -72,6 +72,14 @@ message:
   trade_refused: "村人は取引を拒否しました"
   discount_applied: "(%d%%割引が適用されました)"
 
+# Crime notification messages
+notification:
+  crime_committed: "%s を犯しました (Alignment -%d)"
+  became_gray: "あなたは灰色プレイヤー（Criminal）になりました"
+  became_red: "あなたは赤プレイヤー（Murderer）になりました"
+  became_blue: "あなたは青プレイヤー（Innocent）に戻りました"
+  no_longer_red: "あなたはもう赤プレイヤーではありません"
+
 # Admin messages
 admin:
   gray_list_title: "=== 灰色プレイヤー一覧 (%d人) ==="

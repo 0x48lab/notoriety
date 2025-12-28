@@ -1,6 +1,7 @@
 package com.hacklab.minecraft.notoriety.crime
 
 import com.hacklab.minecraft.notoriety.core.player.PlayerManager
+import com.hacklab.minecraft.notoriety.event.PlayerColorChangeEvent
 import com.hacklab.minecraft.notoriety.event.PlayerCrimeEvent
 import org.bukkit.Bukkit
 import org.bukkit.Location
@@ -21,8 +22,19 @@ class CrimeService(
     ) {
         val player = playerManager.getPlayer(criminal) ?: return
 
+        // 色変更チェック用に現在の色を保存
+        val oldColor = player.getNameColor()
+
         // Alignment減少（悪行なのでマイナス）
         player.addAlignment(-alignmentPenalty)
+
+        // 色が変わったかチェック
+        val newColor = player.getNameColor()
+        if (oldColor != newColor) {
+            Bukkit.getPluginManager().callEvent(
+                PlayerColorChangeEvent(criminal, oldColor, newColor)
+            )
+        }
 
         // 被害者名を取得
         val victimName = victim?.let { Bukkit.getOfflinePlayer(it).name }

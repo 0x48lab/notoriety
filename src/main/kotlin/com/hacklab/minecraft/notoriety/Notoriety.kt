@@ -12,6 +12,7 @@ import com.hacklab.minecraft.notoriety.core.player.PlayerListener
 import com.hacklab.minecraft.notoriety.core.player.PlayerManager
 import com.hacklab.minecraft.notoriety.core.player.PlayerRepository
 import com.hacklab.minecraft.notoriety.core.toLocation
+import com.hacklab.minecraft.notoriety.crime.CrimeNotificationListener
 import com.hacklab.minecraft.notoriety.crime.CrimeRepository
 import com.hacklab.minecraft.notoriety.crime.CrimeService
 import com.hacklab.minecraft.notoriety.crime.CrimeType
@@ -109,6 +110,7 @@ class Notoriety : JavaPlugin() {
         pm.registerEvents(VillagerListener(this, villagerService, golemService, crimeService), this)
         pm.registerEvents(TradeListener(playerManager, reputationService), this)
         pm.registerEvents(CombatListener(playerManager, crimeService, reputationService, bountyService, trustService), this)
+        pm.registerEvents(CrimeNotificationListener(i18nManager), this)
     }
 
     private fun registerCommands() {

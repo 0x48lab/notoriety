@@ -72,6 +72,14 @@ message:
   trade_refused: "The villager refused to trade"
   discount_applied: "(%d%% discount applied)"
 
+# Crime notification messages
+notification:
+  crime_committed: "You committed %s (Alignment -%d)"
+  became_gray: "You have become a Criminal (Gray player)"
+  became_red: "You have become a Murderer (Red player)"
+  became_blue: "You are now Innocent (Blue player) again"
+  no_longer_red: "You are no longer a red player"
+
 # Admin messages
 admin:
   gray_list_title: "=== Gray Players (%d) ==="
