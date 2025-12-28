@@ -19,6 +19,7 @@ import org.bukkit.block.Container
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDeathEvent
+import org.bukkit.event.entity.EntityTargetEvent
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.PlayerMoveEvent
 
@@ -280,6 +281,40 @@ class VillagerListener(
         // 近接攻撃の場合、リーチ外からならテレポート
         val attacker = damager as? Player ?: return
         golemService.onGolemDamaged(golem, attacker)
+    }
+
+    // ゴーレムがターゲットを失った時（倒した、見失ったなど）
+    @EventHandler(priority = EventPriority.MONITOR)
+    fun onGolemTargetChange(event: EntityTargetEvent) {
+        val golem = event.entity as? IronGolem ?: return
+
+        // ホーム位置が登録されているゴーレムのみ処理
+        if (!golemService.hasHomeLocation(golem)) return
+
+        // ターゲットがnullになった（倒した、見失った）場合、帰還
+        if (event.target == null) {
+            golemService.returnGolemToHome(golem)
+        }
+    }
+
+    // ゴーレムのターゲット（プレイヤー）が死亡した時
+    @EventHandler(priority = EventPriority.MONITOR)
+    fun onTargetPlayerDeath(event: EntityDeathEvent) {
+        val deadPlayer = event.entity as? Player ?: return
+
+        // このプレイヤーをターゲットにしている強化ゴーレムを探して帰還させる
+        deadPlayer.world.getNearbyEntities(
+            deadPlayer.location, 64.0, 64.0, 64.0
+        ).filterIsInstance<IronGolem>()
+            .filter { golemService.hasHomeLocation(it) && it.target == deadPlayer }
+            .forEach { golemService.returnGolemToHome(it) }
+    }
+
+    // ゴーレムが死亡した時
+    @EventHandler(priority = EventPriority.MONITOR)
+    fun onGolemDeath(event: EntityDeathEvent) {
+        val golem = event.entity as? IronGolem ?: return
+        golemService.onGolemDeath(golem)
     }
 
     private fun hasBlockChanged(event: PlayerMoveEvent): Boolean {
