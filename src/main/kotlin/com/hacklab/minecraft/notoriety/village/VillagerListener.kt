@@ -266,7 +266,7 @@ class VillagerListener(
         }
     }
 
-    // 灰プレイヤーの村人ベッド破壊（村人が紐づいているベッドを壊すと犯罪）
+    // 灰・赤プレイヤーの村人ベッド破壊（村人が紐づいているベッドを壊すと犯罪）
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onVillagerBedBreak(event: BlockBreakEvent) {
         val player = event.player
@@ -281,12 +281,11 @@ class VillagerListener(
 
         val data = plugin.playerManager.getPlayer(player) ?: return
 
-        // 灰色プレイヤーのみ処理（赤は村人殺害などで既に犯罪者）
-        if (data.getNameColor() != NameColor.GRAY) return
+        // 青プレイヤーは犯罪にならない
+        if (data.getNameColor() == NameColor.BLUE) return
 
         // このベッドに紐づいている村人を探す
-        val affectedVillager = findVillagerWithBed(block.location)
-        if (affectedVillager == null) return
+        val affectedVillager = findVillagerWithBed(block.location) ?: return
 
         // 村人が叫ぶ
         villagerService.shoutCrime(affectedVillager, player.name, "destroy_bed")
@@ -304,11 +303,44 @@ class VillagerListener(
         plugin.reputationService.updateDisplay(player)
     }
 
+    // 灰・赤プレイヤーの村人仕事場破壊（村人が紐づいている職業ブロックを壊すと犯罪）
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    fun onVillagerWorkstationBreak(event: BlockBreakEvent) {
+        val player = event.player
+
+        // クリエイティブモードは犯罪判定をスキップ
+        if (player.gameMode == GameMode.CREATIVE) return
+
+        val block = event.block
+        val data = plugin.playerManager.getPlayer(player) ?: return
+
+        // 青プレイヤーは犯罪にならない
+        if (data.getNameColor() == NameColor.BLUE) return
+
+        // この職業ブロックに紐づいている村人を探す
+        val affectedVillager = findVillagerWithWorkstation(block.location) ?: return
+
+        // 村人が叫ぶ
+        villagerService.shoutCrime(affectedVillager, player.name, "destroy_workstation")
+
+        // ゴーレムを呼ぶ
+        golemService.callGolemToAttack(player, affectedVillager.location)
+
+        // 犯罪記録
+        crimeService.commitCrime(
+            criminal = player.uniqueId,
+            crimeType = CrimeType.DESTROY_VILLAGER_WORKSTATION,
+            alignmentPenalty = 30,
+            location = block.location,
+            detail = block.type.name
+        )
+        plugin.reputationService.updateDisplay(player)
+    }
+
     /**
      * 指定された位置のベッドに紐づいている村人を探す
      */
     private fun findVillagerWithBed(bedLocation: org.bukkit.Location): Villager? {
-        // ベッドの検索範囲（村人は通常近くにいる）
         val searchRange = 64.0
         return bedLocation.world.getNearbyEntities(
             bedLocation,
@@ -318,14 +350,30 @@ class VillagerListener(
         ).filterIsInstance<Villager>()
             .firstOrNull { villager ->
                 val home = villager.getMemory(MemoryKey.HOME)
-                if (home != null) {
-                    // Paper APIではHOMEはLocationを返す
+                home != null &&
                     home.blockX == bedLocation.blockX &&
                     home.blockY == bedLocation.blockY &&
                     home.blockZ == bedLocation.blockZ
-                } else {
-                    false
-                }
+            }
+    }
+
+    /**
+     * 指定された位置の職業ブロックに紐づいている村人を探す
+     */
+    private fun findVillagerWithWorkstation(blockLocation: org.bukkit.Location): Villager? {
+        val searchRange = 64.0
+        return blockLocation.world.getNearbyEntities(
+            blockLocation,
+            searchRange,
+            searchRange,
+            searchRange
+        ).filterIsInstance<Villager>()
+            .firstOrNull { villager ->
+                val jobSite = villager.getMemory(MemoryKey.JOB_SITE)
+                jobSite != null &&
+                    jobSite.blockX == blockLocation.blockX &&
+                    jobSite.blockY == blockLocation.blockY &&
+                    jobSite.blockZ == blockLocation.blockZ
             }
     }
 
