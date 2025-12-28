@@ -496,11 +496,11 @@ class VillagerListener(
         // ゴーレムを呼ぶ
         golemService.callGolemToAttack(attacker, villager.location)
 
-        // 犯罪記録（Alignment -5）
+        // 犯罪記録（Alignment -1）
         crimeService.commitCrime(
             criminal = attacker.uniqueId,
             crimeType = CrimeType.ATTACK_VILLAGER,
-            alignmentPenalty = 5,
+            alignmentPenalty = 1,
             location = villager.location
         )
         plugin.reputationService.updateDisplay(attacker)
