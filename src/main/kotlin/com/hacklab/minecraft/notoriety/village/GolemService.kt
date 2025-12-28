@@ -23,7 +23,7 @@ class GolemService(private val playerManager: PlayerManager) {
         // 強化ゴーレムの設定
         const val ENHANCED_GOLEM_ATTACK_DAMAGE = 45.0  // 通常7-21 → 45（40-50）
         const val ENHANCED_GOLEM_MAX_HEALTH = 200.0    // 通常100 → 200
-        const val ENHANCED_GOLEM_SPEED = 0.5           // 通常0.25 → 0.5（2倍速）
+        // 強化ゴーレムは通常速度 + Speed IIポーション効果で約1.4倍速
     }
 
     // ゴーレムのホーム位置を記録（UUID -> 元の位置）
@@ -171,14 +171,11 @@ class GolemService(private val playerManager: PlayerManager) {
             // 攻撃力強化
             entity.getAttribute(Attribute.ATTACK_DAMAGE)?.baseValue = ENHANCED_GOLEM_ATTACK_DAMAGE
 
-            // 移動速度強化
-            entity.getAttribute(Attribute.MOVEMENT_SPEED)?.baseValue = ENHANCED_GOLEM_SPEED
-
             // ノックバック耐性を最大に
             entity.getAttribute(Attribute.KNOCKBACK_RESISTANCE)?.baseValue = 1.0
         }
 
-        // 速度アップのポーション効果（保険として追加）
+        // 速度アップのポーション効果（通常の約1.4倍速）
         golem.addPotionEffect(PotionEffect(
             PotionEffectType.SPEED,
             Int.MAX_VALUE,  // 永続
@@ -225,16 +222,13 @@ class GolemService(private val playerManager: PlayerManager) {
         // 既に強化済みの場合はスキップ（Speed効果があるかで判定）
         if (golem.hasPotionEffect(PotionEffectType.SPEED)) return
 
-        // 移動速度強化
-        golem.getAttribute(Attribute.MOVEMENT_SPEED)?.baseValue = ENHANCED_GOLEM_SPEED
-
         // 攻撃力強化
         golem.getAttribute(Attribute.ATTACK_DAMAGE)?.baseValue = ENHANCED_GOLEM_ATTACK_DAMAGE
 
         // ノックバック耐性を最大に
         golem.getAttribute(Attribute.KNOCKBACK_RESISTANCE)?.baseValue = 1.0
 
-        // 速度アップのポーション効果（視覚的にもわかりやすい）
+        // 速度アップのポーション効果（通常の約1.4倍速）
         golem.addPotionEffect(PotionEffect(
             PotionEffectType.SPEED,
             Int.MAX_VALUE,  // 永続
