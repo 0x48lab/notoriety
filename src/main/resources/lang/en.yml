@@ -74,7 +74,8 @@ message:
 
 # Crime notification messages
 notification:
-  crime_committed: "You committed %s (Alignment -%d)"
+  crime_committed: "%s's property: %s (Alignment -%d)"
+  village: "Village"
   became_gray: "You have become a Criminal (Gray player)"
   became_red: "You have become a Murderer (Red player)"
   became_blue: "You are now Innocent (Blue player) again"

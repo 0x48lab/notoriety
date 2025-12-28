@@ -10,7 +10,9 @@ import java.util.*
 class PlayerCrimeEvent(
     val criminalUuid: UUID,
     val crimeType: CrimeType,
-    val alignmentPenalty: Int
+    val alignmentPenalty: Int,
+    val victimUuid: UUID? = null,
+    val victimName: String? = null
 ) : Event() {
     val player: Player? get() = Bukkit.getPlayer(criminalUuid)
 

@@ -74,7 +74,8 @@ message:
 
 # Crime notification messages
 notification:
-  crime_committed: "%s を犯しました (Alignment -%d)"
+  crime_committed: "%s の所有物に %s (Alignment -%d)"
+  village: "村"
   became_gray: "あなたは灰色プレイヤー（Criminal）になりました"
   became_red: "あなたは赤プレイヤー（Murderer）になりました"
   became_blue: "あなたは青プレイヤー（Innocent）に戻りました"

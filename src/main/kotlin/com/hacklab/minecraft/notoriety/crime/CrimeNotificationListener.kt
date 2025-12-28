@@ -20,15 +20,21 @@ class CrimeNotificationListener(
         val player = Bukkit.getPlayer(event.criminalUuid) ?: return
 
         val crimeTypeName = i18n.get("crime.${event.crimeType.name.lowercase()}", event.crimeType.name)
+
+        // 被害者名を取得（なければ「村」）
+        val victimName = event.victimName ?: i18n.get("notification.village", "the village")
+
         val message = i18n.get(
             "notification.crime_committed",
-            "[Notoriety] %s (Alignment -%d)",
+            "%s's property: %s (Alignment -%d)",
+            victimName,
             crimeTypeName,
             event.alignmentPenalty
         )
 
         player.sendMessage(
-            Component.text(message).color(NamedTextColor.RED)
+            Component.text("[Notoriety] ").color(NamedTextColor.GOLD)
+                .append(Component.text(message).color(NamedTextColor.RED))
         )
     }
 

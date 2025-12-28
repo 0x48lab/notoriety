@@ -54,9 +54,9 @@ class CrimeService(
             committedAt = Instant.now()
         ))
 
-        // カスタムイベント発火
+        // カスタムイベント発火（被害者情報を含む）
         Bukkit.getPluginManager().callEvent(
-            PlayerCrimeEvent(criminal, crimeType, alignmentPenalty)
+            PlayerCrimeEvent(criminal, crimeType, alignmentPenalty, victim, victimName)
         )
     }
 
