@@ -221,7 +221,7 @@ class GolemService(private val playerManager: PlayerManager) {
     /**
      * 既存のゴーレムを攻撃モード用に強化する
      */
-    private fun enhanceGolem(golem: IronGolem) {
+    fun enhanceGolem(golem: IronGolem) {
         // 既に強化済みの場合はスキップ（Speed効果があるかで判定）
         if (golem.hasPotionEffect(PotionEffectType.SPEED)) return
 
