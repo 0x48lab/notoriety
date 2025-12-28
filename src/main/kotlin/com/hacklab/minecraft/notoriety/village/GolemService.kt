@@ -13,6 +13,7 @@ import org.bukkit.potion.PotionEffectType
 class GolemService(private val playerManager: PlayerManager) {
     companion object {
         const val GOLEM_SEARCH_RANGE = 128.0
+        const val GOLEM_DETECTION_RANGE = 32.0        // ゴーレムの視認範囲
         const val GOLEM_MELEE_RANGE = 2.5             // ゴーレムの通常攻撃リーチ
         const val ESCORT_ALIGNMENT_THRESHOLD = 500
         const val ESCORT_VILLAGER_RANGE = 32.0
@@ -67,6 +68,58 @@ class GolemService(private val playerManager: PlayerManager) {
     fun shouldAttackRedPlayer(player: Player): Boolean {
         val data = playerManager.getPlayer(player) ?: return false
         return data.getNameColor() == NameColor.RED
+    }
+
+    /**
+     * ゴーレムが赤プレイヤーを検知したら攻撃
+     * @return 攻撃したゴーレムがあればtrue
+     */
+    fun checkGolemDetectsRedPlayer(player: Player): Boolean {
+        val data = playerManager.getPlayer(player) ?: return false
+        if (data.getNameColor() != NameColor.RED) return false
+
+        // 近くのゴーレムを探す（視認範囲内）
+        val golem = findNearbyGolemWithLineOfSight(player.location, player) ?: return false
+
+        // ゴーレムを強化して攻撃
+        val teleportLocation = findSafeTeleportLocation(player.location)
+        golem.teleport(teleportLocation)
+        enhanceGolem(golem)
+        golem.target = player
+        return true
+    }
+
+    /**
+     * ゴーレムが灰色プレイヤーの犯罪を目撃したら攻撃
+     * @return 目撃したゴーレムがあればtrue
+     */
+    fun checkGolemWitnessesCrime(player: Player, crimeLocation: Location): Boolean {
+        val data = playerManager.getPlayer(player) ?: return false
+        if (data.getNameColor() != NameColor.GRAY) return false
+
+        // 犯罪現場の近くのゴーレムを探す（視認範囲内）
+        val golem = findNearbyGolemWithLineOfSight(crimeLocation, player) ?: return false
+
+        // ゴーレムを強化して攻撃
+        val teleportLocation = findSafeTeleportLocation(player.location)
+        golem.teleport(teleportLocation)
+        enhanceGolem(golem)
+        golem.target = player
+        return true
+    }
+
+    /**
+     * 視線が通るゴーレムを探す
+     */
+    private fun findNearbyGolemWithLineOfSight(location: Location, target: Player): IronGolem? {
+        return location.world.getNearbyEntities(
+            location,
+            GOLEM_DETECTION_RANGE,
+            GOLEM_DETECTION_RANGE,
+            GOLEM_DETECTION_RANGE
+        ).filterIsInstance<IronGolem>()
+            .filter { it.hasLineOfSight(target) }
+            .minByOrNull { it.location.distance(location) }
     }
 
     private fun findNearbyGolem(location: Location): IronGolem? {

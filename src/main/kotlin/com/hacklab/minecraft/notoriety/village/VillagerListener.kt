@@ -39,10 +39,14 @@ class VillagerListener(
 
         when (data.getNameColor()) {
             NameColor.RED -> {
+                // 村人の反応
                 val villager = villagerService.checkRedPlayerProximity(player)
                 if (villager != null) {
                     villagerService.shoutMurderer(villager)
                     golemService.callGolemToAttack(player, villager.location)
+                } else {
+                    // 村人がいなくても、ゴーレムが独自に赤プレイヤーを検知
+                    golemService.checkGolemDetectsRedPlayer(player)
                 }
             }
             NameColor.GRAY -> {
@@ -114,10 +118,16 @@ class VillagerListener(
 
         // 灰色・赤色プレイヤーのみ処理
         val witness = villagerService.checkGrayCrimeWitness(killer, entity.location)
-        if (witness != null) {
+        val golemWitnessed = if (witness == null) {
+            // 村人が目撃していなくても、ゴーレムが目撃しているかチェック
+            golemService.checkGolemWitnessesCrime(killer, entity.location)
+        } else {
             villagerService.shoutCrime(witness, killer.name, "kill_animal")
             golemService.callGolemToAttack(killer, witness.location)
+            true
+        }
 
+        if (witness != null || golemWitnessed) {
             // Alignment -20（動物殺害の軽微な犯罪）
             data.addAlignment(-20)
 
@@ -149,10 +159,16 @@ class VillagerListener(
         if (data.getNameColor() != NameColor.GRAY) return
 
         val witness = villagerService.checkGrayCrimeWitness(player, block.location)
-        if (witness != null) {
+        val golemWitnessed = if (witness == null) {
+            // 村人が目撃していなくても、ゴーレムが目撃しているかチェック
+            golemService.checkGolemWitnessesCrime(player, block.location)
+        } else {
             villagerService.shoutCrime(witness, player.name, "theft")
             golemService.callGolemToAttack(player, witness.location)
+            true
+        }
 
+        if (witness != null || golemWitnessed) {
             crimeService.commitCrime(
                 criminal = player.uniqueId,
                 crimeType = CrimeType.HARVEST_CROP,
@@ -164,7 +180,7 @@ class VillagerListener(
         }
     }
 
-    // 灰プレイヤーの所有権なしコンテナ・家具破壊（村人目撃下）
+    // 灰プレイヤーの所有権なしコンテナ・家具破壊（村人またはゴーレム目撃下）
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onContainerOrFurnitureBreak(event: BlockBreakEvent) {
         val player = event.player
@@ -184,10 +200,16 @@ class VillagerListener(
         if (plugin.ownershipService.isProtected(block.location)) return
 
         val witness = villagerService.checkGrayCrimeWitness(player, block.location)
-        if (witness != null) {
+        val golemWitnessed = if (witness == null) {
+            // 村人が目撃していなくても、ゴーレムが目撃しているかチェック
+            golemService.checkGolemWitnessesCrime(player, block.location)
+        } else {
             villagerService.shoutCrime(witness, player.name, "destroy")
             golemService.callGolemToAttack(player, witness.location)
+            true
+        }
 
+        if (witness != null || golemWitnessed) {
             crimeService.commitCrime(
                 criminal = player.uniqueId,
                 crimeType = CrimeType.DESTROY,
@@ -199,7 +221,7 @@ class VillagerListener(
         }
     }
 
-    // 灰プレイヤーの所有権なしコンテナからのアイテム取り出し（村人目撃下）
+    // 灰プレイヤーの所有権なしコンテナからのアイテム取り出し（村人またはゴーレム目撃下）
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onContainerAccess(event: InventoryClickEvent) {
         val player = event.whoClicked as? Player ?: return
@@ -221,10 +243,16 @@ class VillagerListener(
         if (plugin.ownershipService.isProtected(location)) return
 
         val witness = villagerService.checkGrayCrimeWitness(player, location)
-        if (witness != null) {
+        val golemWitnessed = if (witness == null) {
+            // 村人が目撃していなくても、ゴーレムが目撃しているかチェック
+            golemService.checkGolemWitnessesCrime(player, location)
+        } else {
             villagerService.shoutCrime(witness, player.name, "theft")
             golemService.callGolemToAttack(player, witness.location)
+            true
+        }
 
+        if (witness != null || golemWitnessed) {
             crimeService.commitCrime(
                 criminal = player.uniqueId,
                 crimeType = CrimeType.THEFT,
