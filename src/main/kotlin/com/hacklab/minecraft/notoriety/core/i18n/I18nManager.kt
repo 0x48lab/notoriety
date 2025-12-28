@@ -50,12 +50,16 @@ class I18nManager(private val plugin: JavaPlugin, private val locale: String) {
         }
     }
 
-    fun get(key: String, vararg args: Any): String {
-        val template = messages[key] ?: return key
+    fun get(key: String, default: String): String {
+        return messages[key] ?: default
+    }
+
+    fun get(key: String, default: String, vararg args: Any): String {
+        val template = messages[key] ?: default
         return if (args.isEmpty()) template else template.format(*args)
     }
 
-    operator fun get(key: String): String = get(key)
+    operator fun get(key: String): String = messages[key] ?: key
 
     fun reload() {
         messages.clear()
