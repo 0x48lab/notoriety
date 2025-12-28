@@ -7,6 +7,7 @@ import com.hacklab.minecraft.notoriety.crime.CrimeService
 import com.hacklab.minecraft.notoriety.crime.CrimeType
 import com.hacklab.minecraft.notoriety.reputation.NameColor
 import com.hacklab.minecraft.notoriety.trust.TrustService
+import org.bukkit.GameMode
 import org.bukkit.block.Container
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -27,6 +28,10 @@ class OwnershipListener(
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onBlockPlace(event: BlockPlaceEvent) {
         val player = event.player
+
+        // クリエイティブモードは所有権システムをスキップ
+        if (player.gameMode == GameMode.CREATIVE) return
+
         val data = plugin.playerManager.getPlayer(player) ?: return
 
         // 青プレイヤーのみ所有権を登録
@@ -44,6 +49,10 @@ class OwnershipListener(
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     fun onBlockBreak(event: BlockBreakEvent) {
         val player = event.player
+
+        // クリエイティブモードは犯罪判定をスキップ
+        if (player.gameMode == GameMode.CREATIVE) return
+
         val block = event.block
         val owner = ownershipService.getOwner(block.location) ?: return
 
@@ -58,7 +67,7 @@ class OwnershipListener(
             crimeService.commitCrime(
                 criminal = player.uniqueId,
                 crimeType = CrimeType.DESTROY,
-                crimePoint = 50,
+                alignmentPenalty = 50,
                 victim = owner,
                 location = block.location,
                 detail = block.type.name
@@ -72,7 +81,7 @@ class OwnershipListener(
                 playerUuid = player.uniqueId,
                 ownerUuid = owner,
                 brokenAt = Instant.now(),
-                crimePoint = 50
+                alignmentPenalty = 50
             ))
         }
     }
@@ -80,6 +89,10 @@ class OwnershipListener(
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onInventoryClick(event: InventoryClickEvent) {
         val player = event.whoClicked as? Player ?: return
+
+        // クリエイティブモードは犯罪判定をスキップ
+        if (player.gameMode == GameMode.CREATIVE) return
+
         val inventory = event.inventory
         val holder = inventory.holder
 
@@ -98,7 +111,7 @@ class OwnershipListener(
         crimeService.commitCrime(
             criminal = player.uniqueId,
             crimeType = CrimeType.THEFT,
-            crimePoint = 100,
+            alignmentPenalty = 100,
             victim = owner,
             location = location
         )

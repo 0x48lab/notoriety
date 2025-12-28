@@ -18,12 +18,20 @@ status:
 
 # Villager messages
 villager:
+  prefix: "<村人>"
   murderer: "人殺しが来た！"
   destroy: "%sが物を壊した！"
   theft: "%sが泥棒だ！"
   kill_animal: "%sが家畜を殺した！"
   dying: "%sは人殺しだ！"
   witness_murder: "%sが村人を殺した！"
+  # Gray player warning messages (random selection)
+  gray_warning_1: "おい、%s...お前のこと見てるからな"
+  gray_warning_2: "あっ、泥棒の%sが来たぞ！"
+  gray_warning_3: "%s...悪いことするなよ"
+  gray_warning_4: "みんな気をつけろ、%sが来た"
+  gray_warning_5: "%sめ...この村では何もするな"
+  gray_warning_6: "おまえ...%sだな。覚えてるぞ"
 
 # Bounty messages
 bounty:
@@ -63,3 +71,18 @@ message:
   invalid_amount: "無効な金額です"
   trade_refused: "村人は取引を拒否しました"
   discount_applied: "(%d%%割引が適用されました)"
+
+# Admin messages
+admin:
+  gray_list_title: "=== 灰色プレイヤー一覧 (%d人) ==="
+  gray_list_empty: "灰色プレイヤーはいません"
+  red_list_title: "=== 赤プレイヤー一覧 (%d人) ==="
+  red_list_empty: "赤プレイヤーはいません"
+  status_online: "オンライン"
+  status_offline: "オフライン"
+  updated: "%s の %s を更新しました"
+  usage: |
+    === Admin Commands ===
+    /noty admin listgray - 灰色プレイヤー一覧
+    /noty admin listred - 赤プレイヤー一覧
+    /noty admin <player> <alignment|fame|pk> <set|add> <value>

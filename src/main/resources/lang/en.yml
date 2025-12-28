@@ -18,12 +18,20 @@ status:
 
 # Villager messages
 villager:
+  prefix: "<Villager>"
   murderer: "A murderer is coming!"
   destroy: "%s destroyed property!"
   theft: "%s is a thief!"
   kill_animal: "%s killed livestock!"
   dying: "%s is a murderer!"
   witness_murder: "%s killed a villager!"
+  # Gray player warning messages (random selection)
+  gray_warning_1: "Hey %s... I'm watching you"
+  gray_warning_2: "Look, the thief %s is here!"
+  gray_warning_3: "%s... don't do anything bad"
+  gray_warning_4: "Everyone beware, %s is here"
+  gray_warning_5: "%s... don't do anything in this village"
+  gray_warning_6: "You... you're %s. I remember you"
 
 # Bounty messages
 bounty:
@@ -63,3 +71,18 @@ message:
   invalid_amount: "Invalid amount"
   trade_refused: "The villager refused to trade"
   discount_applied: "(%d%% discount applied)"
+
+# Admin messages
+admin:
+  gray_list_title: "=== Gray Players (%d) ==="
+  gray_list_empty: "No gray players found"
+  red_list_title: "=== Red Players (%d) ==="
+  red_list_empty: "No red players found"
+  status_online: "Online"
+  status_offline: "Offline"
+  updated: "Updated %s's %s"
+  usage: |
+    === Admin Commands ===
+    /noty admin listgray - List gray players
+    /noty admin listred - List red players
+    /noty admin <player> <alignment|fame|pk> <set|add> <value>

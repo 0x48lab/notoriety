@@ -105,7 +105,7 @@ class NotorietyAPIImpl(private val plugin: Notoriety) : NotorietyAPI {
         plugin.crimeService.commitCrime(
             criminal = criminal,
             crimeType = crimeType,
-            crimePoint = crimeType.defaultPoint,
+            alignmentPenalty = crimeType.defaultPenalty,
             victim = victim,
             location = location,
             detail = detail

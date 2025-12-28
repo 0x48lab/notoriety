@@ -1,6 +1,6 @@
 package com.hacklab.minecraft.notoriety.crime
 
-enum class CrimeType(val displayKey: String, val defaultPoint: Int) {
+enum class CrimeType(val displayKey: String, val defaultPenalty: Int) {
     THEFT("crime.theft", 100),
     DESTROY("crime.destroy", 50),
     ATTACK("crime.attack", 150),

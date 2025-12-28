@@ -38,4 +38,19 @@ class PlayerManager(
         plugin.server.onlinePlayers.mapNotNull { cache[it.uniqueId] }
 
     fun getCachedPlayers(): Collection<PlayerData> = cache.values
+
+    /**
+     * DBから全ての灰色プレイヤーを取得（オフライン含む）
+     */
+    fun findAllGrayPlayers(): List<PlayerData> = repository.findGrayPlayers()
+
+    /**
+     * DBから全ての赤プレイヤーを取得（オフライン含む）
+     */
+    fun findAllRedPlayers(): List<PlayerData> = repository.findRedPlayers()
+
+    /**
+     * 指定UUIDがオンラインかどうか
+     */
+    fun isOnline(uuid: UUID): Boolean = plugin.server.getPlayer(uuid) != null
 }

@@ -16,13 +16,53 @@ class VillagerService(
     companion object {
         const val RED_DETECTION_RANGE = 16.0
         const val GRAY_LINE_OF_SIGHT_RANGE = 32.0
+        const val GRAY_WARNING_COOLDOWN = 120_000L  // 2分間のクールダウン
+        const val GRAY_WARNING_CHANCE = 0.05        // 5%の確率で警告
+        const val GRAY_WARNING_COUNT = 6            // 警告メッセージの数
     }
+
+    // プレイヤーUUID -> 最終警告時刻
+    private val lastWarningTime = mutableMapOf<java.util.UUID, Long>()
 
     fun checkRedPlayerProximity(player: Player): Villager? {
         val data = playerManager.getPlayer(player) ?: return null
         if (data.getNameColor() != NameColor.RED) return null
 
         return findNearbyVillager(player.location, RED_DETECTION_RANGE)
+    }
+
+    /**
+     * 灰色プレイヤーが村人の近くにいるとき、まれに警告する
+     * - 2分間のクールダウン
+     * - 5%の確率
+     */
+    fun checkGrayPlayerProximity(player: Player): Boolean {
+        val data = playerManager.getPlayer(player) ?: return false
+        if (data.getNameColor() != NameColor.GRAY) return false
+
+        // クールダウンチェック
+        val now = System.currentTimeMillis()
+        val lastWarning = lastWarningTime[player.uniqueId] ?: 0L
+        if (now - lastWarning < GRAY_WARNING_COOLDOWN) return false
+
+        // 確率チェック
+        if (Math.random() > GRAY_WARNING_CHANCE) return false
+
+        // 近くに村人がいるか確認
+        val villager = findNearbyVillager(player.location, RED_DETECTION_RANGE) ?: return false
+
+        // 視線が通るか確認
+        if (!villager.hasLineOfSight(player)) return false
+
+        // 警告メッセージを送信（ランダム選択）
+        val index = (1..GRAY_WARNING_COUNT).random()
+        val message = i18n.get("villager.gray_warning_$index", "%s...").format(player.name)
+        villagerShout(villager, message)
+
+        // クールダウン更新
+        lastWarningTime[player.uniqueId] = now
+
+        return true
     }
 
     fun checkGrayCrimeWitness(player: Player, crimeLocation: Location): Villager? {
@@ -34,16 +74,17 @@ class VillagerService(
             GRAY_LINE_OF_SIGHT_RANGE,
             GRAY_LINE_OF_SIGHT_RANGE,
             GRAY_LINE_OF_SIGHT_RANGE
-        ) { it is Villager && isValidVillager(it as Villager) }
+        ) { it is Villager && isValidVillager(it) }
             .filterIsInstance<Villager>()
             .firstOrNull { it.hasLineOfSight(player) }
     }
 
     fun villagerShout(villager: Villager, message: String) {
+        val prefix = i18n.get("villager.prefix", "<Villager>")
         villager.world.players.filter {
             it.location.distance(villager.location) <= 32
         }.forEach {
-            it.sendMessage(Component.text("<村人> $message").color(NamedTextColor.YELLOW))
+            it.sendMessage(Component.text("$prefix $message").color(NamedTextColor.YELLOW))
         }
     }
 

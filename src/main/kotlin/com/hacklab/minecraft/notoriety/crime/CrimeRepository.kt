@@ -23,7 +23,7 @@ class CrimeRepository(private val databaseManager: DatabaseManager) {
             if (record.y != null) stmt.setInt(7, record.y) else stmt.setNull(7, java.sql.Types.INTEGER)
             if (record.z != null) stmt.setInt(8, record.z) else stmt.setNull(8, java.sql.Types.INTEGER)
             stmt.setString(9, record.detail)
-            stmt.setInt(10, record.crimePoint)
+            stmt.setInt(10, record.alignmentPenalty)
             stmt.setTimestamp(11, Timestamp.from(record.committedAt))
             stmt.executeUpdate()
         }
@@ -56,7 +56,7 @@ class CrimeRepository(private val databaseManager: DatabaseManager) {
                     y = rs.getObject("y") as? Int,
                     z = rs.getObject("z") as? Int,
                     detail = rs.getString("detail"),
-                    crimePoint = rs.getInt("crime_point"),
+                    alignmentPenalty = rs.getInt("crime_point"),
                     committedAt = rs.getTimestamp("committed_at").toInstant()
                 ))
             }

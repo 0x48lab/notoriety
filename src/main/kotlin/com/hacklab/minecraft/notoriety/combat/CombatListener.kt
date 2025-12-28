@@ -35,12 +35,12 @@ class CombatListener(
 
         val victimData = playerManager.getPlayer(victim) ?: return
 
-        // 青を攻撃したらCrimePoint加算
+        // 青を攻撃したらAlignment減少
         if (victimData.getNameColor() == NameColor.BLUE) {
             crimeService.commitCrime(
                 criminal = attacker.uniqueId,
                 crimeType = CrimeType.ATTACK,
-                crimePoint = 150,
+                alignmentPenalty = 150,
                 victim = victim.uniqueId
             )
             reputationService.updateDisplay(attacker)
@@ -70,11 +70,11 @@ class CombatListener(
         // 青色プレイヤーのペットのみ保護
         if (ownerData.getNameColor() != NameColor.BLUE) return
 
-        // CrimePoint +150
+        // Alignment -150
         crimeService.commitCrime(
             criminal = attacker.uniqueId,
             crimeType = CrimeType.ATTACK,
-            crimePoint = 150,
+            alignmentPenalty = 150,
             victim = owner.uniqueId,
             detail = "Pet: ${pet.type.name}"
         )

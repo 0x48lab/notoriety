@@ -60,4 +60,52 @@ class PlayerRepository(private val databaseManager: DatabaseManager) {
             stmt.executeUpdate()
         }
     }
+
+    /**
+     * 灰色プレイヤーを取得（alignment < 0 かつ pk_count == 0）
+     */
+    fun findGrayPlayers(): List<PlayerData> {
+        return databaseManager.provider.useConnection { conn ->
+            val stmt = conn.prepareStatement(
+                "SELECT * FROM player_data WHERE alignment < 0 AND pk_count = 0 ORDER BY alignment ASC"
+            )
+            val rs = stmt.executeQuery()
+            val players = mutableListOf<PlayerData>()
+            while (rs.next()) {
+                players.add(PlayerData(
+                    uuid = UUID.fromString(rs.getString("uuid")),
+                    alignment = rs.getInt("alignment"),
+                    pkCount = rs.getInt("pk_count"),
+                    fame = rs.getInt("fame"),
+                    playTimeMinutes = rs.getLong("play_time_minutes"),
+                    lastSeen = rs.getTimestamp("last_seen")?.toInstant() ?: Instant.now()
+                ))
+            }
+            players
+        }
+    }
+
+    /**
+     * 赤プレイヤーを取得（pk_count >= 1）
+     */
+    fun findRedPlayers(): List<PlayerData> {
+        return databaseManager.provider.useConnection { conn ->
+            val stmt = conn.prepareStatement(
+                "SELECT * FROM player_data WHERE pk_count >= 1 ORDER BY pk_count DESC"
+            )
+            val rs = stmt.executeQuery()
+            val players = mutableListOf<PlayerData>()
+            while (rs.next()) {
+                players.add(PlayerData(
+                    uuid = UUID.fromString(rs.getString("uuid")),
+                    alignment = rs.getInt("alignment"),
+                    pkCount = rs.getInt("pk_count"),
+                    fame = rs.getInt("fame"),
+                    playTimeMinutes = rs.getLong("play_time_minutes"),
+                    lastSeen = rs.getTimestamp("last_seen")?.toInstant() ?: Instant.now()
+                ))
+            }
+            players
+        }
+    }
 }

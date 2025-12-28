@@ -11,5 +11,5 @@ data class PendingCrime(
     val playerUuid: UUID,
     val ownerUuid: UUID,
     val brokenAt: Instant,
-    val crimePoint: Int
+    val alignmentPenalty: Int
 )

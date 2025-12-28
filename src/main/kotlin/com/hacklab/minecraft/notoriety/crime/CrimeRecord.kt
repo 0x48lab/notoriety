@@ -14,6 +14,6 @@ data class CrimeRecord(
     val y: Int? = null,
     val z: Int? = null,
     val detail: String? = null,
-    val crimePoint: Int,
+    val alignmentPenalty: Int,
     val committedAt: Instant = Instant.now()
 )

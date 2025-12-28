@@ -173,7 +173,7 @@ class Notoriety : JavaPlugin() {
                 crimeService.commitCrime(
                     criminal = pending.playerUuid,
                     crimeType = CrimeType.DESTROY,
-                    crimePoint = pending.crimePoint,
+                    alignmentPenalty = pending.alignmentPenalty,
                     victim = pending.ownerUuid,
                     location = pending.location.toLocation(),
                     detail = pending.blockType.name

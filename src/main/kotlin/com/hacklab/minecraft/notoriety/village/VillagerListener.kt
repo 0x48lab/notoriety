@@ -4,9 +4,12 @@ import com.hacklab.minecraft.notoriety.Notoriety
 import com.hacklab.minecraft.notoriety.crime.CrimeService
 import com.hacklab.minecraft.notoriety.crime.CrimeType
 import com.hacklab.minecraft.notoriety.reputation.NameColor
+import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.entity.Animals
+import org.bukkit.entity.IronGolem
 import org.bukkit.entity.Player
+import org.bukkit.entity.Projectile
 import org.bukkit.entity.Tameable
 import org.bukkit.entity.Villager
 import org.bukkit.event.EventHandler
@@ -26,7 +29,7 @@ class VillagerListener(
     private val crimeService: CrimeService
 ) : Listener {
 
-    // 赤プレイヤーの移動検知
+    // 赤・灰プレイヤーの移動検知
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onPlayerMove(event: PlayerMoveEvent) {
         if (!hasBlockChanged(event)) return
@@ -34,12 +37,19 @@ class VillagerListener(
         val player = event.player
         val data = plugin.playerManager.getPlayer(player) ?: return
 
-        if (data.getNameColor() == NameColor.RED) {
-            val villager = villagerService.checkRedPlayerProximity(player)
-            if (villager != null) {
-                villagerService.shoutMurderer(villager)
-                golemService.callGolemToAttack(player, villager.location)
+        when (data.getNameColor()) {
+            NameColor.RED -> {
+                val villager = villagerService.checkRedPlayerProximity(player)
+                if (villager != null) {
+                    villagerService.shoutMurderer(villager)
+                    golemService.callGolemToAttack(player, villager.location)
+                }
             }
+            NameColor.GRAY -> {
+                // 灰色プレイヤーにはまれに警告（ゴーレムは呼ばない）
+                villagerService.checkGrayPlayerProximity(player)
+            }
+            else -> {}
         }
     }
 
@@ -50,6 +60,10 @@ class VillagerListener(
         if (victim !is Villager) return
 
         val killer = victim.killer ?: return
+
+        // クリエイティブモードは犯罪判定をスキップ
+        if (killer.gameMode == GameMode.CREATIVE) return
+
         val data = plugin.playerManager.getPlayer(killer) ?: return
 
         // 殺された村人の断末魔
@@ -63,13 +77,15 @@ class VillagerListener(
 
         witnesses.firstOrNull()?.let { witness ->
             villagerService.shoutWitnessedMurder(witness, killer.name)
-            golemService.callGolemToAttack(killer, witness.location)
         }
+
+        // 周囲のゴーレムを全て召集して強化
+        golemService.callAllGolemsToAttack(killer, victim.location)
 
         crimeService.commitCrime(
             criminal = killer.uniqueId,
             crimeType = CrimeType.KILL_VILLAGER,
-            crimePoint = 200,
+            alignmentPenalty = 200,
             location = victim.location
         )
         plugin.reputationService.updateDisplay(killer)
@@ -79,6 +95,10 @@ class VillagerListener(
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onAnimalDeath(event: EntityDeathEvent) {
         val killer = event.entity.killer ?: return
+
+        // クリエイティブモードは犯罪判定をスキップ
+        if (killer.gameMode == GameMode.CREATIVE) return
+
         val entity = event.entity
 
         // 動物のみ
@@ -105,7 +125,7 @@ class VillagerListener(
             crimeService.recordCrimeHistory(
                 criminal = killer.uniqueId,
                 crimeType = CrimeType.KILL_ANIMAL,
-                crimePoint = 0,
+                alignmentPenalty = 0,
                 location = entity.location,
                 detail = entity.type.name
             )
@@ -117,6 +137,10 @@ class VillagerListener(
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onCropBreak(event: BlockBreakEvent) {
         val player = event.player
+
+        // クリエイティブモードは犯罪判定をスキップ
+        if (player.gameMode == GameMode.CREATIVE) return
+
         val block = event.block
 
         if (!isCrop(block.type)) return
@@ -132,7 +156,7 @@ class VillagerListener(
             crimeService.commitCrime(
                 criminal = player.uniqueId,
                 crimeType = CrimeType.HARVEST_CROP,
-                crimePoint = 10,
+                alignmentPenalty = 10,
                 location = block.location,
                 detail = block.type.name
             )
@@ -144,6 +168,10 @@ class VillagerListener(
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onContainerOrFurnitureBreak(event: BlockBreakEvent) {
         val player = event.player
+
+        // クリエイティブモードは犯罪判定をスキップ
+        if (player.gameMode == GameMode.CREATIVE) return
+
         val block = event.block
 
         // コンテナまたは家具のみ対象
@@ -163,7 +191,7 @@ class VillagerListener(
             crimeService.commitCrime(
                 criminal = player.uniqueId,
                 crimeType = CrimeType.DESTROY,
-                crimePoint = 30,
+                alignmentPenalty = 30,
                 location = block.location,
                 detail = block.type.name
             )
@@ -175,6 +203,10 @@ class VillagerListener(
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onContainerAccess(event: InventoryClickEvent) {
         val player = event.whoClicked as? Player ?: return
+
+        // クリエイティブモードは犯罪判定をスキップ
+        if (player.gameMode == GameMode.CREATIVE) return
+
         val holder = event.inventory.holder as? Container ?: return
 
         if (event.clickedInventory != event.inventory) return
@@ -196,11 +228,30 @@ class VillagerListener(
             crimeService.commitCrime(
                 criminal = player.uniqueId,
                 crimeType = CrimeType.THEFT,
-                crimePoint = 50,
+                alignmentPenalty = 50,
                 location = location
             )
             plugin.reputationService.updateDisplay(player)
         }
+    }
+
+    // 強化ゴーレムがプレイヤーから攻撃を受けた時
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    fun onGolemDamaged(event: EntityDamageByEntityEvent) {
+        val golem = event.entity as? IronGolem ?: return
+        if (!golemService.isEnhancedGolem(golem)) return
+
+        val damager = event.damager
+
+        // 矢などの飛び道具は無効化
+        if (damager is Projectile) {
+            event.isCancelled = true
+            return
+        }
+
+        // 近接攻撃の場合、リーチ外からならテレポート
+        val attacker = damager as? Player ?: return
+        golemService.onGolemDamaged(golem, attacker)
     }
 
     private fun hasBlockChanged(event: PlayerMoveEvent): Boolean {

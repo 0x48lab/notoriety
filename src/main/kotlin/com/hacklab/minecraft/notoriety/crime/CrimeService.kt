@@ -14,7 +14,7 @@ class CrimeService(
     fun commitCrime(
         criminal: UUID,
         crimeType: CrimeType,
-        crimePoint: Int,
+        alignmentPenalty: Int,
         victim: UUID? = null,
         location: Location? = null,
         detail: String? = null
@@ -22,7 +22,7 @@ class CrimeService(
         val player = playerManager.getPlayer(criminal) ?: return
 
         // Alignment減少（悪行なのでマイナス）
-        player.addAlignment(-crimePoint)
+        player.addAlignment(-alignmentPenalty)
 
         // 被害者名を取得
         val victimName = victim?.let { Bukkit.getOfflinePlayer(it).name }
@@ -38,13 +38,13 @@ class CrimeService(
             y = location?.blockY,
             z = location?.blockZ,
             detail = detail,
-            crimePoint = crimePoint,
+            alignmentPenalty = alignmentPenalty,
             committedAt = Instant.now()
         ))
 
         // カスタムイベント発火
         Bukkit.getPluginManager().callEvent(
-            PlayerCrimeEvent(criminal, crimeType, crimePoint)
+            PlayerCrimeEvent(criminal, crimeType, alignmentPenalty)
         )
     }
 
@@ -55,13 +55,13 @@ class CrimeService(
         repository.getHistoryCount(player)
 
     /**
-     * 犯罪履歴のみを記録する（CrimePoint加算なし）
-     * 動物殺害など、履歴は残すがCrimePointを加算しない場合に使用
+     * 犯罪履歴のみを記録する（Alignment減少なし）
+     * 動物殺害など、履歴は残すがAlignmentを減少させない場合に使用
      */
     fun recordCrimeHistory(
         criminal: UUID,
         crimeType: CrimeType,
-        crimePoint: Int = 0,
+        alignmentPenalty: Int = 0,
         victim: UUID? = null,
         location: Location? = null,
         detail: String? = null
@@ -78,7 +78,7 @@ class CrimeService(
             y = location?.blockY,
             z = location?.blockZ,
             detail = detail,
-            crimePoint = crimePoint,
+            alignmentPenalty = alignmentPenalty,
             committedAt = Instant.now()
         ))
     }
