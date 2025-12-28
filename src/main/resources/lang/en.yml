@@ -9,6 +9,7 @@ crime:
   kill_villager: "Villager Murder"
   kill_animal: "Animal Killing"
   harvest_crop: "Crop Harvesting"
+  destroy_villager_bed: "Villager Bed Destruction"
 
 # Status names
 status:
@@ -25,6 +26,7 @@ villager:
   kill_animal: "%s killed livestock!"
   dying: "%s is a murderer!"
   witness_murder: "%s killed a villager!"
+  destroy_bed: "%s destroyed my bed!"
   # Gray player warning messages (random selection)
   gray_warning_1: "Hey %s... I'm watching you"
   gray_warning_2: "Look, the thief %s is here!"

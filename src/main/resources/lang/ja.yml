@@ -9,6 +9,7 @@ crime:
   kill_villager: "村人殺害"
   kill_animal: "動物殺害"
   harvest_crop: "作物収穫"
+  destroy_villager_bed: "村人のベッド破壊"
 
 # Status names
 status:
@@ -25,6 +26,7 @@ villager:
   kill_animal: "%sが家畜を殺した！"
   dying: "%sは人殺しだ！"
   witness_murder: "%sが村人を殺した！"
+  destroy_bed: "%sが私のベッドを壊した！"
   # Gray player warning messages (random selection)
   gray_warning_1: "おい、%s...お前のこと見てるからな"
   gray_warning_2: "あっ、泥棒の%sが来たぞ！"

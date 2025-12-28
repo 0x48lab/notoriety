@@ -12,6 +12,7 @@ import org.bukkit.entity.Player
 import org.bukkit.entity.Projectile
 import org.bukkit.entity.Tameable
 import org.bukkit.entity.Villager
+import org.bukkit.entity.memory.MemoryKey
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
@@ -263,6 +264,76 @@ class VillagerListener(
             )
             plugin.reputationService.updateDisplay(player)
         }
+    }
+
+    // 灰プレイヤーの村人ベッド破壊（村人が紐づいているベッドを壊すと犯罪）
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    fun onVillagerBedBreak(event: BlockBreakEvent) {
+        val player = event.player
+
+        // クリエイティブモードは犯罪判定をスキップ
+        if (player.gameMode == GameMode.CREATIVE) return
+
+        val block = event.block
+
+        // ベッドのみ対象
+        if (!isBed(block.type)) return
+
+        val data = plugin.playerManager.getPlayer(player) ?: return
+
+        // 灰色プレイヤーのみ処理（赤は村人殺害などで既に犯罪者）
+        if (data.getNameColor() != NameColor.GRAY) return
+
+        // このベッドに紐づいている村人を探す
+        val affectedVillager = findVillagerWithBed(block.location)
+        if (affectedVillager == null) return
+
+        // 村人が叫ぶ
+        villagerService.shoutCrime(affectedVillager, player.name, "destroy_bed")
+
+        // ゴーレムを呼ぶ
+        golemService.callGolemToAttack(player, affectedVillager.location)
+
+        // 犯罪記録
+        crimeService.commitCrime(
+            criminal = player.uniqueId,
+            crimeType = CrimeType.DESTROY_VILLAGER_BED,
+            alignmentPenalty = 30,
+            location = block.location
+        )
+        plugin.reputationService.updateDisplay(player)
+    }
+
+    /**
+     * 指定された位置のベッドに紐づいている村人を探す
+     */
+    private fun findVillagerWithBed(bedLocation: org.bukkit.Location): Villager? {
+        // ベッドの検索範囲（村人は通常近くにいる）
+        val searchRange = 64.0
+        return bedLocation.world.getNearbyEntities(
+            bedLocation,
+            searchRange,
+            searchRange,
+            searchRange
+        ).filterIsInstance<Villager>()
+            .firstOrNull { villager ->
+                val home = villager.getMemory(MemoryKey.HOME)
+                if (home != null) {
+                    // Paper APIではHOMEはLocationを返す
+                    home.blockX == bedLocation.blockX &&
+                    home.blockY == bedLocation.blockY &&
+                    home.blockZ == bedLocation.blockZ
+                } else {
+                    false
+                }
+            }
+    }
+
+    /**
+     * ベッドかどうか判定
+     */
+    private fun isBed(material: Material): Boolean {
+        return material.name.endsWith("_BED")
     }
 
     // 強化ゴーレムがプレイヤーから攻撃を受けた時
