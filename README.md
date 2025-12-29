@@ -4,6 +4,8 @@
 
 プレイヤーの行動に応じて評価が変動し、PKや窃盗などの悪行を抑制するシステムを提供します。
 
+**[Documentation / ドキュメント](https://0x48lab.github.io/notoriety/)**
+
 ## 動作環境
 
 - Minecraft 1.21.1+
