@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notoriety - Reputation System Documentation</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Notoriety</h1>
+        <p>Classic MMORPG-inspired reputation system for Minecraft</p>
+        <div class="lang-switch">
+            <a href="index.html" class="active">English</a>
+            <a href="index_ja.html">日本語</a>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#colors">Name Colors</a></li>
+            <li><a href="#crimes">Crimes</a></li>
+            <li><a href="#recovery">Recovery</a></li>
+            <li><a href="#titles">Titles</a></li>
+            <li><a href="#village">Village System</a></li>
+            <li><a href="#bounty">Bounty</a></li>
+            <li><a href="#trust">Trust</a></li>
+            <li><a href="#commands">Commands</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <!-- Overview -->
+        <section id="overview">
+            <h2>Overview</h2>
+            <p>Notoriety is a reputation system inspired by classic MMORPGs. Your actions determine your standing - good players are protected, while criminals face consequences.</p>
+
+            <h3>Key Features</h3>
+            <ul>
+                <li><strong>Name Color System</strong> - Blue (Innocent), Gray (Criminal), Red (Murderer)</li>
+                <li><strong>Alignment System</strong> - -1000 to +1000 good/evil axis</li>
+                <li><strong>PK Tracking</strong> - Killing innocent players has lasting consequences</li>
+                <li><strong>Property Protection</strong> - Blue players' property is protected</li>
+                <li><strong>Bounty System</strong> - Place bounties on murderers</li>
+                <li><strong>Village Integration</strong> - Villagers and golems react to your reputation</li>
+            </ul>
+
+            <h3>Parameters</h3>
+            <table>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Range</th>
+                    <th>Initial</th>
+                    <th>Purpose</th>
+                </tr>
+                <tr>
+                    <td>Alignment</td>
+                    <td>-1000 ~ +1000</td>
+                    <td>0</td>
+                    <td>Good/Evil axis (negative = gray)</td>
+                </tr>
+                <tr>
+                    <td>PKCount</td>
+                    <td>0 ~ unlimited</td>
+                    <td>0</td>
+                    <td>Murder tracking (1+ = red)</td>
+                </tr>
+                <tr>
+                    <td>Fame</td>
+                    <td>0 ~ 1000</td>
+                    <td>0</td>
+                    <td>Title determination</td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- Name Colors -->
+        <section id="colors">
+            <h2>Name Color System</h2>
+            <p>Your name color reflects your reputation status and determines how NPCs and other systems treat you.</p>
+
+            <div class="color-cards">
+                <div class="color-card blue">
+                    <h4 style="color: var(--blue-color);">Blue (Innocent)</h4>
+                    <p class="status">Alignment ≥ 0, PKCount = 0</p>
+                    <ul>
+                        <li>Trade with villagers at normal prices</li>
+                        <li>Your property is protected</li>
+                        <li>Keep items on death</li>
+                        <li>Golems are neutral</li>
+                        <li>High alignment = villager discounts</li>
+                    </ul>
+                </div>
+                <div class="color-card gray">
+                    <h4 style="color: var(--gray-color);">Gray (Criminal)</h4>
+                    <p class="status">Alignment < 0, PKCount = 0</p>
+                    <ul>
+                        <li>Villager prices are 1.5x higher</li>
+                        <li>No ownership on new placements</li>
+                        <li>No penalty for being attacked</li>
+                        <li>Keep items on death</li>
+                        <li>Golems attack if caught committing crimes</li>
+                    </ul>
+                </div>
+                <div class="color-card red">
+                    <h4 style="color: var(--red-color);">Red (Murderer)</h4>
+                    <p class="status">PKCount ≥ 1</p>
+                    <ul>
+                        <li>Villagers refuse to trade</li>
+                        <li>Golems attack on sight</li>
+                        <li>Bounty can be placed on you</li>
+                        <li>Drop items on death</li>
+                        <li>No ownership on new placements</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>State Transitions</h3>
+
+            <div class="transition">
+                <span class="state blue">Blue</span>
+                <span class="arrow">→</span>
+                <span class="state gray">Gray</span>
+                <span class="condition">Alignment drops below 0</span>
+            </div>
+
+            <div class="transition">
+                <span class="state gray">Gray</span>
+                <span class="arrow">→</span>
+                <span class="state blue">Blue</span>
+                <span class="condition">Alignment reaches 0 or above</span>
+            </div>
+
+            <div class="transition">
+                <span class="state blue">Blue/Gray</span>
+                <span class="arrow">→</span>
+                <span class="state red">Red</span>
+                <span class="condition">Kill a blue player (PKCount +1)</span>
+            </div>
+
+            <div class="transition">
+                <span class="state red">Red</span>
+                <span class="arrow">→</span>
+                <span class="state gray">Gray</span>
+                <span class="condition">PKCount reaches 0 (time decay)</span>
+            </div>
+
+            <div class="warning">
+                <strong>Note:</strong> You cannot go directly from red to blue. You must first become gray and restore your alignment.
+            </div>
+        </section>
+
+        <!-- Crimes -->
+        <section id="crimes">
+            <h2>Crimes and Penalties</h2>
+            <p>Committing crimes decreases your Alignment. Penalties are tiered into three levels:</p>
+
+            <h3>Severe Crimes (-50)</h3>
+            <table>
+                <tr>
+                    <th>Action</th>
+                    <th>Penalty</th>
+                    <th>Notes</th>
+                </tr>
+                <tr>
+                    <td>Kill villager (with bed)</td>
+                    <td class="penalty">-50</td>
+                    <td>Villager linked to a bed</td>
+                </tr>
+                <tr>
+                    <td>Steal from player's container</td>
+                    <td class="penalty">-50</td>
+                    <td>Taking items from protected chests</td>
+                </tr>
+                <tr>
+                    <td>Kill Iron Golem</td>
+                    <td class="penalty">-50</td>
+                    <td>Nearby golems become hostile</td>
+                </tr>
+            </table>
+
+            <h3>Moderate Crimes (-10)</h3>
+            <table>
+                <tr>
+                    <th>Action</th>
+                    <th>Penalty</th>
+                    <th>Notes</th>
+                </tr>
+                <tr>
+                    <td>Destroy player's property</td>
+                    <td class="penalty">-10</td>
+                    <td>Replace within 5 sec to cancel</td>
+                </tr>
+            </table>
+
+            <h3>Minor Crimes (-1)</h3>
+            <table>
+                <tr>
+                    <th>Action</th>
+                    <th>Penalty</th>
+                    <th>Notes</th>
+                </tr>
+                <tr>
+                    <td>Attack another player</td>
+                    <td class="penalty">-1</td>
+                    <td>Attacking blue players</td>
+                </tr>
+                <tr>
+                    <td>Attack player's pet</td>
+                    <td class="penalty">-1</td>
+                    <td>Blue player's tamed animals</td>
+                </tr>
+                <tr>
+                    <td>Attack villager</td>
+                    <td class="penalty">-1</td>
+                    <td>Even without killing</td>
+                </tr>
+                <tr>
+                    <td>Kill animals</td>
+                    <td class="penalty">-1</td>
+                    <td>When witnessed by villager/golem</td>
+                </tr>
+                <tr>
+                    <td>Harvest crops</td>
+                    <td class="penalty">-1</td>
+                    <td>When witnessed by villager</td>
+                </tr>
+                <tr>
+                    <td>Kill villager (no bed)</td>
+                    <td class="penalty">-1</td>
+                    <td>Villager not linked to a bed</td>
+                </tr>
+                <tr>
+                    <td>Destroy villager's bed</td>
+                    <td class="penalty">-1</td>
+                    <td>Exempt if you or trusted player placed it</td>
+                </tr>
+                <tr>
+                    <td>Destroy villager's workstation</td>
+                    <td class="penalty">-1</td>
+                    <td>Exempt if you or trusted player placed it</td>
+                </tr>
+            </table>
+
+            <div class="tip">
+                <strong>Tip:</strong> Blocks placed by you or your trusted players can be freely modified without penalty.
+            </div>
+        </section>
+
+        <!-- Recovery -->
+        <section id="recovery">
+            <h2>Recovery and Good Deeds</h2>
+            <p>Alignment naturally recovers toward 0 over time, and good deeds speed up the process.</p>
+
+            <table>
+                <tr>
+                    <th>Action</th>
+                    <th>Recovery</th>
+                    <th>Notes</th>
+                </tr>
+                <tr>
+                    <td>Time passage</td>
+                    <td class="reward">+10/hour</td>
+                    <td>Moves alignment toward 0</td>
+                </tr>
+                <tr>
+                    <td>Kill red player</td>
+                    <td class="reward">+50</td>
+                    <td>Bounty hunting</td>
+                </tr>
+                <tr>
+                    <td>Trade with villager</td>
+                    <td class="reward">+5</td>
+                    <td>Each successful trade</td>
+                </tr>
+                <tr>
+                    <td>Kill monster</td>
+                    <td class="reward">+1</td>
+                    <td>Fame also increases</td>
+                </tr>
+            </table>
+
+            <h3>PKCount Decay</h3>
+            <div class="formula">
+                <p>When Alignment reaches 0 while red: PKCount -1, Alignment resets to -1000</p>
+                <p>This means murderers must spend significant time recovering before returning to innocent status.</p>
+            </div>
+        </section>
+
+        <!-- Titles -->
+        <section id="titles">
+            <h2>Title System</h2>
+            <p>Titles are displayed above your name based on your Fame (blue/gray) or PKCount (red).</p>
+
+            <h3 style="color: var(--blue-color);">Blue Player Titles (by Fame)</h3>
+            <div class="title-grid">
+                <div class="title-item">
+                    <span class="name">Glorious Lord</span>
+                    <span class="req">Fame 750+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">Great Lord</span>
+                    <span class="req">Fame 500+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">Lord</span>
+                    <span class="req">Fame 250+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">Notable</span>
+                    <span class="req">Fame 100+</span>
+                </div>
+            </div>
+
+            <h3 style="color: var(--gray-color);">Gray Player Titles (by Fame)</h3>
+            <div class="title-grid">
+                <div class="title-item">
+                    <span class="name">Renegade</span>
+                    <span class="req">Fame 750+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">Outlaw</span>
+                    <span class="req">Fame 500+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">Rogue</span>
+                    <span class="req">Fame 250+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">Scoundrel</span>
+                    <span class="req">Fame 100+</span>
+                </div>
+            </div>
+
+            <h3 style="color: var(--red-color);">Red Player Titles (by PKCount)</h3>
+            <div class="title-grid">
+                <div class="title-item">
+                    <span class="name">Dread Lord</span>
+                    <span class="req">PK 200+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">Dark Lord</span>
+                    <span class="req">PK 100+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">Infamous</span>
+                    <span class="req">PK 50+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">Notorious</span>
+                    <span class="req">PK 30+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">Wicked</span>
+                    <span class="req">PK 10+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">Outcast</span>
+                    <span class="req">PK 1+</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Village System -->
+        <section id="village">
+            <h2>Village Integration</h2>
+            <p>Villagers and Iron Golems react to your reputation status.</p>
+
+            <h3>Villager Trading</h3>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Price Modifier</th>
+                </tr>
+                <tr>
+                    <td style="color: var(--blue-color);">Blue (High Alignment 500+)</td>
+                    <td>5-20% discount</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--blue-color);">Blue (Normal)</td>
+                    <td>Normal prices</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--gray-color);">Gray</td>
+                    <td>1.5x prices</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--red-color);">Red</td>
+                    <td>Refused</td>
+                </tr>
+            </table>
+
+            <h3>Iron Golem Behavior</h3>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Golem Reaction</th>
+                </tr>
+                <tr>
+                    <td style="color: var(--blue-color);">Blue (High Alignment)</td>
+                    <td>Escort and protect from monsters</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--blue-color);">Blue (Normal)</td>
+                    <td>Neutral</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--gray-color);">Gray</td>
+                    <td>Attack if crime witnessed (32 block range)</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--red-color);">Red</td>
+                    <td>Attack on sight (128 block search range)</td>
+                </tr>
+            </table>
+
+            <div class="info">
+                <strong>Enhanced Golems:</strong> When golems attack criminals, they gain enhanced speed and damage. They can teleport to distant targets.
+            </div>
+        </section>
+
+        <!-- Bounty -->
+        <section id="bounty">
+            <h2>Bounty System</h2>
+            <p>Place bounties on red players to incentivize their capture.</p>
+
+            <h3>Placing Bounties</h3>
+            <ul>
+                <li><strong>Target:</strong> Red players only</li>
+                <li><strong>Minimum:</strong> 100 currency</li>
+                <li><strong>Stacking:</strong> Multiple bounties on same player add up</li>
+            </ul>
+
+            <h3>Claiming Bounties</h3>
+            <table>
+                <tr>
+                    <th>Reward Type</th>
+                    <th>Amount</th>
+                </tr>
+                <tr>
+                    <td>Bounty Money</td>
+                    <td>Total pooled bounty</td>
+                </tr>
+                <tr>
+                    <td>System XP (PK 1-4)</td>
+                    <td>50 XP</td>
+                </tr>
+                <tr>
+                    <td>System XP (PK 5-9)</td>
+                    <td>100 XP</td>
+                </tr>
+                <tr>
+                    <td>System XP (PK 10-19)</td>
+                    <td>300 XP</td>
+                </tr>
+                <tr>
+                    <td>System XP (PK 20+)</td>
+                    <td>500 XP</td>
+                </tr>
+                <tr>
+                    <td>Fame</td>
+                    <td>+50, or inherit target's Fame if higher</td>
+                </tr>
+            </table>
+
+            <h3>Bounty Signs</h3>
+            <p>OPs can create bounty ranking signs by placing a sign with <code>[bounty]</code> on the first line.</p>
+        </section>
+
+        <!-- Trust -->
+        <section id="trust">
+            <h2>Trust System</h2>
+            <p>Trust players to share property access without committing crimes.</p>
+
+            <h3>Effects of Trust</h3>
+            <ul>
+                <li>Open and take from trusted player's chests</li>
+                <li>Break trusted player's blocks</li>
+                <li>Attack trusted player without penalty</li>
+                <li>Kill trusted player without PK count</li>
+            </ul>
+
+            <div class="warning">
+                <strong>One-Way Trust:</strong> Trust is not mutual. If you trust someone, they can access your property, but you cannot access theirs unless they also trust you.
+            </div>
+        </section>
+
+        <!-- Commands -->
+        <section id="commands">
+            <h2>Commands</h2>
+
+            <h3>Player Commands</h3>
+            <table>
+                <tr>
+                    <th>Command</th>
+                    <th>Description</th>
+                </tr>
+                <tr><td><code>/noty status</code></td><td>View your reputation status</td></tr>
+                <tr><td><code>/noty status [player]</code></td><td>View another player's status</td></tr>
+                <tr><td><code>/noty history</code></td><td>View your crime history</td></tr>
+                <tr><td><code>/noty history [player]</code></td><td>View another player's crime history</td></tr>
+            </table>
+
+            <h3>Trust Commands</h3>
+            <table>
+                <tr>
+                    <th>Command</th>
+                    <th>Description</th>
+                </tr>
+                <tr><td><code>/noty trust add [player]</code></td><td>Add player to trust list</td></tr>
+                <tr><td><code>/noty trust remove [player]</code></td><td>Remove player from trust list</td></tr>
+                <tr><td><code>/noty trust list</code></td><td>View your trust list</td></tr>
+                <tr><td><code>/noty trust check [player]</code></td><td>Check trust relationship</td></tr>
+            </table>
+
+            <h3>Bounty Commands</h3>
+            <table>
+                <tr>
+                    <th>Command</th>
+                    <th>Description</th>
+                </tr>
+                <tr><td><code>/noty bounty set [player] [amount]</code></td><td>Place bounty on red player</td></tr>
+                <tr><td><code>/noty bounty list</code></td><td>View all bounties</td></tr>
+                <tr><td><code>/noty bounty check [player]</code></td><td>Check bounty on specific player</td></tr>
+            </table>
+
+            <h3>Admin Commands</h3>
+            <table>
+                <tr>
+                    <th>Command</th>
+                    <th>Description</th>
+                </tr>
+                <tr><td><code>/noty admin listgray</code></td><td>List all gray players</td></tr>
+                <tr><td><code>/noty admin listred</code></td><td>List all red players</td></tr>
+                <tr><td><code>/noty admin [player] alignment set [value]</code></td><td>Set player's alignment</td></tr>
+                <tr><td><code>/noty admin [player] fame set [value]</code></td><td>Set player's fame</td></tr>
+                <tr><td><code>/noty admin [player] pk set [value]</code></td><td>Set player's PK count</td></tr>
+            </table>
+        </section>
+    </main>
+
+    <footer>
+        <p>Notoriety Plugin Documentation</p>
+        <p>Classic MMORPG-inspired | Built for Minecraft</p>
+    </footer>
+</body>
+</html>

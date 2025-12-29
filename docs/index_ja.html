@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notoriety - 名声システム ドキュメント</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Notoriety</h1>
+        <p>クラシックMMORPG風の名声システム for Minecraft</p>
+        <div class="lang-switch">
+            <a href="index.html">English</a>
+            <a href="index_ja.html" class="active">日本語</a>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="#overview">概要</a></li>
+            <li><a href="#colors">ネームカラー</a></li>
+            <li><a href="#crimes">犯罪</a></li>
+            <li><a href="#recovery">回復</a></li>
+            <li><a href="#titles">称号</a></li>
+            <li><a href="#village">村システム</a></li>
+            <li><a href="#bounty">懸賞金</a></li>
+            <li><a href="#trust">信頼</a></li>
+            <li><a href="#commands">コマンド</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <!-- 概要 -->
+        <section id="overview">
+            <h2>概要</h2>
+            <p>Notorietyは、クラシックMMORPGにインスパイアされた名声システムです。あなたの行動が評価を決定し、善良なプレイヤーは保護され、犯罪者は制裁を受けます。</p>
+
+            <h3>主な機能</h3>
+            <ul>
+                <li><strong>ネームカラーシステム</strong> - 青（Innocent）、灰（Criminal）、赤（Murderer）</li>
+                <li><strong>Alignmentシステム</strong> - -1000〜+1000の善悪軸</li>
+                <li><strong>PK追跡</strong> - 無実のプレイヤーを殺すと永続的な影響</li>
+                <li><strong>財産保護</strong> - 青プレイヤーの所有物は保護される</li>
+                <li><strong>懸賞金システム</strong> - 殺人者に懸賞金をかけられる</li>
+                <li><strong>村との連携</strong> - 村人とゴーレムがあなたの評判に反応</li>
+            </ul>
+
+            <h3>パラメータ</h3>
+            <table>
+                <tr>
+                    <th>パラメータ</th>
+                    <th>範囲</th>
+                    <th>初期値</th>
+                    <th>用途</th>
+                </tr>
+                <tr>
+                    <td>Alignment</td>
+                    <td>-1000〜+1000</td>
+                    <td>0</td>
+                    <td>善悪軸（負=灰色）</td>
+                </tr>
+                <tr>
+                    <td>PKCount</td>
+                    <td>0〜上限なし</td>
+                    <td>0</td>
+                    <td>殺人追跡（1以上=赤）</td>
+                </tr>
+                <tr>
+                    <td>Fame</td>
+                    <td>0〜1000</td>
+                    <td>0</td>
+                    <td>称号の決定</td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- ネームカラー -->
+        <section id="colors">
+            <h2>ネームカラーシステム</h2>
+            <p>あなたの名前の色は評判を反映し、NPCや各種システムがあなたをどう扱うかを決定します。</p>
+
+            <div class="color-cards">
+                <div class="color-card blue">
+                    <h4 style="color: var(--blue-color);">青（Innocent）</h4>
+                    <p class="status">Alignment ≥ 0、PKCount = 0</p>
+                    <ul>
+                        <li>村人と通常価格で取引可能</li>
+                        <li>所有物が保護される</li>
+                        <li>死亡時にアイテムを保持</li>
+                        <li>ゴーレムは中立</li>
+                        <li>高Alignmentで村人から割引</li>
+                    </ul>
+                </div>
+                <div class="color-card gray">
+                    <h4 style="color: var(--gray-color);">灰（Criminal）</h4>
+                    <p class="status">Alignment < 0、PKCount = 0</p>
+                    <ul>
+                        <li>村人取引が1.5倍の価格</li>
+                        <li>新規設置物に所有権なし</li>
+                        <li>攻撃されてもペナルティなし</li>
+                        <li>死亡時はアイテム保持</li>
+                        <li>犯罪を目撃されるとゴーレムが攻撃</li>
+                    </ul>
+                </div>
+                <div class="color-card red">
+                    <h4 style="color: var(--red-color);">赤（Murderer）</h4>
+                    <p class="status">PKCount ≥ 1</p>
+                    <ul>
+                        <li>村人が取引を拒否</li>
+                        <li>ゴーレムが視認で攻撃</li>
+                        <li>懸賞金をかけられる</li>
+                        <li>死亡時にアイテムを落とす</li>
+                        <li>新規設置物に所有権なし</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>状態遷移</h3>
+
+            <div class="transition">
+                <span class="state blue">青</span>
+                <span class="arrow">→</span>
+                <span class="state gray">灰</span>
+                <span class="condition">Alignmentが0未満になる</span>
+            </div>
+
+            <div class="transition">
+                <span class="state gray">灰</span>
+                <span class="arrow">→</span>
+                <span class="state blue">青</span>
+                <span class="condition">Alignmentが0以上になる</span>
+            </div>
+
+            <div class="transition">
+                <span class="state blue">青/灰</span>
+                <span class="arrow">→</span>
+                <span class="state red">赤</span>
+                <span class="condition">青プレイヤーを殺害（PKCount +1）</span>
+            </div>
+
+            <div class="transition">
+                <span class="state red">赤</span>
+                <span class="arrow">→</span>
+                <span class="state gray">灰</span>
+                <span class="condition">PKCountが0になる（時間経過）</span>
+            </div>
+
+            <div class="warning">
+                <strong>注意:</strong> 赤から直接青には戻れません。まず灰色になり、Alignmentを回復する必要があります。
+            </div>
+        </section>
+
+        <!-- 犯罪 -->
+        <section id="crimes">
+            <h2>犯罪とペナルティ</h2>
+            <p>犯罪を行うとAlignmentが減少します。ペナルティは3段階に分類されています：</p>
+
+            <h3>重大犯罪（-50）</h3>
+            <table>
+                <tr>
+                    <th>行動</th>
+                    <th>ペナルティ</th>
+                    <th>備考</th>
+                </tr>
+                <tr>
+                    <td>村人を殺害（ベッドあり）</td>
+                    <td class="penalty">-50</td>
+                    <td>ベッドに紐づいている村人</td>
+                </tr>
+                <tr>
+                    <td>他プレイヤーの所有物を盗む</td>
+                    <td class="penalty">-50</td>
+                    <td>保護されたチェストからアイテムを取る</td>
+                </tr>
+                <tr>
+                    <td>アイアンゴーレムを殺害</td>
+                    <td class="penalty">-50</td>
+                    <td>周囲のゴーレムも敵対化</td>
+                </tr>
+            </table>
+
+            <h3>中程度の犯罪（-10）</h3>
+            <table>
+                <tr>
+                    <th>行動</th>
+                    <th>ペナルティ</th>
+                    <th>備考</th>
+                </tr>
+                <tr>
+                    <td>他プレイヤーの所有物を破壊</td>
+                    <td class="penalty">-10</td>
+                    <td>5秒以内に戻せばキャンセル</td>
+                </tr>
+            </table>
+
+            <h3>軽微な犯罪（-1）</h3>
+            <table>
+                <tr>
+                    <th>行動</th>
+                    <th>ペナルティ</th>
+                    <th>備考</th>
+                </tr>
+                <tr>
+                    <td>他プレイヤーを攻撃</td>
+                    <td class="penalty">-1</td>
+                    <td>青プレイヤーへの攻撃</td>
+                </tr>
+                <tr>
+                    <td>他プレイヤーのペットを攻撃</td>
+                    <td class="penalty">-1</td>
+                    <td>青プレイヤーの飼いならした動物</td>
+                </tr>
+                <tr>
+                    <td>村人を攻撃</td>
+                    <td class="penalty">-1</td>
+                    <td>殺害しなくても</td>
+                </tr>
+                <tr>
+                    <td>動物を殺す</td>
+                    <td class="penalty">-1</td>
+                    <td>村人/ゴーレムに目撃された場合</td>
+                </tr>
+                <tr>
+                    <td>作物を収穫</td>
+                    <td class="penalty">-1</td>
+                    <td>村人に目撃された場合</td>
+                </tr>
+                <tr>
+                    <td>村人を殺害（ベッドなし）</td>
+                    <td class="penalty">-1</td>
+                    <td>ベッドに紐づいていない村人</td>
+                </tr>
+                <tr>
+                    <td>村人のベッドを破壊</td>
+                    <td class="penalty">-1</td>
+                    <td>自分または信頼者が設置した場合は免除</td>
+                </tr>
+                <tr>
+                    <td>村人の仕事場を破壊</td>
+                    <td class="penalty">-1</td>
+                    <td>自分または信頼者が設置した場合は免除</td>
+                </tr>
+            </table>
+
+            <div class="tip">
+                <strong>ヒント:</strong> 自分で設置したブロックや、信頼しているプレイヤーが設置したブロックはペナルティなしで操作できます。
+            </div>
+        </section>
+
+        <!-- 回復 -->
+        <section id="recovery">
+            <h2>回復と善行</h2>
+            <p>Alignmentは時間経過で自然に0に向かって回復し、善行で回復を早めることができます。</p>
+
+            <table>
+                <tr>
+                    <th>行動</th>
+                    <th>回復量</th>
+                    <th>備考</th>
+                </tr>
+                <tr>
+                    <td>時間経過</td>
+                    <td class="reward">+10/時間</td>
+                    <td>Alignmentが0に向かって移動</td>
+                </tr>
+                <tr>
+                    <td>赤プレイヤーを討伐</td>
+                    <td class="reward">+50</td>
+                    <td>賞金稼ぎ</td>
+                </tr>
+                <tr>
+                    <td>村人と取引</td>
+                    <td class="reward">+5</td>
+                    <td>取引成功ごと</td>
+                </tr>
+                <tr>
+                    <td>モンスターを討伐</td>
+                    <td class="reward">+1</td>
+                    <td>Fameも増加</td>
+                </tr>
+            </table>
+
+            <h3>PKCount減少</h3>
+            <div class="formula">
+                <p>赤プレイヤーのAlignmentが0に達すると：PKCount -1、Alignment = -1000にリセット</p>
+                <p>つまり、殺人者が無実に戻るには長期間の回復が必要です。</p>
+            </div>
+        </section>
+
+        <!-- 称号 -->
+        <section id="titles">
+            <h2>称号システム</h2>
+            <p>称号はFame（青/灰）またはPKCount（赤）に基づいて名前の上に表示されます。</p>
+
+            <h3 style="color: var(--blue-color);">青プレイヤーの称号（Fameベース）</h3>
+            <div class="title-grid">
+                <div class="title-item">
+                    <span class="name">勇者（Glorious Lord）</span>
+                    <span class="req">Fame 750+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">聖将（Great Lord）</span>
+                    <span class="req">Fame 500+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">聖騎士（Lord）</span>
+                    <span class="req">Fame 250+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">功士（Notable）</span>
+                    <span class="req">Fame 100+</span>
+                </div>
+            </div>
+
+            <h3 style="color: var(--gray-color);">灰プレイヤーの称号（Fameベース）</h3>
+            <div class="title-grid">
+                <div class="title-item">
+                    <span class="name">反逆者（Renegade）</span>
+                    <span class="req">Fame 750+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">無法者（Outlaw）</span>
+                    <span class="req">Fame 500+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">ならず者（Rogue）</span>
+                    <span class="req">Fame 250+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">悪党（Scoundrel）</span>
+                    <span class="req">Fame 100+</span>
+                </div>
+            </div>
+
+            <h3 style="color: var(--red-color);">赤プレイヤーの称号（PKCountベース）</h3>
+            <div class="title-grid">
+                <div class="title-item">
+                    <span class="name">殺戮者（Dread Lord）</span>
+                    <span class="req">PK 200+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">殺人鬼（Dark Lord）</span>
+                    <span class="req">PK 100+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">悪鬼（Infamous）</span>
+                    <span class="req">PK 50+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">凶漢（Notorious）</span>
+                    <span class="req">PK 30+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">外道（Wicked）</span>
+                    <span class="req">PK 10+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">罪人（Outcast）</span>
+                    <span class="req">PK 1+</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 村システム -->
+        <section id="village">
+            <h2>村との連携</h2>
+            <p>村人とアイアンゴーレムはあなたの評判に反応します。</p>
+
+            <h3>村人との取引</h3>
+            <table>
+                <tr>
+                    <th>状態</th>
+                    <th>価格倍率</th>
+                </tr>
+                <tr>
+                    <td style="color: var(--blue-color);">青（高Alignment 500+）</td>
+                    <td>5〜20%割引</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--blue-color);">青（通常）</td>
+                    <td>通常価格</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--gray-color);">灰</td>
+                    <td>1.5倍</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--red-color);">赤</td>
+                    <td>拒否</td>
+                </tr>
+            </table>
+
+            <h3>アイアンゴーレムの挙動</h3>
+            <table>
+                <tr>
+                    <th>状態</th>
+                    <th>ゴーレムの反応</th>
+                </tr>
+                <tr>
+                    <td style="color: var(--blue-color);">青（高Alignment）</td>
+                    <td>護衛としてモンスターから守る</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--blue-color);">青（通常）</td>
+                    <td>中立</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--gray-color);">灰</td>
+                    <td>犯罪を目撃すると攻撃（32ブロック範囲）</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--red-color);">赤</td>
+                    <td>視認で攻撃（128ブロック検索範囲）</td>
+                </tr>
+            </table>
+
+            <div class="info">
+                <strong>強化ゴーレム:</strong> ゴーレムが犯罪者を攻撃する際、速度とダメージが強化されます。遠距離のターゲットにはテレポートします。
+            </div>
+        </section>
+
+        <!-- 懸賞金 -->
+        <section id="bounty">
+            <h2>懸賞金システム</h2>
+            <p>赤プレイヤーに懸賞金をかけて、捕縛を促進できます。</p>
+
+            <h3>懸賞金をかける</h3>
+            <ul>
+                <li><strong>対象:</strong> 赤プレイヤーのみ</li>
+                <li><strong>最低金額:</strong> 100</li>
+                <li><strong>累積:</strong> 複数人が同じプレイヤーにかけると合算</li>
+            </ul>
+
+            <h3>懸賞金の獲得</h3>
+            <table>
+                <tr>
+                    <th>報酬タイプ</th>
+                    <th>金額</th>
+                </tr>
+                <tr>
+                    <td>懸賞金</td>
+                    <td>累積された全懸賞金</td>
+                </tr>
+                <tr>
+                    <td>システム経験値（PK 1-4）</td>
+                    <td>50 XP</td>
+                </tr>
+                <tr>
+                    <td>システム経験値（PK 5-9）</td>
+                    <td>100 XP</td>
+                </tr>
+                <tr>
+                    <td>システム経験値（PK 10-19）</td>
+                    <td>300 XP</td>
+                </tr>
+                <tr>
+                    <td>システム経験値（PK 20+）</td>
+                    <td>500 XP</td>
+                </tr>
+                <tr>
+                    <td>Fame</td>
+                    <td>+50、または相手のFameが高ければ継承</td>
+                </tr>
+            </table>
+
+            <h3>懸賞金看板</h3>
+            <p>OPは看板の1行目に<code>[bounty]</code>と入力することで懸賞金ランキング看板を作成できます。</p>
+        </section>
+
+        <!-- 信頼 -->
+        <section id="trust">
+            <h2>信頼システム</h2>
+            <p>プレイヤーを信頼することで、犯罪にならずに財産を共有できます。</p>
+
+            <h3>信頼の効果</h3>
+            <ul>
+                <li>信頼したプレイヤーのチェストを開いてアイテムを取れる</li>
+                <li>信頼したプレイヤーのブロックを破壊できる</li>
+                <li>信頼したプレイヤーを攻撃してもペナルティなし</li>
+                <li>信頼したプレイヤーを殺してもPKカウント増加なし</li>
+            </ul>
+
+            <div class="warning">
+                <strong>片方向の信頼:</strong> 信頼は相互ではありません。あなたが誰かを信頼しても、相手があなたを信頼しない限り、あなたは相手の財産にアクセスできません。
+            </div>
+        </section>
+
+        <!-- コマンド -->
+        <section id="commands">
+            <h2>コマンド</h2>
+
+            <h3>プレイヤーコマンド</h3>
+            <table>
+                <tr>
+                    <th>コマンド</th>
+                    <th>説明</th>
+                </tr>
+                <tr><td><code>/noty status</code></td><td>自分のステータスを表示</td></tr>
+                <tr><td><code>/noty status [プレイヤー]</code></td><td>指定プレイヤーのステータスを表示</td></tr>
+                <tr><td><code>/noty history</code></td><td>自分の犯罪履歴を表示</td></tr>
+                <tr><td><code>/noty history [プレイヤー]</code></td><td>指定プレイヤーの犯罪履歴を表示</td></tr>
+            </table>
+
+            <h3>信頼コマンド</h3>
+            <table>
+                <tr>
+                    <th>コマンド</th>
+                    <th>説明</th>
+                </tr>
+                <tr><td><code>/noty trust add [プレイヤー]</code></td><td>プレイヤーを信頼リストに追加</td></tr>
+                <tr><td><code>/noty trust remove [プレイヤー]</code></td><td>プレイヤーを信頼リストから削除</td></tr>
+                <tr><td><code>/noty trust list</code></td><td>信頼リストを表示</td></tr>
+                <tr><td><code>/noty trust check [プレイヤー]</code></td><td>信頼関係を確認</td></tr>
+            </table>
+
+            <h3>懸賞金コマンド</h3>
+            <table>
+                <tr>
+                    <th>コマンド</th>
+                    <th>説明</th>
+                </tr>
+                <tr><td><code>/noty bounty set [プレイヤー] [金額]</code></td><td>赤プレイヤーに懸賞金をかける</td></tr>
+                <tr><td><code>/noty bounty list</code></td><td>全ての懸賞金を表示</td></tr>
+                <tr><td><code>/noty bounty check [プレイヤー]</code></td><td>特定プレイヤーの懸賞金を確認</td></tr>
+            </table>
+
+            <h3>管理者コマンド</h3>
+            <table>
+                <tr>
+                    <th>コマンド</th>
+                    <th>説明</th>
+                </tr>
+                <tr><td><code>/noty admin listgray</code></td><td>全灰色プレイヤー一覧</td></tr>
+                <tr><td><code>/noty admin listred</code></td><td>全赤プレイヤー一覧</td></tr>
+                <tr><td><code>/noty admin [プレイヤー] alignment set [値]</code></td><td>Alignmentを設定</td></tr>
+                <tr><td><code>/noty admin [プレイヤー] fame set [値]</code></td><td>Fameを設定</td></tr>
+                <tr><td><code>/noty admin [プレイヤー] pk set [値]</code></td><td>PKCountを設定</td></tr>
+            </table>
+        </section>
+    </main>
+
+    <footer>
+        <p>Notoriety Plugin Documentation</p>
+        <p>クラシックMMORPG風 | Minecraft用</p>
+    </footer>
+</body>
+</html>
