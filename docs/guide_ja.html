@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notoriety - 名声システム ガイド</title>
+    <style>
+        :root {
+            --blue: #3498db;
+            --gray: #95a5a6;
+            --red: #e74c3c;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            text-align: center;
+            padding: 40px 0;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+            margin-bottom: 40px;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, var(--blue), var(--red));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .subtitle {
+            color: #888;
+            font-size: 1.1em;
+        }
+        .lang-switch {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .lang-switch a {
+            color: #888;
+            text-decoration: none;
+            padding: 8px 16px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        .lang-switch a:hover {
+            background: #444;
+            color: #fff;
+        }
+        section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        h2 {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+        }
+        h3 {
+            font-size: 1.2em;
+            margin: 20px 0 10px;
+            color: #bbb;
+        }
+        .color-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .color-card {
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .color-card.blue {
+            background: linear-gradient(135deg, rgba(52,152,219,0.3), rgba(52,152,219,0.1));
+            border: 2px solid var(--blue);
+        }
+        .color-card.gray {
+            background: linear-gradient(135deg, rgba(149,165,166,0.3), rgba(149,165,166,0.1));
+            border: 2px solid var(--gray);
+        }
+        .color-card.red {
+            background: linear-gradient(135deg, rgba(231,76,60,0.3), rgba(231,76,60,0.1));
+            border: 2px solid var(--red);
+        }
+        .color-card h4 {
+            font-size: 1.3em;
+            margin-bottom: 10px;
+        }
+        .color-card .status {
+            font-size: 0.9em;
+            color: #aaa;
+            margin-bottom: 15px;
+        }
+        .color-card ul {
+            text-align: left;
+            list-style: none;
+        }
+        .color-card li {
+            padding: 5px 0;
+            font-size: 0.9em;
+        }
+        .color-card li::before {
+            content: "• ";
+            color: inherit;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        th {
+            background: rgba(255,255,255,0.05);
+            font-weight: 600;
+        }
+        tr:hover {
+            background: rgba(255,255,255,0.02);
+        }
+        .penalty {
+            color: var(--red);
+            font-weight: bold;
+        }
+        .reward {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+        .command {
+            background: #1a1a2e;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        .tip {
+            background: rgba(46, 204, 113, 0.1);
+            border-left: 4px solid #2ecc71;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .warning {
+            background: rgba(231, 76, 60, 0.1);
+            border-left: 4px solid var(--red);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .title-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .title-item {
+            background: rgba(255,255,255,0.05);
+            padding: 10px 15px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .title-item .name {
+            font-weight: bold;
+        }
+        .title-item .req {
+            color: #888;
+            font-size: 0.85em;
+        }
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="lang-switch">
+        <a href="guide_en.html">English</a>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>Notoriety</h1>
+            <p class="subtitle">名声システム プレイヤーガイド</p>
+        </header>
+
+        <section>
+            <h2>名声システムとは？</h2>
+            <p>Notorietyは、あなたの行動に応じて評価が変わるシステムです。善良なプレイヤーは保護され、悪行を行うプレイヤーにはペナルティが課されます。</p>
+
+            <div class="color-cards">
+                <div class="color-card blue">
+                    <h4 style="color: var(--blue);">青（Innocent）</h4>
+                    <p class="status">善良なプレイヤー</p>
+                    <ul>
+                        <li>村人と通常価格で取引可能</li>
+                        <li>所有物が保護される</li>
+                        <li>死亡時にアイテムを保持</li>
+                        <li>ゴーレムは中立</li>
+                    </ul>
+                </div>
+                <div class="color-card gray">
+                    <h4 style="color: var(--gray);">灰（Criminal）</h4>
+                    <p class="status">犯罪者</p>
+                    <ul>
+                        <li>村人取引が1.5倍の価格</li>
+                        <li>新規設置物に所有権なし</li>
+                        <li>攻撃されてもペナルティなし</li>
+                        <li>死亡時はアイテム保持</li>
+                    </ul>
+                </div>
+                <div class="color-card red">
+                    <h4 style="color: var(--red);">赤（Murderer）</h4>
+                    <p class="status">殺人者</p>
+                    <ul>
+                        <li>村人が取引を拒否</li>
+                        <li>ゴーレムが攻撃してくる</li>
+                        <li>懸賞金をかけられる</li>
+                        <li>死亡時にアイテムを落とす</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>状態の変化</h2>
+
+            <h3>青から灰になる条件</h3>
+            <p>悪行を行い、Alignmentが0未満になると灰色になります。</p>
+
+            <h3>灰から青に戻る条件</h3>
+            <p>時間経過（1時間ごとに+10回復）や善行でAlignmentが0以上になると青に戻ります。</p>
+
+            <h3>赤になる条件</h3>
+            <p>青プレイヤーを殺害するとPKカウントが増え、赤になります。</p>
+
+            <div class="warning">
+                <strong>注意:</strong> 赤から直接青には戻れません。まず灰色期間を経る必要があります。
+            </div>
+        </section>
+
+        <section>
+            <h2>悪行とペナルティ</h2>
+            <table>
+                <tr>
+                    <th>行動</th>
+                    <th>ペナルティ</th>
+                    <th>備考</th>
+                </tr>
+                <tr>
+                    <td>村人を殺害（ベッドあり）</td>
+                    <td class="penalty">-50</td>
+                    <td>ベッドに紐づいている村人</td>
+                </tr>
+                <tr>
+                    <td>他プレイヤーの所有物を盗む</td>
+                    <td class="penalty">-50</td>
+                    <td>チェストからアイテムを取る</td>
+                </tr>
+                <tr>
+                    <td>ゴーレムを殺害</td>
+                    <td class="penalty">-50</td>
+                    <td>周囲のゴーレムも敵対化</td>
+                </tr>
+                <tr>
+                    <td>他プレイヤーの所有物を破壊</td>
+                    <td class="penalty">-10</td>
+                    <td>5秒以内に戻せばキャンセル</td>
+                </tr>
+                <tr>
+                    <td>他プレイヤーを攻撃</td>
+                    <td class="penalty">-1</td>
+                    <td>青プレイヤーへの攻撃</td>
+                </tr>
+                <tr>
+                    <td>村人を攻撃</td>
+                    <td class="penalty">-1</td>
+                    <td>殺害しなくても</td>
+                </tr>
+                <tr>
+                    <td>動物を殺す</td>
+                    <td class="penalty">-1</td>
+                    <td>村人/ゴーレムに目撃された場合</td>
+                </tr>
+                <tr>
+                    <td>村人を殺害（ベッドなし）</td>
+                    <td class="penalty">-1</td>
+                    <td>ベッドに紐づいていない村人</td>
+                </tr>
+            </table>
+
+            <div class="tip">
+                <strong>ヒント:</strong> 自分で設置したブロックや、信頼しているプレイヤーが設置したブロックは自由に操作できます。
+            </div>
+        </section>
+
+        <section>
+            <h2>善行と回復</h2>
+            <table>
+                <tr>
+                    <th>行動</th>
+                    <th>回復量</th>
+                </tr>
+                <tr>
+                    <td>時間経過</td>
+                    <td class="reward">+10/時間</td>
+                </tr>
+                <tr>
+                    <td>赤プレイヤーを討伐</td>
+                    <td class="reward">+50</td>
+                </tr>
+                <tr>
+                    <td>村人と取引</td>
+                    <td class="reward">+5</td>
+                </tr>
+                <tr>
+                    <td>モンスターを討伐</td>
+                    <td class="reward">+1</td>
+                </tr>
+            </table>
+        </section>
+
+        <section>
+            <h2>称号システム</h2>
+            <p>Fame（名声）に応じて称号が付与されます。称号は頭上のネームタグに表示されます。</p>
+
+            <h3 style="color: var(--blue);">青プレイヤーの称号</h3>
+            <div class="title-grid">
+                <div class="title-item">
+                    <span class="name">勇者</span>
+                    <span class="req">Fame 750+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">聖将</span>
+                    <span class="req">Fame 500+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">聖騎士</span>
+                    <span class="req">Fame 250+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">功士</span>
+                    <span class="req">Fame 100+</span>
+                </div>
+            </div>
+
+            <h3 style="color: var(--gray);">灰プレイヤーの称号</h3>
+            <div class="title-grid">
+                <div class="title-item">
+                    <span class="name">反逆者</span>
+                    <span class="req">Fame 750+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">無法者</span>
+                    <span class="req">Fame 500+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">ならず者</span>
+                    <span class="req">Fame 250+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">悪党</span>
+                    <span class="req">Fame 100+</span>
+                </div>
+            </div>
+
+            <h3 style="color: var(--red);">赤プレイヤーの称号</h3>
+            <div class="title-grid">
+                <div class="title-item">
+                    <span class="name">殺戮者</span>
+                    <span class="req">PK 200+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">殺人鬼</span>
+                    <span class="req">PK 100+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">悪鬼</span>
+                    <span class="req">PK 50+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">凶漢</span>
+                    <span class="req">PK 30+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">外道</span>
+                    <span class="req">PK 10+</span>
+                </div>
+                <div class="title-item">
+                    <span class="name">罪人</span>
+                    <span class="req">PK 1+</span>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>コマンド</h2>
+            <table>
+                <tr>
+                    <th>コマンド</th>
+                    <th>説明</th>
+                </tr>
+                <tr>
+                    <td><span class="command">/noty status</span></td>
+                    <td>自分のステータスを表示</td>
+                </tr>
+                <tr>
+                    <td><span class="command">/noty status [プレイヤー]</span></td>
+                    <td>指定プレイヤーのステータスを表示</td>
+                </tr>
+                <tr>
+                    <td><span class="command">/noty history</span></td>
+                    <td>自分の犯罪履歴を表示</td>
+                </tr>
+                <tr>
+                    <td><span class="command">/noty trust add [プレイヤー]</span></td>
+                    <td>プレイヤーを信頼リストに追加</td>
+                </tr>
+                <tr>
+                    <td><span class="command">/noty trust remove [プレイヤー]</span></td>
+                    <td>信頼を解除</td>
+                </tr>
+                <tr>
+                    <td><span class="command">/noty trust list</span></td>
+                    <td>信頼リストを表示</td>
+                </tr>
+                <tr>
+                    <td><span class="command">/noty bounty set [プレイヤー] [金額]</span></td>
+                    <td>赤プレイヤーに懸賞金をかける</td>
+                </tr>
+                <tr>
+                    <td><span class="command">/noty bounty list</span></td>
+                    <td>懸賞金リストを表示</td>
+                </tr>
+            </table>
+        </section>
+
+        <section>
+            <h2>信頼システム</h2>
+            <p>信頼したプレイヤーは、あなたの所有物にアクセスできるようになります。</p>
+            <ul style="margin: 15px 0; padding-left: 20px;">
+                <li>チェストを開いてアイテムを取り出せる</li>
+                <li>ブロックを破壊できる</li>
+                <li>攻撃しても犯罪にならない</li>
+            </ul>
+            <div class="warning">
+                <strong>注意:</strong> 信頼は片方向です。あなたが誰かを信頼しても、相手があなたを信頼しているとは限りません。
+            </div>
+        </section>
+
+        <section>
+            <h2>懸賞金システム</h2>
+            <p>赤プレイヤー（殺人者）には懸賞金をかけることができます。</p>
+            <ul style="margin: 15px 0; padding-left: 20px;">
+                <li>最低金額: 100</li>
+                <li>複数人が同じプレイヤーに懸賞金をかけると合算</li>
+                <li>赤プレイヤーを倒すと懸賞金を獲得</li>
+                <li>追加で経験値報酬も獲得（PKカウントに応じて50〜500）</li>
+            </ul>
+        </section>
+
+        <footer>
+            <p>Notoriety Plugin - Minecraft Server</p>
+        </footer>
+    </div>
+</body>
+</html>
