@@ -76,7 +76,7 @@ class VillagerListener(
 
         // ベッドに紐づいているかどうかでペナルティを変える
         val hasBed = victim.getMemory(MemoryKey.HOME) != null
-        val penalty = if (hasBed) 100 else 10
+        val penalty = if (hasBed) 50 else 1
 
         // 殺された村人の断末魔
         villagerService.dyingMessage(victim, killer)
@@ -180,7 +180,7 @@ class VillagerListener(
             crimeService.commitCrime(
                 criminal = player.uniqueId,
                 crimeType = CrimeType.HARVEST_CROP,
-                alignmentPenalty = 10,
+                alignmentPenalty = 1,
                 location = block.location,
                 detail = block.type.name
             )
@@ -221,7 +221,7 @@ class VillagerListener(
             crimeService.commitCrime(
                 criminal = player.uniqueId,
                 crimeType = CrimeType.DESTROY,
-                alignmentPenalty = 30,
+                alignmentPenalty = 10,
                 location = block.location,
                 detail = block.type.name
             )
@@ -303,7 +303,7 @@ class VillagerListener(
         crimeService.commitCrime(
             criminal = player.uniqueId,
             crimeType = CrimeType.DESTROY_VILLAGER_BED,
-            alignmentPenalty = 5,
+            alignmentPenalty = 1,
             location = block.location
         )
         plugin.reputationService.updateDisplay(player)
@@ -337,7 +337,7 @@ class VillagerListener(
         crimeService.commitCrime(
             criminal = player.uniqueId,
             crimeType = CrimeType.DESTROY_VILLAGER_WORKSTATION,
-            alignmentPenalty = 10,
+            alignmentPenalty = 1,
             location = block.location,
             detail = block.type.name
         )
@@ -472,7 +472,7 @@ class VillagerListener(
         crimeService.commitCrime(
             criminal = killer.uniqueId,
             crimeType = CrimeType.KILL_GOLEM,
-            alignmentPenalty = 100,
+            alignmentPenalty = 50,
             location = golem.location
         )
         plugin.reputationService.updateDisplay(killer)

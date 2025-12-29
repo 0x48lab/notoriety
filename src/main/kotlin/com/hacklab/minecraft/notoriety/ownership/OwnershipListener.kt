@@ -67,7 +67,7 @@ class OwnershipListener(
             crimeService.commitCrime(
                 criminal = player.uniqueId,
                 crimeType = CrimeType.DESTROY,
-                alignmentPenalty = 50,
+                alignmentPenalty = 10,
                 victim = owner,
                 location = block.location,
                 detail = block.type.name
@@ -81,7 +81,7 @@ class OwnershipListener(
                 playerUuid = player.uniqueId,
                 ownerUuid = owner,
                 brokenAt = Instant.now(),
-                alignmentPenalty = 50
+                alignmentPenalty = 10
             ))
         }
     }
@@ -111,7 +111,7 @@ class OwnershipListener(
         crimeService.commitCrime(
             criminal = player.uniqueId,
             crimeType = CrimeType.THEFT,
-            alignmentPenalty = 100,
+            alignmentPenalty = 50,
             victim = owner,
             location = location
         )
