@@ -74,6 +74,10 @@ class VillagerListener(
 
         val data = plugin.playerManager.getPlayer(killer) ?: return
 
+        // ベッドに紐づいているかどうかでペナルティを変える
+        val hasBed = victim.getMemory(MemoryKey.HOME) != null
+        val penalty = if (hasBed) 100 else 10
+
         // 殺された村人の断末魔
         villagerService.dyingMessage(victim, killer)
 
@@ -93,7 +97,7 @@ class VillagerListener(
         crimeService.commitCrime(
             criminal = killer.uniqueId,
             crimeType = CrimeType.KILL_VILLAGER,
-            alignmentPenalty = 200,
+            alignmentPenalty = penalty,
             location = victim.location
         )
         plugin.reputationService.updateDisplay(killer)
@@ -282,6 +286,10 @@ class VillagerListener(
 
         plugin.playerManager.getPlayer(player) ?: return
 
+        // 自分で設置したブロック、または信頼されたプレイヤーなら犯罪にならない
+        val owner = plugin.ownershipService.getOwner(block.location)
+        if (owner != null && (owner == player.uniqueId || plugin.trustService.isTrusted(owner, player.uniqueId))) return
+
         // このベッドに紐づいている村人を探す
         val affectedVillager = findVillagerWithBed(block.location) ?: return
 
@@ -311,6 +319,10 @@ class VillagerListener(
 
         val block = event.block
         plugin.playerManager.getPlayer(player) ?: return
+
+        // 自分で設置したブロック、または信頼されたプレイヤーなら犯罪にならない
+        val owner = plugin.ownershipService.getOwner(block.location)
+        if (owner != null && (owner == player.uniqueId || plugin.trustService.isTrusted(owner, player.uniqueId))) return
 
         // この職業ブロックに紐づいている村人を探す
         val affectedVillager = findVillagerWithWorkstation(block.location) ?: return

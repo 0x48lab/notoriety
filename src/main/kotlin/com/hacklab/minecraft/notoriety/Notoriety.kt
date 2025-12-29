@@ -1,6 +1,7 @@
 package com.hacklab.minecraft.notoriety
 
 import com.hacklab.minecraft.notoriety.bounty.BountyService
+import com.hacklab.minecraft.notoriety.bounty.BountySignListener
 import com.hacklab.minecraft.notoriety.combat.CombatListener
 import com.hacklab.minecraft.notoriety.command.NotorietyCommand
 import com.hacklab.minecraft.notoriety.core.BlockLocation
@@ -111,6 +112,7 @@ class Notoriety : JavaPlugin() {
         pm.registerEvents(TradeListener(playerManager, reputationService), this)
         pm.registerEvents(CombatListener(playerManager, crimeService, reputationService, bountyService, trustService), this)
         pm.registerEvents(CrimeNotificationListener(i18nManager), this)
+        pm.registerEvents(BountySignListener(bountyService.signManager), this)
     }
 
     private fun registerCommands() {

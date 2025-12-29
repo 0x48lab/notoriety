@@ -40,7 +40,7 @@ class CombatListener(
             crimeService.commitCrime(
                 criminal = attacker.uniqueId,
                 crimeType = CrimeType.ATTACK,
-                alignmentPenalty = 150,
+                alignmentPenalty = 50,
                 victim = victim.uniqueId
             )
             reputationService.updateDisplay(attacker)
@@ -70,11 +70,11 @@ class CombatListener(
         // 青色プレイヤーのペットのみ保護
         if (ownerData.getNameColor() != NameColor.BLUE) return
 
-        // Alignment -150
+        // Alignment -50
         crimeService.commitCrime(
             criminal = attacker.uniqueId,
             crimeType = CrimeType.ATTACK,
-            alignmentPenalty = 150,
+            alignmentPenalty = 50,
             victim = owner.uniqueId,
             detail = "Pet: ${pet.type.name}"
         )
