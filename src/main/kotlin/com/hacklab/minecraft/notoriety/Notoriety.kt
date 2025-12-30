@@ -2,6 +2,11 @@ package com.hacklab.minecraft.notoriety
 
 import com.hacklab.minecraft.notoriety.bounty.BountyService
 import com.hacklab.minecraft.notoriety.bounty.BountySignListener
+import com.hacklab.minecraft.notoriety.chat.ChatListener
+import com.hacklab.minecraft.notoriety.chat.command.ChatCommand
+import com.hacklab.minecraft.notoriety.chat.command.WhisperCommand
+import com.hacklab.minecraft.notoriety.chat.repository.ChatSettingsRepository
+import com.hacklab.minecraft.notoriety.chat.service.ChatService
 import com.hacklab.minecraft.notoriety.combat.CombatListener
 import com.hacklab.minecraft.notoriety.command.NotorietyCommand
 import com.hacklab.minecraft.notoriety.core.BlockLocation
@@ -18,10 +23,21 @@ import com.hacklab.minecraft.notoriety.crime.CrimeRepository
 import com.hacklab.minecraft.notoriety.crime.CrimeService
 import com.hacklab.minecraft.notoriety.crime.CrimeType
 import com.hacklab.minecraft.notoriety.event.PlayerColorChangeEvent
+import com.hacklab.minecraft.notoriety.guild.cache.GuildCache
+import com.hacklab.minecraft.notoriety.guild.command.GuildCommand
+import com.hacklab.minecraft.notoriety.guild.display.GuildTagManager
+import com.hacklab.minecraft.notoriety.guild.gui.GuildGUIManager
+import com.hacklab.minecraft.notoriety.guild.listener.GuildEventListener
+import com.hacklab.minecraft.notoriety.guild.repository.GuildInvitationRepository
+import com.hacklab.minecraft.notoriety.guild.repository.GuildMembershipRepository
+import com.hacklab.minecraft.notoriety.guild.repository.GuildRepository
+import com.hacklab.minecraft.notoriety.guild.service.GuildService
+import com.hacklab.minecraft.notoriety.guild.service.GuildServiceImpl
 import com.hacklab.minecraft.notoriety.inspect.InspectCommand
 import com.hacklab.minecraft.notoriety.inspect.InspectListener
 import com.hacklab.minecraft.notoriety.inspect.InspectService
 import com.hacklab.minecraft.notoriety.inspect.InspectionStick
+import com.hacklab.minecraft.notoriety.ownership.ExplosionProtectionListener
 import com.hacklab.minecraft.notoriety.ownership.OwnershipListener
 import com.hacklab.minecraft.notoriety.ownership.OwnershipRepository
 import com.hacklab.minecraft.notoriety.ownership.OwnershipService
@@ -68,6 +84,17 @@ class Notoriety : JavaPlugin() {
     lateinit var inspectionStick: InspectionStick
         private set
 
+    // ギルドシステム
+    lateinit var guildService: GuildService
+        private set
+    lateinit var chatService: ChatService
+        private set
+    lateinit var guildGUIManager: GuildGUIManager
+        private set
+    private lateinit var guildCache: GuildCache
+    private lateinit var whisperCommand: WhisperCommand
+    private lateinit var guildTagManager: GuildTagManager
+
     private lateinit var ownershipRepository: OwnershipRepository
 
     val api: NotorietyAPI by lazy { NotorietyAPIImpl(this) }
@@ -99,6 +126,25 @@ class Notoriety : JavaPlugin() {
         inspectService = InspectService(this, ownershipRepository, trustService, i18nManager)
         inspectionStick = InspectionStick(this, i18nManager)
 
+        // ギルドシステム初期化
+        val guildRepository = GuildRepository(databaseManager)
+        val membershipRepository = GuildMembershipRepository(databaseManager)
+        val invitationRepository = GuildInvitationRepository(databaseManager)
+        val chatSettingsRepository = ChatSettingsRepository(databaseManager)
+        guildCache = GuildCache()
+        guildTagManager = GuildTagManager(reputationService.teamManager)
+        guildService = GuildServiceImpl(
+            plugin = this,
+            guildRepository = guildRepository,
+            membershipRepository = membershipRepository,
+            invitationRepository = invitationRepository,
+            trustService = trustService,
+            guildCache = guildCache,
+            guildTagManager = guildTagManager
+        )
+        chatService = ChatService(chatSettingsRepository, guildService)
+        guildGUIManager = GuildGUIManager(this, guildService)
+
         // 5. イベントリスナー登録
         registerListeners()
 
@@ -121,13 +167,19 @@ class Notoriety : JavaPlugin() {
         val pm = server.pluginManager
 
         pm.registerEvents(PlayerListener(playerManager, reputationService), this)
-        pm.registerEvents(OwnershipListener(this, ownershipService, trustService, crimeService), this)
+        pm.registerEvents(OwnershipListener(this, ownershipService, guildService, crimeService), this)
+        pm.registerEvents(ExplosionProtectionListener(ownershipService), this)
         pm.registerEvents(VillagerListener(this, villagerService, golemService, crimeService), this)
         pm.registerEvents(TradeListener(playerManager, reputationService), this)
         pm.registerEvents(CombatListener(playerManager, crimeService, reputationService, bountyService, trustService), this)
         pm.registerEvents(CrimeNotificationListener(i18nManager), this)
         pm.registerEvents(BountySignListener(bountyService.signManager), this)
         pm.registerEvents(InspectListener(inspectService, inspectionStick), this)
+
+        // ギルドシステムリスナー
+        pm.registerEvents(GuildEventListener(guildService, chatService, guildTagManager, reputationService), this)
+        pm.registerEvents(ChatListener(chatService, guildService), this)
+        pm.registerEvents(guildGUIManager, this)
     }
 
     private fun registerCommands() {
@@ -168,6 +220,31 @@ class Notoriety : JavaPlugin() {
             it.tabCompleter = org.bukkit.command.TabCompleter { sender, _, _, args ->
                 inspectCommand.tabComplete(sender, args)
             }
+        }
+
+        // ギルドコマンド
+        val guildCommand = GuildCommand(this, guildService, guildGUIManager)
+        getCommand("guild")?.let {
+            it.setExecutor(guildCommand)
+            it.tabCompleter = guildCommand
+        }
+
+        // チャットコマンド
+        val chatCommand = ChatCommand(chatService)
+        getCommand("chat")?.let {
+            it.setExecutor(chatCommand)
+            it.tabCompleter = chatCommand
+        }
+
+        // ウィスパーコマンド
+        whisperCommand = WhisperCommand(chatService)
+        getCommand("w")?.let {
+            it.setExecutor(whisperCommand)
+            it.tabCompleter = whisperCommand
+        }
+        getCommand("r")?.let {
+            it.setExecutor(whisperCommand)
+            it.tabCompleter = whisperCommand
         }
     }
 

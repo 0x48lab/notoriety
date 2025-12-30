@@ -31,6 +31,11 @@ class AdminCommand(private val plugin: Notoriety) : SubCommand {
             return listRedPlayers(sender)
         }
 
+        // guildtag テストコマンド
+        if (args[0].lowercase() == "guildtag") {
+            return testGuildTag(sender, args.drop(1).toTypedArray())
+        }
+
         if (args.size < 4) {
             showUsage(sender)
             return true
@@ -101,6 +106,48 @@ class AdminCommand(private val plugin: Notoriety) : SubCommand {
         return true
     }
 
+    private fun testGuildTag(sender: CommandSender, args: Array<out String>): Boolean {
+        if (args.isEmpty()) {
+            sender.sendMessage(Component.text("Usage: /noty admin guildtag <player> <tag|clear>").color(NamedTextColor.YELLOW))
+            sender.sendMessage(Component.text("Example: /noty admin guildtag Steve BC").color(NamedTextColor.GRAY))
+            sender.sendMessage(Component.text("Example: /noty admin guildtag Steve clear").color(NamedTextColor.GRAY))
+            return true
+        }
+
+        if (args.size < 2) {
+            sender.sendMessage(Component.text("Usage: /noty admin guildtag <player> <tag|clear>").color(NamedTextColor.RED))
+            return true
+        }
+
+        val targetPlayer = Bukkit.getPlayer(args[0])
+        if (targetPlayer == null) {
+            sender.sendMessage(Component.text("Player ${args[0]} is not online").color(NamedTextColor.RED))
+            return true
+        }
+
+        val tag = args[1]
+        val teamManager = plugin.reputationService.teamManager
+
+        if (tag.lowercase() == "clear") {
+            teamManager.setTestGuildTag(targetPlayer.uniqueId, null)
+            plugin.reputationService.updateDisplay(targetPlayer)
+            sender.sendMessage(Component.text("Cleared guild tag for ${targetPlayer.name}").color(NamedTextColor.GREEN))
+        } else {
+            if (tag.length > 5) {
+                sender.sendMessage(Component.text("Tag must be 5 characters or less").color(NamedTextColor.RED))
+                return true
+            }
+            teamManager.setTestGuildTag(targetPlayer.uniqueId, tag)
+            plugin.reputationService.updateDisplay(targetPlayer)
+            sender.sendMessage(
+                Component.text("Set guild tag for ${targetPlayer.name} to ")
+                    .color(NamedTextColor.GREEN)
+                    .append(Component.text("[$tag]").color(NamedTextColor.GOLD))
+            )
+        }
+        return true
+    }
+
     private fun listRedPlayers(sender: CommandSender): Boolean {
         val redPlayers = plugin.playerManager.findAllRedPlayers()
 
@@ -138,6 +185,7 @@ class AdminCommand(private val plugin: Notoriety) : SubCommand {
             === Admin Commands ===
             /noty admin listgray - List gray players
             /noty admin listred - List red players
+            /noty admin guildtag <player> <tag|clear> - Test guild tag display
             /noty admin <player> <alignment|fame|pk> <set|add> <value>
         """.trimIndent())
         sender.sendMessage(usage)
@@ -146,18 +194,23 @@ class AdminCommand(private val plugin: Notoriety) : SubCommand {
     override fun tabComplete(sender: CommandSender, args: Array<out String>): List<String> {
         return when (args.size) {
             1 -> {
-                val commands = listOf("listgray", "listred")
+                val commands = listOf("listgray", "listred", "guildtag")
                 val players = Bukkit.getOnlinePlayers().map { it.name }
                 (commands + players).filter { it.lowercase().startsWith(args[0].lowercase()) }
             }
-            2 -> if (args[0].lowercase() !in listOf("listgray", "listred")) {
-                listOf("alignment", "fame", "pk")
+            2 -> when (args[0].lowercase()) {
+                "listgray", "listred" -> emptyList()
+                "guildtag" -> Bukkit.getOnlinePlayers().map { it.name }
+                    .filter { it.lowercase().startsWith(args[1].lowercase()) }
+                else -> listOf("alignment", "fame", "pk")
                     .filter { it.startsWith(args[1].lowercase()) }
-            } else emptyList()
-            3 -> if (args[0].lowercase() !in listOf("listgray", "listred")) {
-                listOf("set", "add")
+            }
+            3 -> when (args[0].lowercase()) {
+                "guildtag" -> listOf("clear").filter { it.startsWith(args[2].lowercase()) }
+                "listgray", "listred" -> emptyList()
+                else -> listOf("set", "add")
                     .filter { it.startsWith(args[2].lowercase()) }
-            } else emptyList()
+            }
             else -> emptyList()
         }
     }

@@ -12,9 +12,24 @@ import org.bukkit.scoreboard.Scoreboard
 class TeamManager(private val plugin: JavaPlugin) {
     private val scoreboard: Scoreboard = Bukkit.getScoreboardManager().mainScoreboard
 
+    // テスト用: プレイヤーUUID -> ギルドタグ
+    private val testGuildTags = mutableMapOf<java.util.UUID, String>()
+
     companion object {
         private const val BELOW_NAME_OBJECTIVE = "noty_title"
     }
+
+    // テスト用: ギルドタグを設定
+    fun setTestGuildTag(playerUuid: java.util.UUID, tag: String?) {
+        if (tag == null) {
+            testGuildTags.remove(playerUuid)
+        } else {
+            testGuildTags[playerUuid] = tag
+        }
+    }
+
+    // テスト用: ギルドタグを取得
+    fun getTestGuildTag(playerUuid: java.util.UUID): String? = testGuildTags[playerUuid]
 
     init {
         // BELOW_NAME用のObjectiveを作成
@@ -34,8 +49,14 @@ class TeamManager(private val plugin: JavaPlugin) {
         // チームの色を設定（名前の色）
         val team = scoreboard.getTeam(teamName) ?: scoreboard.registerNewTeam(teamName)
         team.color(color.chatColor)
-        // プレフィックスは使わない（BELOW_NAMEに称号を表示するため）
-        team.prefix(Component.empty())
+
+        // ギルドタグをprefixに表示
+        val guildTag = testGuildTags[player.uniqueId]
+        if (guildTag != null) {
+            team.prefix(Component.text("[$guildTag] ").color(net.kyori.adventure.text.format.NamedTextColor.GOLD))
+        } else {
+            team.prefix(Component.empty())
+        }
 
         if (!team.hasEntry(player.name)) {
             // 他のチームから削除

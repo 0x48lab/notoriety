@@ -56,7 +56,7 @@ jobs:
         modrinth-token: ${{ secrets.MODRINTH_PAT }}
 
         files: ${{ steps.jar.outputs.JAR_PATH }}
-        name: "Easy Hide and Seek v${{ steps.version.outputs.VERSION }}"
+        name: "Notoriety v${{ steps.version.outputs.VERSION }}"
         version: ${{ steps.version.outputs.VERSION }}
         version-type: release
 

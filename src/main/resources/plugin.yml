@@ -27,6 +27,28 @@ commands:
   inspect:
     description: Toggle block ownership inspection mode
     usage: /<command>
+  guild:
+    description: Guild system commands
+    usage: /<command> <subcommand>
+    aliases:
+      - g
+  chat:
+    description: Chat mode settings
+    usage: /<command> <local|global|guild|romaji|status>
+    aliases:
+      - ch
+  w:
+    description: Send a private message to a player
+    usage: /<command> <player> <message>
+    aliases:
+      - whisper
+      - msg
+      - tell
+  r:
+    description: Reply to the last private message
+    usage: /<command> <message>
+    aliases:
+      - reply
 
 permissions:
   notoriety.admin:

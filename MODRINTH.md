@@ -17,11 +17,29 @@ Players are classified into three states based on their behavior:
 - Blocks placed by innocent players are automatically protected
 - Breaking or stealing from others' property is a crime
 - 5-second grace period to undo accidental actions
+- Owned blocks are protected from explosions (Creeper, TNT, etc.)
 
-### Trust System
-- Set trust relationships between players
-- Trusted players can access your property
-- Combat between trusted players isn't considered a crime
+### Three-State Trust System
+- **TRUST** - Grant full access to your property
+- **UNSET** - Default state; guild members get automatic trust
+- **DISTRUST** - Block access even from guild members
+- Distrusted players can view chests but cannot take items
+
+### Guild System
+Form groups with automatic trust relationships:
+- Guild members automatically trust each other (unless DISTRUST is set)
+- Guild tags displayed before player names (e.g., `[BC] PlayerName`)
+- 16 customizable tag colors
+- Three roles: Master, Vice Master, Member
+- Guild chat channel for private communication
+
+### Chat System
+Multiple communication channels:
+- **Local** - 50-block range (default)
+- **Global** - Server-wide with `!` prefix
+- **Guild** - Members only with `@` prefix
+- **Whisper** - Private 1-on-1 messages
+- Romaji to Hiragana conversion for Japanese players
 
 ### Villager & Golem System
 - Villagers shout when they witness crimes
@@ -40,9 +58,27 @@ Players are classified into three states based on their behavior:
 - `/noty history [player]` - View crime history
 
 **Trust Commands**
-- `/trust add <player>` - Trust a player
-- `/trust remove <player>` - Remove trust
+- `/trust add <player>` - Trust a player (TRUST)
+- `/trust distrust <player>` - Distrust a player (DISTRUST)
+- `/trust remove <player>` - Reset trust (UNSET)
 - `/trust list` - View trust relationships
+- `/trust check <player>` - Check trust status with a player
+
+**Guild Commands**
+- `/guild create <name> <tag> [description]` - Create a guild
+- `/guild disband` - Disband your guild (Master only)
+- `/guild invite <player>` - Invite a player
+- `/guild accept/decline <guild>` - Accept/decline invitation
+- `/guild kick <player>` - Remove a member (Master only)
+- `/guild leave` - Leave your guild
+- `/guild promote/demote <player>` - Change member roles
+- `/guild transfer <player>` - Transfer leadership
+- `/guild tagcolor <color>` - Change tag color
+
+**Chat Commands**
+- `/w <player> <message>` - Send whisper
+- `/r <message>` - Reply to last whisper
+- `/romaji on/off` - Toggle romaji conversion
 
 **Bounty Commands**
 - `/bounty set <player> <amount>` - Set a bounty
