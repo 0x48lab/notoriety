@@ -5,8 +5,8 @@ import com.hacklab.minecraft.notoriety.core.BlockLocation
 import com.hacklab.minecraft.notoriety.core.toBlockLoc
 import com.hacklab.minecraft.notoriety.crime.CrimeService
 import com.hacklab.minecraft.notoriety.crime.CrimeType
+import com.hacklab.minecraft.notoriety.guild.service.GuildService
 import com.hacklab.minecraft.notoriety.reputation.NameColor
-import com.hacklab.minecraft.notoriety.trust.TrustService
 import org.bukkit.GameMode
 import org.bukkit.block.Container
 import org.bukkit.entity.Player
@@ -21,7 +21,7 @@ import java.time.Instant
 class OwnershipListener(
     private val plugin: Notoriety,
     private val ownershipService: OwnershipService,
-    private val trustService: TrustService,
+    private val guildService: GuildService,
     private val crimeService: CrimeService
 ) : Listener {
 
@@ -56,8 +56,8 @@ class OwnershipListener(
         val block = event.block
         val owner = ownershipService.getOwner(block.location) ?: return
 
-        // 本人または信頼されたプレイヤーは許可
-        if (ownershipService.canAccess(block.location, player.uniqueId, trustService)) {
+        // 本人または信頼されたプレイヤーは許可（ギルドメンバー含む）
+        if (ownershipService.canAccess(block.location, player.uniqueId, guildService)) {
             ownershipService.removeOwnership(block.location)
             return
         }
@@ -104,8 +104,9 @@ class OwnershipListener(
         val location = holder.block.location
         val owner = ownershipService.getOwner(location) ?: return
 
-        // 本人または信頼されたプレイヤーは許可
-        if (ownershipService.canAccess(location, player.uniqueId, trustService)) return
+        // 本人または信頼されたプレイヤーは許可（ギルドメンバー含む）
+        // ただし、不信頼に設定されている場合は取り出し不可
+        if (ownershipService.canTakeFromContainer(location, player.uniqueId, guildService)) return
 
         // 窃盗として犯罪確定
         crimeService.commitCrime(

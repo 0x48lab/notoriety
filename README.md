@@ -9,7 +9,7 @@
 ## 動作環境
 
 - Minecraft 1.21.1+
-- Paper/Spigot サーバー
+- Paper サーバー
 - Java 21+
 - Vault（オプション：経済機能）
 
@@ -21,21 +21,38 @@
 
 | 状態 | 色 | 条件 |
 |-----|---|-----|
-| Innocent | 青 | 犯罪なし |
-| Criminal | 灰 | 犯罪を犯した |
-| Murderer | 赤 | プレイヤーを殺害した |
+| Innocent | 青 | Alignment ≥ 0 かつ PKCount = 0 |
+| Criminal | 灰 | Alignment < 0 かつ PKCount = 0 |
+| Murderer | 赤 | PKCount ≥ 1 |
 
 ### 所有権システム
 
 - 青プレイヤーが設置したブロックは自動的に保護
 - 他人の所有物を破壊・窃盗すると犯罪
 - 5秒以内に元に戻せば犯罪にならない（猶予システム）
+- 爆発（クリーパー、TNT等）からも保護
 
 ### 信頼システム
 
 - プレイヤー間で信頼関係を設定可能
 - 信頼されたプレイヤーは所有物へのアクセスが許可
 - 攻撃・殺害も犯罪にならない
+- 三段階信頼: 信頼/未設定/不信頼
+
+### ギルドシステム
+
+- ギルドを作成してメンバーを招待
+- ギルドメンバー間は自動的に信頼関係
+- ギルドタグの表示（名前の前に表示）
+- GUIによる直感的な管理
+
+### チャットシステム
+
+- ローカルチャット（50ブロック範囲）
+- グローバルチャット（`!`プレフィックス）
+- ギルドチャット（`@`プレフィックス）
+- ウィスパー（`/w`コマンド）
+- ローマ字→ひらがな自動変換
 
 ### 村人・ゴーレムシステム
 
@@ -62,17 +79,34 @@
 ```
 /noty status [player]     - ステータス表示
 /noty history [player]    - 犯罪履歴表示
+/noty inspect [tool]      - 所有権確認モード切替 / 調査棒を取得
 /noty admin ...           - 管理コマンド（OP専用）
 ```
+
+### 調査コマンド
+
+```
+/inspect                  - 所有権確認モードのON/OFF切替
+/noty inspect             - 所有権確認モードのON/OFF切替
+/noty inspect tool        - 調査棒（Inspection Stick）を取得
+```
+
+所有権確認モードでは、ブロックを右クリックすると所有者情報が表示されます。
 
 ### 信頼コマンド
 
 ```
 /trust add <player>       - プレイヤーを信頼
-/trust remove <player>    - 信頼を解除
+/trust remove <player>    - 信頼設定を解除（未設定に戻す）
+/trust distrust <player>  - プレイヤーを不信頼に設定
 /trust list               - 信頼関係一覧
 /trust check <player>     - 信頼関係を確認
 ```
+
+三段階信頼システム：
+- **信頼**: 所有物へのアクセスを許可
+- **未設定**: ギルドメンバーの場合はアクセス許可（デフォルト）
+- **不信頼**: ギルドメンバーでもアクセスを拒否
 
 ### 懸賞金コマンド
 
@@ -80,6 +114,50 @@
 /bounty set <player> <amount>  - 懸賞金を設定
 /bounty list                   - 懸賞金リスト
 /bounty check <player>         - 懸賞金を確認
+```
+
+### ギルドコマンド
+
+```
+/guild                         - ギルドGUIを開く（メニュー）
+/guild menu                    - ギルドGUIを開く
+/guild create <name> <tag>     - ギルドを作成
+/guild info [guild]            - ギルド情報を表示
+/guild list                    - ギルド一覧を表示
+/guild members                 - メンバー一覧を表示
+/guild invite <player>         - プレイヤーを招待
+/guild kick <player>           - メンバーを追放
+/guild leave                   - ギルドを脱退
+/guild accept [guild]          - 招待を承諾
+/guild deny [guild]            - 招待を拒否
+/guild invites                 - 受け取った招待一覧
+/guild promote <player>        - メンバーを昇格（マスター専用）
+/guild demote <player>         - メンバーを降格（マスター専用）
+/guild transfer <player>       - マスター権限を譲渡
+/guild dissolve                - ギルドを解散（マスター専用）
+/guild color <color>           - タグの色を変更
+/guild help                    - ヘルプを表示
+```
+
+### チャットコマンド
+
+```
+/chat local                - ローカルチャットモード
+/chat global               - グローバルチャットモード
+/chat guild                - ギルドチャットモード
+/chat romaji               - ローマ字変換のON/OFF
+/w <player> <message>      - プライベートメッセージ
+/r <message>               - 返信
+```
+
+### 管理者コマンド（OP専用）
+
+```
+/noty admin listgray                           - 灰色プレイヤー一覧
+/noty admin listred                            - 赤プレイヤー一覧
+/noty admin guildtag <player> <tag|clear>      - ギルドタグテスト用
+/noty admin <player> <alignment|fame|pk> <set|add> <value>
+                                               - パラメータ操作
 ```
 
 ## 設定
@@ -105,47 +183,63 @@ database:
 
 ## パラメータ
 
-| パラメータ | 範囲 | 説明 |
-|-----------|-----|------|
-| CrimePoint | 0-1000 | 犯罪ポイント（灰状態の管理） |
-| PKCount | 0- | 殺人カウント（赤状態の管理） |
-| Karma | 0-1000 | 善悪の評価（称号用） |
-| Fame | 0-1000 | 名声（称号用） |
+| パラメータ | 範囲 | 初期値 | 説明 |
+|-----------|-----|--------|------|
+| Alignment | -1000〜+1000 | 0 | 善悪軸（負=灰、正=善行累積） |
+| PKCount | 0〜 | 0 | 殺人カウント（赤状態の管理） |
+| Fame | 0〜1000 | 0 | 名声（称号用） |
 
-## 犯罪ポイント
+## Alignment変動
 
-| 行動 | ポイント |
-|-----|---------|
-| 他人の所有物を盗む | +100 |
-| 他人の所有物を破壊 | +50 |
-| プレイヤーを攻撃 | +150 |
-| 村人を殺害 | +200 |
-| 動物を殺す（目撃時） | +20 |
-| 作物を収穫（目撃時） | +10 |
+### 減少（悪行）
+
+| 行動 | 変動 |
+|-----|------|
+| 他人の所有物を盗む | -50 |
+| 他人の所有物を破壊 | -10 |
+| プレイヤーを攻撃 | -1 |
+| 村人を殺害（ベッド紐付き） | -50 |
+| 動物を殺す（目撃時） | -1 |
+
+### 増加（善行・時間経過）
+
+| 行動 | 変動 |
+|-----|------|
+| 時間経過 | +10/時間（0に向かって回復） |
+| 赤プレイヤーを討伐 | +50 |
+| 村人と取引 | +5 |
+| モンスターを討伐 | +1 |
 
 ## 称号
 
-### 青プレイヤー（善）
+### 青（Innocent）- Fame基準
 
-| Karma | 称号 |
-|-------|-----|
-| 100+ | 義人 |
-| 250+ | 功士 |
-| 500+ | 豪傑 |
-| 625+ | 聖騎士 |
-| 750+ | 聖将 |
-| 875+ | 勇者 |
+| Fame | 称号（英語） | 称号（日本語） |
+|------|-------------|---------------|
+| 750〜1000 | Glorious Lord | 勇者 |
+| 500〜749 | Great Lord | 聖将 |
+| 250〜499 | Lord | 聖騎士 |
+| 100〜249 | Notable | 功士 |
 
-### 赤プレイヤー（悪）
+### 灰（Criminal）- Fame基準
 
-| Karma | 称号 |
-|-------|-----|
-| 100+ | 罪人 |
-| 250+ | 凶漢 |
-| 500+ | 悪鬼 |
-| 625+ | 外道 |
-| 750+ | 殺人鬼 |
-| 875+ | 殺戮者 |
+| Fame | 称号（英語） | 称号（日本語） |
+|------|-------------|---------------|
+| 750〜1000 | Renegade | 反逆者 |
+| 500〜749 | Outlaw | 無法者 |
+| 250〜499 | Rogue | ならず者 |
+| 100〜249 | Scoundrel | 悪党 |
+
+### 赤（Murderer）- PKCount基準
+
+| PKCount | 称号（英語） | 称号（日本語） |
+|---------|-------------|---------------|
+| 200+ | Dread Lord | 殺戮者 |
+| 100〜199 | Dark Lord | 殺人鬼 |
+| 50〜99 | Infamous | 悪鬼 |
+| 30〜49 | Notorious | 凶漢 |
+| 10〜29 | Wicked | 外道 |
+| 1〜9 | Outcast | 罪人 |
 
 ## API
 
@@ -155,11 +249,11 @@ database:
 val notoriety = Bukkit.getPluginManager().getPlugin("Notoriety") as Notoriety
 val api = notoriety.api
 
-// プレイヤーの色を取得
-val color = api.getPlayerColor(player.uniqueId)
+// Alignmentを取得
+val alignment = api.getAlignment(player.uniqueId)
 
-// 犯罪を記録
-api.commitCrime(player.uniqueId, CrimeType.THEFT, 100)
+// ネームカラーを取得
+val color = api.getNameColor(player.uniqueId)
 
 // 信頼関係を確認
 val isTrusted = api.isTrusted(owner, accessor)
@@ -173,6 +267,27 @@ val isTrusted = api.isTrusted(owner, accessor)
 | PlayerCrimeEvent | 犯罪が発生した時 |
 | PlayerGoodDeedEvent | 善行を行った時 |
 | BountyClaimedEvent | 懸賞金が支払われた時 |
+| GuildCreateEvent | ギルドが作成された時 |
+| GuildMemberJoinEvent | メンバーがギルドに参加した時 |
+| GuildMemberLeaveEvent | メンバーがギルドを脱退した時 |
+
+## 変更履歴
+
+### v0.2.6
+
+- 調査コマンド（`/inspect`）のドキュメントを追加
+- 管理者コマンド（`listgray`, `listred`, `guildtag`）のドキュメントを追加
+- ギルドコマンドのサブコマンドを完全に文書化
+- 三段階信頼システム（信頼/未設定/不信頼）のコマンドを実装
+  - `/trust distrust <player>` コマンドを追加
+  - 不信頼設定によりギルドメンバーでもアクセス拒否が可能に
+- ウィスパーコマンド（`/w`, `/r`）を実装
+- 爆発保護機能（FR-005a）を実装
+- ギルド信頼との所有権システム統合
+
+### v0.2.4
+
+- trustコマンド強化: 通知機能とタブ補完を追加
 
 ## ライセンス
 

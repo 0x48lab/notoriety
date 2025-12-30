@@ -26,6 +26,8 @@
             <li><a href="#village">Village System</a></li>
             <li><a href="#bounty">Bounty</a></li>
             <li><a href="#trust">Trust</a></li>
+            <li><a href="#guild">Guild</a></li>
+            <li><a href="#chat">Chat</a></li>
             <li><a href="#commands">Commands</a></li>
         </ul>
     </nav>
@@ -471,7 +473,31 @@
         <!-- Trust -->
         <section id="trust">
             <h2>Trust System</h2>
-            <p>Trust players to share property access without committing crimes.</p>
+            <p>Trust players to share property access without committing crimes. Uses a three-state system.</p>
+
+            <h3>Three-State Trust</h3>
+            <table>
+                <tr>
+                    <th>State</th>
+                    <th>Description</th>
+                    <th>Priority</th>
+                </tr>
+                <tr>
+                    <td><strong>TRUST</strong></td>
+                    <td>Explicitly trusted - full access allowed</td>
+                    <td>High</td>
+                </tr>
+                <tr>
+                    <td><strong>UNSET</strong></td>
+                    <td>No setting - falls back to guild trust</td>
+                    <td>Medium</td>
+                </tr>
+                <tr>
+                    <td><strong>DISTRUST</strong></td>
+                    <td>Explicitly distrusted - access denied even for guild members</td>
+                    <td>Highest</td>
+                </tr>
+            </table>
 
             <h3>Effects of Trust</h3>
             <ul>
@@ -481,9 +507,115 @@
                 <li>Kill trusted player without PK count</li>
             </ul>
 
+            <h3>Distrust Effects</h3>
+            <ul>
+                <li>Can open chests but <strong>cannot take items</strong></li>
+                <li>Can put items into chests</li>
+                <li>Overrides guild membership trust</li>
+            </ul>
+
             <div class="warning">
                 <strong>One-Way Trust:</strong> Trust is not mutual. If you trust someone, they can access your property, but you cannot access theirs unless they also trust you.
             </div>
+        </section>
+
+        <!-- Guild -->
+        <section id="guild">
+            <h2>Guild System</h2>
+            <p>Form guilds to automatically share trust with all members. Guild members can access each other's property without explicit trust settings.</p>
+
+            <h3>Key Features</h3>
+            <ul>
+                <li><strong>Automatic Trust</strong> - Guild members automatically trust each other (unless explicitly distrusted)</li>
+                <li><strong>Guild Tags</strong> - 1-4 character tags displayed before player names</li>
+                <li><strong>Customizable Colors</strong> - 16 colors available for guild tags</li>
+                <li><strong>Role System</strong> - Master, Vice Master, Member roles</li>
+                <li><strong>Invitation System</strong> - 7-day invitation expiry</li>
+            </ul>
+
+            <h3>Roles</h3>
+            <table>
+                <tr>
+                    <th>Role</th>
+                    <th>Permissions</th>
+                </tr>
+                <tr>
+                    <td>Master</td>
+                    <td>All permissions - disband, kick, promote, demote, invite, tag color</td>
+                </tr>
+                <tr>
+                    <td>Vice Master</td>
+                    <td>Invite new members</td>
+                </tr>
+                <tr>
+                    <td>Member</td>
+                    <td>Access guild features, leave</td>
+                </tr>
+            </table>
+
+            <h3>Trust Priority</h3>
+            <div class="formula">
+                <p>1. <strong>DISTRUST</strong> → Access denied (highest priority)</p>
+                <p>2. <strong>TRUST</strong> → Access allowed</p>
+                <p>3. <strong>Same Guild</strong> → Access allowed (if UNSET)</p>
+                <p>4. Otherwise → Access denied</p>
+            </div>
+        </section>
+
+        <!-- Chat -->
+        <section id="chat">
+            <h2>Chat System</h2>
+            <p>Multiple chat channels for different communication needs.</p>
+
+            <h3>Chat Channels</h3>
+            <table>
+                <tr>
+                    <th>Channel</th>
+                    <th>Range</th>
+                    <th>Prefix</th>
+                    <th>Command</th>
+                </tr>
+                <tr>
+                    <td>Local</td>
+                    <td>50 blocks</td>
+                    <td>(none)</td>
+                    <td><code>/ch local</code></td>
+                </tr>
+                <tr>
+                    <td>Global</td>
+                    <td>Server-wide</td>
+                    <td><code>!</code></td>
+                    <td><code>/ch global</code></td>
+                </tr>
+                <tr>
+                    <td>Guild</td>
+                    <td>Guild members only</td>
+                    <td><code>@</code></td>
+                    <td><code>/ch guild</code></td>
+                </tr>
+                <tr>
+                    <td>Whisper</td>
+                    <td>1-to-1</td>
+                    <td>-</td>
+                    <td><code>/w &lt;player&gt;</code></td>
+                </tr>
+            </table>
+
+            <h3>Chat Display Format</h3>
+            <ul>
+                <li><strong>Local:</strong> <code>[TAG] PlayerName: message</code></li>
+                <li><strong>Global:</strong> <code>[G][TAG] PlayerName: message</code></li>
+                <li><strong>Guild:</strong> <code>[Guild] PlayerName: message</code></li>
+                <li><strong>Whisper:</strong> <code>[PlayerName → You]: message</code></li>
+            </ul>
+
+            <h3>Romaji Conversion</h3>
+            <p>Auto-converts romaji input to hiragana for Japanese players.</p>
+            <ul>
+                <li><code>/romaji on</code> - Enable conversion</li>
+                <li><code>/romaji off</code> - Disable conversion</li>
+                <li>URLs, numbers, and commands are not converted</li>
+            </ul>
         </section>
 
         <!-- Commands -->
@@ -508,10 +640,44 @@
                     <th>Command</th>
                     <th>Description</th>
                 </tr>
-                <tr><td><code>/noty trust add [player]</code></td><td>Add player to trust list</td></tr>
-                <tr><td><code>/noty trust remove [player]</code></td><td>Remove player from trust list</td></tr>
-                <tr><td><code>/noty trust list</code></td><td>View your trust list</td></tr>
-                <tr><td><code>/noty trust check [player]</code></td><td>Check trust relationship</td></tr>
+                <tr><td><code>/trust add [player]</code></td><td>Add player to trust list (TRUST)</td></tr>
+                <tr><td><code>/trust distrust [player]</code></td><td>Add player to distrust list (DISTRUST)</td></tr>
+                <tr><td><code>/trust remove [player]</code></td><td>Remove trust setting (UNSET)</td></tr>
+                <tr><td><code>/trust list</code></td><td>View your trust list</td></tr>
+                <tr><td><code>/trust check [player]</code></td><td>Check trust relationship</td></tr>
+            </table>
+
+            <h3>Guild Commands</h3>
+            <table>
+                <tr>
+                    <th>Command</th>
+                    <th>Description</th>
+                </tr>
+                <tr><td><code>/guild create [name] [tag]</code></td><td>Create a new guild</td></tr>
+                <tr><td><code>/guild disband</code></td><td>Disband your guild (Master only)</td></tr>
+                <tr><td><code>/guild invite [player]</code></td><td>Invite a player</td></tr>
+                <tr><td><code>/guild accept [guild]</code></td><td>Accept an invitation</td></tr>
+                <tr><td><code>/guild leave</code></td><td>Leave your guild</td></tr>
+                <tr><td><code>/guild kick [player]</code></td><td>Kick a member (Master only)</td></tr>
+                <tr><td><code>/guild promote [player]</code></td><td>Promote to Vice Master</td></tr>
+                <tr><td><code>/guild demote [player]</code></td><td>Demote to Member</td></tr>
+                <tr><td><code>/guild tagcolor [color]</code></td><td>Change tag color (Master only)</td></tr>
+                <tr><td><code>/guild info</code></td><td>View guild info</td></tr>
+                <tr><td><code>/guild members</code></td><td>View member list</td></tr>
+            </table>
+
+            <h3>Chat Commands</h3>
+            <table>
+                <tr>
+                    <th>Command</th>
+                    <th>Description</th>
+                </tr>
+                <tr><td><code>/ch local</code></td><td>Switch to local chat</td></tr>
+                <tr><td><code>/ch global</code></td><td>Switch to global chat</td></tr>
+                <tr><td><code>/ch guild</code></td><td>Switch to guild chat</td></tr>
+                <tr><td><code>/w [player] [message]</code></td><td>Send whisper</td></tr>
+                <tr><td><code>/r [message]</code></td><td>Reply to last whisper</td></tr>
+                <tr><td><code>/romaji on|off</code></td><td>Toggle romaji conversion</td></tr>
             </table>
 
             <h3>Bounty Commands</h3>

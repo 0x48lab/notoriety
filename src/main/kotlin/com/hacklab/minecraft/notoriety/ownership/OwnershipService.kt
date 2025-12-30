@@ -2,6 +2,7 @@ package com.hacklab.minecraft.notoriety.ownership
 
 import com.hacklab.minecraft.notoriety.core.BlockLocation
 import com.hacklab.minecraft.notoriety.core.toBlockLoc
+import com.hacklab.minecraft.notoriety.guild.service.GuildService
 import com.hacklab.minecraft.notoriety.trust.TrustService
 import org.bukkit.Location
 import org.bukkit.Material
@@ -31,10 +32,35 @@ class OwnershipService(private val repository: OwnershipRepository) {
     fun isProtected(location: Location): Boolean =
         getOwner(location) != null
 
+    @Deprecated("Use canAccess with GuildService instead for proper guild trust integration")
     fun canAccess(location: Location, player: UUID, trustService: TrustService): Boolean {
         val owner = getOwner(location) ?: return true  // 所有者なし = 自由
         if (owner == player) return true               // 本人
         return trustService.isTrusted(owner, player)   // 信頼されている
+    }
+
+    /**
+     * ギルド信頼を含むアクセスチェック
+     * - 所有者なし: 許可
+     * - 本人: 許可
+     * - 明示的に信頼: 許可
+     * - 明示的に不信頼: 拒否（ギルドメンバーでも）
+     * - 未設定 + 同じギルド: 許可
+     * - それ以外: 拒否
+     */
+    fun canAccess(location: Location, player: UUID, guildService: GuildService): Boolean {
+        val owner = getOwner(location) ?: return true  // 所有者なし = 自由
+        if (owner == player) return true               // 本人
+        return guildService.isAccessAllowed(owner, player)
+    }
+
+    /**
+     * コンテナからアイテムを取り出せるかチェック
+     */
+    fun canTakeFromContainer(location: Location, player: UUID, guildService: GuildService): Boolean {
+        val owner = getOwner(location) ?: return true
+        if (owner == player) return true
+        return guildService.canTakeFromContainer(owner, player)
     }
 
     // 保留犯罪システム

@@ -43,4 +43,18 @@ object Messages {
     const val TITLE_WICKED = "title.wicked"
     const val TITLE_DARK_LORD = "title.dark_lord"
     const val TITLE_DREAD_LORD = "title.dread_lord"
+
+    // Inspect messages
+    const val INSPECT_ENABLED = "inspect.enabled"
+    const val INSPECT_DISABLED = "inspect.disabled"
+    const val INSPECT_ACTIONBAR = "inspect.actionbar"
+    const val INSPECT_HEADER = "inspect.header"
+    const val INSPECT_BLOCK_TYPE = "inspect.block_type"
+    const val INSPECT_LOCATION = "inspect.location"
+    const val INSPECT_OWNER = "inspect.owner"
+    const val INSPECT_NO_OWNER = "inspect.no_owner"
+    const val INSPECT_PLACED_AT = "inspect.placed_at"
+    const val INSPECT_TRUSTED = "inspect.trusted"
+    const val INSPECT_NOT_TRUSTED = "inspect.not_trusted"
+    const val INSPECT_YOUR_BLOCK = "inspect.your_block"
 }

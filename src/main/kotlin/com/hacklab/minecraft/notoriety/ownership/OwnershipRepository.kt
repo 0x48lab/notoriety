@@ -2,6 +2,9 @@ package com.hacklab.minecraft.notoriety.ownership
 
 import com.hacklab.minecraft.notoriety.core.BlockLocation
 import com.hacklab.minecraft.notoriety.core.database.DatabaseManager
+import com.hacklab.minecraft.notoriety.core.toBlockLoc
+import org.bukkit.Location
+import java.time.Instant
 import java.util.*
 
 class OwnershipRepository(private val databaseManager: DatabaseManager) {
@@ -75,6 +78,28 @@ class OwnershipRepository(private val databaseManager: DatabaseManager) {
                 ))
             }
             blocks
+        }
+    }
+
+    fun getOwnershipInfo(location: Location): BlockOwnershipInfo? {
+        val blockLoc = location.toBlockLoc()
+        return databaseManager.provider.useConnection { conn ->
+            val stmt = conn.prepareStatement(
+                "SELECT owner_uuid, placed_at FROM block_ownership WHERE world = ? AND x = ? AND y = ? AND z = ?"
+            )
+            stmt.setString(1, blockLoc.world)
+            stmt.setInt(2, blockLoc.x)
+            stmt.setInt(3, blockLoc.y)
+            stmt.setInt(4, blockLoc.z)
+
+            val rs = stmt.executeQuery()
+            if (rs.next()) {
+                val ownerUuid = UUID.fromString(rs.getString("owner_uuid"))
+                val placedAt = rs.getTimestamp("placed_at")?.toInstant()
+                BlockOwnershipInfo(ownerUuid, placedAt)
+            } else {
+                null
+            }
         }
     }
 }

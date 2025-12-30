@@ -26,6 +26,8 @@
             <li><a href="#village">村システム</a></li>
             <li><a href="#bounty">懸賞金</a></li>
             <li><a href="#trust">信頼</a></li>
+            <li><a href="#guild">ギルド</a></li>
+            <li><a href="#chat">チャット</a></li>
             <li><a href="#commands">コマンド</a></li>
         </ul>
     </nav>
@@ -473,6 +475,32 @@
             <h2>信頼システム</h2>
             <p>プレイヤーを信頼することで、犯罪にならずに財産を共有できます。</p>
 
+            <h3>三段階信頼システム</h3>
+            <p>信頼状態は「信頼」「未設定」「不信頼」の三段階で管理されます。</p>
+
+            <table>
+                <tr>
+                    <th>状態</th>
+                    <th>効果</th>
+                    <th>コマンド</th>
+                </tr>
+                <tr>
+                    <td style="color: #4CAF50;"><strong>TRUST（信頼）</strong></td>
+                    <td>所有物へのフルアクセスを許可</td>
+                    <td><code>/trust add &lt;player&gt;</code></td>
+                </tr>
+                <tr>
+                    <td style="color: #9E9E9E;"><strong>UNSET（未設定）</strong></td>
+                    <td>デフォルト。ギルドメンバーなら自動信頼</td>
+                    <td><code>/trust remove &lt;player&gt;</code></td>
+                </tr>
+                <tr>
+                    <td style="color: #F44336;"><strong>DISTRUST（不信頼）</strong></td>
+                    <td>ギルドメンバーでもアクセス拒否</td>
+                    <td><code>/trust distrust &lt;player&gt;</code></td>
+                </tr>
+            </table>
+
             <h3>信頼の効果</h3>
             <ul>
                 <li>信頼したプレイヤーのチェストを開いてアイテムを取れる</li>
@@ -481,8 +509,114 @@
                 <li>信頼したプレイヤーを殺してもPKカウント増加なし</li>
             </ul>
 
+            <h3>不信頼時のチェスト動作</h3>
+            <ul>
+                <li>チェストを開くことは可能（中身を見れる）</li>
+                <li>アイテムを取り出すことは不可</li>
+                <li>アイテムを入れることは可能（所有者への利益）</li>
+            </ul>
+
             <div class="warning">
                 <strong>片方向の信頼:</strong> 信頼は相互ではありません。あなたが誰かを信頼しても、相手があなたを信頼しない限り、あなたは相手の財産にアクセスできません。
+            </div>
+        </section>
+
+        <!-- ギルド -->
+        <section id="guild">
+            <h2>ギルドシステム</h2>
+            <p>ギルドは信頼関係をグループ化する機能です。同じギルドのメンバーは自動的に信頼扱いになります。</p>
+
+            <h3>主な機能</h3>
+            <ul>
+                <li><strong>自動信頼</strong> - ギルドメンバー間は自動的に信頼関係が構築される</li>
+                <li><strong>ギルドタグ</strong> - 名前の前に表示される1-4文字のタグ（例: [BC] PlayerName）</li>
+                <li><strong>ギルドチャット</strong> - <code>@</code>プレフィックスでメンバーのみに送信</li>
+                <li><strong>役職システム</strong> - マスター、副マスター、メンバーの3役職</li>
+            </ul>
+
+            <h3>役職と権限</h3>
+            <table>
+                <tr>
+                    <th>役職</th>
+                    <th>権限</th>
+                </tr>
+                <tr>
+                    <td><strong>マスター</strong></td>
+                    <td>全権限（解散、招待、除名、昇格、降格、譲渡、タグ色変更）</td>
+                </tr>
+                <tr>
+                    <td><strong>副マスター</strong></td>
+                    <td>招待のみ</td>
+                </tr>
+                <tr>
+                    <td><strong>メンバー</strong></td>
+                    <td>ギルドチャット、情報閲覧</td>
+                </tr>
+            </table>
+
+            <h3>信頼の優先順位</h3>
+            <div class="formula">
+                <p><strong>DISTRUST（不信頼）</strong> &gt; <strong>TRUST（信頼）</strong> &gt; <strong>ギルドメンバー</strong> &gt; <strong>拒否</strong></p>
+                <p>個人の不信頼設定はギルドの自動信頼よりも優先されます。</p>
+            </div>
+
+            <h3>ギルド作成</h3>
+            <div class="tip">
+                <code>/guild create &lt;名前&gt; &lt;タグ&gt; [説明]</code><br>
+                例: <code>/guild create BlueCrown BC 最強のギルド</code>
+            </div>
+        </section>
+
+        <!-- チャット -->
+        <section id="chat">
+            <h2>チャットシステム</h2>
+            <p>複数のチャンネルを使い分けてコミュニケーションできます。</p>
+
+            <h3>チャットチャンネル</h3>
+            <table>
+                <tr>
+                    <th>チャンネル</th>
+                    <th>プレフィックス</th>
+                    <th>範囲</th>
+                    <th>表示形式</th>
+                </tr>
+                <tr>
+                    <td>ローカル</td>
+                    <td>（なし）</td>
+                    <td>50ブロック</td>
+                    <td style="color: #9E9E9E;">[TAG] Player: message</td>
+                </tr>
+                <tr>
+                    <td>グローバル</td>
+                    <td><code>!</code></td>
+                    <td>サーバー全体</td>
+                    <td style="color: #FFC107;">[G][TAG] Player: message</td>
+                </tr>
+                <tr>
+                    <td>ギルド</td>
+                    <td><code>@</code></td>
+                    <td>ギルドメンバーのみ</td>
+                    <td style="color: #4CAF50;">[Guild] Player: message</td>
+                </tr>
+                <tr>
+                    <td>ウィスパー</td>
+                    <td><code>/w &lt;player&gt;</code></td>
+                    <td>1対1</td>
+                    <td style="color: #E91E63;">[You → Player]: message</td>
+                </tr>
+            </table>
+            <p><small>※ [TAG] はギルドタグ（ギルド所属時のみ表示、設定された色で表示）</small></p>
+
+            <h3>ローマ字→ひらがな変換</h3>
+            <p>ローマ字入力を自動的にひらがなに変換できます。</p>
+            <ul>
+                <li><code>konnichiha</code> → <code>こんにちは</code></li>
+                <li>URL、英単語、コマンドは自動的にスキップ</li>
+                <li><code>/romaji on</code> / <code>/romaji off</code> で切り替え</li>
+            </ul>
+
+            <div class="info">
+                <strong>ヒント:</strong> ローカルチャットがデフォルトです。サーバー全体に発言するには <code>!</code> を付けてください。
             </div>
         </section>
 
@@ -508,10 +642,46 @@
                     <th>コマンド</th>
                     <th>説明</th>
                 </tr>
-                <tr><td><code>/noty trust add [プレイヤー]</code></td><td>プレイヤーを信頼リストに追加</td></tr>
-                <tr><td><code>/noty trust remove [プレイヤー]</code></td><td>プレイヤーを信頼リストから削除</td></tr>
-                <tr><td><code>/noty trust list</code></td><td>信頼リストを表示</td></tr>
-                <tr><td><code>/noty trust check [プレイヤー]</code></td><td>信頼関係を確認</td></tr>
+                <tr><td><code>/trust add &lt;プレイヤー&gt;</code></td><td>プレイヤーを信頼（TRUST）に設定</td></tr>
+                <tr><td><code>/trust distrust &lt;プレイヤー&gt;</code></td><td>プレイヤーを不信頼（DISTRUST）に設定</td></tr>
+                <tr><td><code>/trust remove &lt;プレイヤー&gt;</code></td><td>信頼設定を解除（UNSET）</td></tr>
+                <tr><td><code>/trust list</code></td><td>信頼関係一覧を表示</td></tr>
+                <tr><td><code>/trust check &lt;プレイヤー&gt;</code></td><td>指定プレイヤーとの信頼関係を確認</td></tr>
+            </table>
+
+            <h3>ギルドコマンド</h3>
+            <table>
+                <tr>
+                    <th>コマンド</th>
+                    <th>説明</th>
+                </tr>
+                <tr><td><code>/guild create &lt;名前&gt; &lt;タグ&gt; [説明]</code></td><td>ギルドを作成</td></tr>
+                <tr><td><code>/guild disband</code></td><td>ギルドを解散（マスターのみ）</td></tr>
+                <tr><td><code>/guild info [ギルド名]</code></td><td>ギルド情報を表示</td></tr>
+                <tr><td><code>/guild list</code></td><td>ギルド一覧を表示</td></tr>
+                <tr><td><code>/guild members [ページ]</code></td><td>メンバー一覧を表示</td></tr>
+                <tr><td><code>/guild invite &lt;プレイヤー&gt;</code></td><td>プレイヤーを招待</td></tr>
+                <tr><td><code>/guild accept &lt;ギルド名&gt;</code></td><td>招待を承諾</td></tr>
+                <tr><td><code>/guild decline &lt;ギルド名&gt;</code></td><td>招待を拒否</td></tr>
+                <tr><td><code>/guild invitations</code></td><td>受信した招待一覧</td></tr>
+                <tr><td><code>/guild kick &lt;プレイヤー&gt;</code></td><td>メンバーを除名（マスターのみ）</td></tr>
+                <tr><td><code>/guild leave</code></td><td>ギルドを脱退</td></tr>
+                <tr><td><code>/guild promote &lt;プレイヤー&gt;</code></td><td>副マスターに昇格</td></tr>
+                <tr><td><code>/guild demote &lt;プレイヤー&gt;</code></td><td>メンバーに降格</td></tr>
+                <tr><td><code>/guild transfer &lt;プレイヤー&gt;</code></td><td>マスター権限を譲渡</td></tr>
+                <tr><td><code>/guild tagcolor &lt;色&gt;</code></td><td>タグの色を変更</td></tr>
+            </table>
+
+            <h3>チャットコマンド</h3>
+            <table>
+                <tr>
+                    <th>コマンド</th>
+                    <th>説明</th>
+                </tr>
+                <tr><td><code>/w &lt;プレイヤー&gt; &lt;メッセージ&gt;</code></td><td>ウィスパーを送信</td></tr>
+                <tr><td><code>/r &lt;メッセージ&gt;</code></td><td>最後のウィスパーに返信</td></tr>
+                <tr><td><code>/romaji on</code></td><td>ローマ字変換を有効化</td></tr>
+                <tr><td><code>/romaji off</code></td><td>ローマ字変換を無効化</td></tr>
             </table>
 
             <h3>懸賞金コマンド</h3>

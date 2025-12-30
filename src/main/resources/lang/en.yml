@@ -89,6 +89,28 @@ notification:
   became_blue: "You are now Innocent (Blue player) again"
   no_longer_red: "You are no longer a red player"
 
+# Inspect messages
+inspect:
+  enabled: "Inspect mode enabled"
+  disabled: "Inspect mode disabled"
+  actionbar: "Inspect Mode - Click blocks to check ownership"
+  header: "=== Block Info ==="
+  block_type: "Type: %s"
+  location: "Location: %s (%d, %d, %d)"
+  owner: "Owner: %s"
+  no_owner: "Owner: None (Free to use)"
+  placed_at: "Placed: %s"
+  trusted: "You are trusted by the owner"
+  not_trusted: "You are NOT trusted"
+  your_block: "This is your block"
+  # Inspection Stick
+  stick_name: "Inspection Stick"
+  stick_lore1: "Right-click a block to check its owner"
+  stick_lore2: "No inspect mode required!"
+  stick_lore3: "Special Item"
+  stick_received: "You received an Inspection Stick!"
+  stick_dropped: "Inventory full! Inspection Stick dropped at your feet."
+
 # Admin messages
 admin:
   gray_list_title: "=== Gray Players (%d) ==="
