@@ -1,6 +1,7 @@
 package com.hacklab.minecraft.notoriety.command
 
 import com.hacklab.minecraft.notoriety.Notoriety
+import com.hacklab.minecraft.notoriety.inspect.InspectCommand
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
@@ -14,7 +15,8 @@ class NotorietyCommand(private val plugin: Notoriety) : CommandExecutor, TabComp
             "history" to HistoryCommand(plugin),
             "bounty" to BountyCommand(plugin),
             "trust" to TrustCommand(plugin),
-            "admin" to AdminCommand(plugin)
+            "admin" to AdminCommand(plugin),
+            "inspect" to InspectCommand(plugin.inspectService, plugin.inspectionStick, plugin.i18nManager)
         )
     }
 
@@ -59,6 +61,7 @@ class NotorietyCommand(private val plugin: Notoriety) : CommandExecutor, TabComp
         sender.sendMessage("/noty history [player] - Show crime history")
         sender.sendMessage("/noty bounty <set|list|check> - Bounty system")
         sender.sendMessage("/noty trust <add|remove|list|check> - Trust system")
+        sender.sendMessage("/noty inspect [tool] - Inspect mode / Get inspection stick")
         sender.sendMessage("/noty admin <player> <param> <set|add> <value> - Admin commands")
     }
 }

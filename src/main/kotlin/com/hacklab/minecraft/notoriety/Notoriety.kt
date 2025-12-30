@@ -18,6 +18,10 @@ import com.hacklab.minecraft.notoriety.crime.CrimeRepository
 import com.hacklab.minecraft.notoriety.crime.CrimeService
 import com.hacklab.minecraft.notoriety.crime.CrimeType
 import com.hacklab.minecraft.notoriety.event.PlayerColorChangeEvent
+import com.hacklab.minecraft.notoriety.inspect.InspectCommand
+import com.hacklab.minecraft.notoriety.inspect.InspectListener
+import com.hacklab.minecraft.notoriety.inspect.InspectService
+import com.hacklab.minecraft.notoriety.inspect.InspectionStick
 import com.hacklab.minecraft.notoriety.ownership.OwnershipListener
 import com.hacklab.minecraft.notoriety.ownership.OwnershipRepository
 import com.hacklab.minecraft.notoriety.ownership.OwnershipService
@@ -59,6 +63,12 @@ class Notoriety : JavaPlugin() {
         private set
     lateinit var bountyService: BountyService
         private set
+    lateinit var inspectService: InspectService
+        private set
+    lateinit var inspectionStick: InspectionStick
+        private set
+
+    private lateinit var ownershipRepository: OwnershipRepository
 
     val api: NotorietyAPI by lazy { NotorietyAPIImpl(this) }
 
@@ -77,7 +87,8 @@ class Notoriety : JavaPlugin() {
 
         // 4. コアサービス初期化
         playerManager = PlayerManager(this, PlayerRepository(databaseManager))
-        ownershipService = OwnershipService(OwnershipRepository(databaseManager))
+        ownershipRepository = OwnershipRepository(databaseManager)
+        ownershipService = OwnershipService(ownershipRepository)
         trustService = TrustService(TrustRepository(databaseManager))
         crimeService = CrimeService(CrimeRepository(databaseManager), playerManager)
         reputationService = ReputationService(playerManager, TeamManager(this))
@@ -85,6 +96,8 @@ class Notoriety : JavaPlugin() {
         golemService = GolemService(playerManager)
         bountyService = BountyService(this, economyService)
         bountyService.initializeSignManager()
+        inspectService = InspectService(this, ownershipRepository, trustService, i18nManager)
+        inspectionStick = InspectionStick(this, i18nManager)
 
         // 5. イベントリスナー登録
         registerListeners()
@@ -114,6 +127,7 @@ class Notoriety : JavaPlugin() {
         pm.registerEvents(CombatListener(playerManager, crimeService, reputationService, bountyService, trustService), this)
         pm.registerEvents(CrimeNotificationListener(i18nManager), this)
         pm.registerEvents(BountySignListener(bountyService.signManager), this)
+        pm.registerEvents(InspectListener(inspectService, inspectionStick), this)
     }
 
     private fun registerCommands() {
@@ -143,6 +157,16 @@ class Notoriety : JavaPlugin() {
         getCommand("wanted")?.let {
             it.setExecutor { sender, _, _, args ->
                 mainCommand.onCommand(sender, it, "wanted", arrayOf("bounty") + args)
+            }
+        }
+
+        getCommand("inspect")?.let {
+            val inspectCommand = InspectCommand(inspectService, inspectionStick, i18nManager)
+            it.setExecutor { sender, _, _, args ->
+                inspectCommand.execute(sender, args)
+            }
+            it.tabCompleter = org.bukkit.command.TabCompleter { sender, _, _, args ->
+                inspectCommand.tabComplete(sender, args)
             }
         }
     }

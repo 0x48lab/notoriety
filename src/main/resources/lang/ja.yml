@@ -89,6 +89,28 @@ notification:
   became_blue: "あなたは青プレイヤー（Innocent）に戻りました"
   no_longer_red: "あなたはもう赤プレイヤーではありません"
 
+# Inspect messages
+inspect:
+  enabled: "調査モードを開始しました"
+  disabled: "調査モードを終了しました"
+  actionbar: "調査モード - ブロックをクリックして所有者を確認"
+  header: "=== ブロック情報 ==="
+  block_type: "種類: %s"
+  location: "位置: %s (%d, %d, %d)"
+  owner: "所有者: %s"
+  no_owner: "所有者: なし（自由に使用可能）"
+  placed_at: "設置日: %s"
+  trusted: "あなたは所有者に信頼されています"
+  not_trusted: "あなたは信頼されていません"
+  your_block: "これはあなたのブロックです"
+  # Inspection Stick
+  stick_name: "調査の棒"
+  stick_lore1: "ブロックを右クリックして所有者を確認"
+  stick_lore2: "調査モード不要！"
+  stick_lore3: "特別なアイテム"
+  stick_received: "調査の棒を受け取りました！"
+  stick_dropped: "インベントリが満杯です！足元に調査の棒を落としました。"
+
 # Admin messages
 admin:
   gray_list_title: "=== 灰色プレイヤー一覧 (%d人) ==="

@@ -24,6 +24,9 @@ commands:
   wanted:
     description: Alias for bounty command
     usage: /<command> <set|list|check>
+  inspect:
+    description: Toggle block ownership inspection mode
+    usage: /<command>
 
 permissions:
   notoriety.admin:
