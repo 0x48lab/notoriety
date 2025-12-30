@@ -32,23 +32,37 @@ class TrustCommand(private val plugin: Notoriety) : SubCommand {
 
     private fun addTrust(player: Player, args: Array<out String>): Boolean {
         if (args.size < 2) {
-            player.sendMessage("Usage: /noty trust add <player>")
+            player.sendMessage("Usage: /trust add <player>")
             return true
         }
         val target = Bukkit.getOfflinePlayer(args[1])
         plugin.trustService.addTrust(player.uniqueId, target.uniqueId)
         player.sendMessage("${target.name} を信頼リストに追加しました")
+
+        // 相手がオンラインなら通知を送る
+        Bukkit.getPlayer(target.uniqueId)?.let { targetPlayer ->
+            targetPlayer.sendMessage("§a${player.name} があなたを信頼しました")
+            // 相互信頼でない場合、追加を促すメッセージ
+            if (!plugin.trustService.isTrusted(target.uniqueId, player.uniqueId)) {
+                targetPlayer.sendMessage("§7あなたも信頼するなら: §f/trust add ${player.name}")
+            }
+        }
         return true
     }
 
     private fun removeTrust(player: Player, args: Array<out String>): Boolean {
         if (args.size < 2) {
-            player.sendMessage("Usage: /noty trust remove <player>")
+            player.sendMessage("Usage: /trust remove <player>")
             return true
         }
         val target = Bukkit.getOfflinePlayer(args[1])
         plugin.trustService.removeTrust(player.uniqueId, target.uniqueId)
         player.sendMessage("${target.name} を信頼リストから削除しました")
+
+        // 相手がオンラインなら通知を送る
+        Bukkit.getPlayer(target.uniqueId)?.let { targetPlayer ->
+            targetPlayer.sendMessage("§c${player.name} があなたへの信頼を解除しました")
+        }
         return true
     }
 
@@ -82,7 +96,7 @@ class TrustCommand(private val plugin: Notoriety) : SubCommand {
 
     private fun checkTrust(player: Player, args: Array<out String>): Boolean {
         if (args.size < 2) {
-            player.sendMessage("Usage: /noty trust check <player>")
+            player.sendMessage("Usage: /trust check <player>")
             return true
         }
         val target = Bukkit.getOfflinePlayer(args[1])
@@ -97,10 +111,10 @@ class TrustCommand(private val plugin: Notoriety) : SubCommand {
 
     private fun showUsage(sender: CommandSender) {
         sender.sendMessage("=== Trust Commands ===")
-        sender.sendMessage("/noty trust add <player> - プレイヤーを信頼")
-        sender.sendMessage("/noty trust remove <player> - 信頼を解除")
-        sender.sendMessage("/noty trust list - 信頼リスト表示")
-        sender.sendMessage("/noty trust check <player> - 信頼関係を確認")
+        sender.sendMessage("/trust add <player> - プレイヤーを信頼")
+        sender.sendMessage("/trust remove <player> - 信頼を解除")
+        sender.sendMessage("/trust list - 信頼リスト表示")
+        sender.sendMessage("/trust check <player> - 信頼関係を確認")
     }
 
     override fun tabComplete(sender: CommandSender, args: Array<out String>): List<String> {

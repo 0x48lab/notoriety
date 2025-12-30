@@ -30,6 +30,7 @@ import com.hacklab.minecraft.notoriety.village.TradeListener
 import com.hacklab.minecraft.notoriety.village.VillagerListener
 import com.hacklab.minecraft.notoriety.village.VillagerService
 import org.bukkit.Bukkit
+import org.bukkit.command.TabCompleter
 import org.bukkit.plugin.java.JavaPlugin
 
 class Notoriety : JavaPlugin() {
@@ -133,6 +134,9 @@ class Notoriety : JavaPlugin() {
         getCommand("trust")?.let {
             it.setExecutor { sender, _, _, args ->
                 mainCommand.onCommand(sender, it, "trust", arrayOf("trust") + args)
+            }
+            it.tabCompleter = TabCompleter { sender, _, _, args ->
+                mainCommand.onTabComplete(sender, it, "trust", arrayOf("trust") + args)
             }
         }
 
