@@ -118,6 +118,10 @@ warning:
   container_break: "§c⚠ Warning: §eThis container belongs to §f%s§e. Breaking it will be an INSTANT CRIME! §7(Alignment -10)"
   attack_player: "§c⚠ Warning: §eAttacking §f%s §ewill be a CRIME! §7(Alignment -1)"
   attack_pet: "§c⚠ Warning: §eAttacking §f%s§e's pet will be a CRIME! §7(Alignment -1)"
+  villager_bed: "§c⚠ Warning: §eThis bed belongs to a villager. Breaking it will be a CRIME! §7(Alignment -1)"
+  villager_workstation: "§c⚠ Warning: §eThis workstation belongs to a villager. Breaking it will be a CRIME! §7(Alignment -1)"
+  attack_villager: "§c⚠ Warning: §eAttacking villagers is a CRIME! §7(Alignment -1)"
+  attack_golem: "§c⚠ Warning: §eAttacking Iron Golems is a CRIME! §7(Alignment -50)"
 
 # Admin messages
 admin:

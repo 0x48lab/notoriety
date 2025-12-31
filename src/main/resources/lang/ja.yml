@@ -118,6 +118,10 @@ warning:
   container_break: "§c⚠ 警告: §eこのコンテナは §f%s §eの所有物です。破壊すると即座に犯罪になります！ §7(Alignment -10)"
   attack_player: "§c⚠ 警告: §f%s §eを攻撃すると犯罪になります！ §7(Alignment -1)"
   attack_pet: "§c⚠ 警告: §f%s §eのペットを攻撃すると犯罪になります！ §7(Alignment -1)"
+  villager_bed: "§c⚠ 警告: §eこのベッドは村人が使用しています。破壊すると犯罪になります！ §7(Alignment -1)"
+  villager_workstation: "§c⚠ 警告: §eこの仕事場は村人が使用しています。破壊すると犯罪になります！ §7(Alignment -1)"
+  attack_villager: "§c⚠ 警告: §e村人を攻撃すると犯罪になります！ §7(Alignment -1)"
+  attack_golem: "§c⚠ 警告: §eアイアンゴーレムを攻撃すると犯罪になります！ §7(Alignment -50)"
 
 # Admin messages
 admin:

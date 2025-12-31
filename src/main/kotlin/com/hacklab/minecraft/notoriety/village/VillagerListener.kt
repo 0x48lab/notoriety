@@ -1,6 +1,10 @@
 package com.hacklab.minecraft.notoriety.village
 
 import com.hacklab.minecraft.notoriety.Notoriety
+import com.hacklab.minecraft.notoriety.chat.service.ChatService
+import com.hacklab.minecraft.notoriety.core.BlockLocation
+import com.hacklab.minecraft.notoriety.core.i18n.I18nManager
+import com.hacklab.minecraft.notoriety.core.toBlockLoc
 import com.hacklab.minecraft.notoriety.crime.CrimeService
 import com.hacklab.minecraft.notoriety.crime.CrimeType
 import com.hacklab.minecraft.notoriety.reputation.NameColor
@@ -19,19 +23,165 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.block.Container
 import org.bukkit.event.block.BlockBreakEvent
+import org.bukkit.event.block.BlockDamageEvent
 import org.bukkit.event.entity.CreatureSpawnEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.entity.EntityTargetEvent
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.PlayerMoveEvent
+import java.time.Instant
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class VillagerListener(
     private val plugin: Notoriety,
     private val villagerService: VillagerService,
     private val golemService: GolemService,
-    private val crimeService: CrimeService
+    private val crimeService: CrimeService,
+    private val chatService: ChatService,
+    private val i18nManager: I18nManager
 ) : Listener {
+
+    // 警告のクールダウン
+    private data class WarningKey(val playerUuid: UUID, val targetId: String)
+    private val warningCooldowns = ConcurrentHashMap<WarningKey, Instant>()
+    private val WARNING_COOLDOWN_SECONDS = 10L
+
+    /**
+     * クールダウンをチェックして警告を表示するか判定
+     */
+    private fun shouldShowWarning(playerUuid: UUID, targetId: String): Boolean {
+        val warningKey = WarningKey(playerUuid, targetId)
+        val lastWarning = warningCooldowns[warningKey]
+        val now = Instant.now()
+        if (lastWarning != null && java.time.Duration.between(lastWarning, now).seconds < WARNING_COOLDOWN_SECONDS) {
+            return false
+        }
+        warningCooldowns[warningKey] = now
+        return true
+    }
+
+    /**
+     * 村人のベッドを壊そうとした時の警告
+     */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    fun onVillagerBedDamageWarning(event: BlockDamageEvent) {
+        val player = event.player
+
+        // クリエイティブモードはスキップ
+        if (player.gameMode == GameMode.CREATIVE) return
+
+        // 警告がOFFの場合はスキップ
+        if (!chatService.isWarningsEnabled(player.uniqueId)) return
+
+        val block = event.block
+
+        // ベッドのみ対象
+        if (!isBed(block.type)) return
+
+        // 自分で設置したブロック、または信頼されたプレイヤーなら警告不要
+        val owner = plugin.ownershipService.getOwner(block.location)
+        if (owner != null && (owner == player.uniqueId || plugin.trustService.isTrusted(owner, player.uniqueId))) return
+
+        // このベッドに紐づいている村人を探す
+        val affectedVillager = findVillagerWithBed(block.location) ?: return
+
+        // クールダウンチェック
+        val locationKey = "${block.location.world.name}:${block.location.blockX}:${block.location.blockY}:${block.location.blockZ}"
+        if (!shouldShowWarning(player.uniqueId, "bed:$locationKey")) return
+
+        // 警告メッセージを表示
+        val message = i18nManager.get("warning.villager_bed", "warning.villager_bed")
+        player.sendMessage(message)
+    }
+
+    /**
+     * 村人の仕事場を壊そうとした時の警告
+     */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    fun onVillagerWorkstationDamageWarning(event: BlockDamageEvent) {
+        val player = event.player
+
+        // クリエイティブモードはスキップ
+        if (player.gameMode == GameMode.CREATIVE) return
+
+        // 警告がOFFの場合はスキップ
+        if (!chatService.isWarningsEnabled(player.uniqueId)) return
+
+        val block = event.block
+
+        // 自分で設置したブロック、または信頼されたプレイヤーなら警告不要
+        val owner = plugin.ownershipService.getOwner(block.location)
+        if (owner != null && (owner == player.uniqueId || plugin.trustService.isTrusted(owner, player.uniqueId))) return
+
+        // この職業ブロックに紐づいている村人を探す
+        val affectedVillager = findVillagerWithWorkstation(block.location) ?: return
+
+        // クールダウンチェック
+        val locationKey = "${block.location.world.name}:${block.location.blockX}:${block.location.blockY}:${block.location.blockZ}"
+        if (!shouldShowWarning(player.uniqueId, "workstation:$locationKey")) return
+
+        // 警告メッセージを表示
+        val message = i18nManager.get("warning.villager_workstation", "warning.villager_workstation")
+        player.sendMessage(message)
+    }
+
+    /**
+     * 村人を攻撃した時の警告
+     */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    fun onVillagerAttackWarning(event: EntityDamageByEntityEvent) {
+        val villager = event.entity as? Villager ?: return
+
+        // 攻撃者を特定
+        val attacker = when (val damager = event.damager) {
+            is Player -> damager
+            is Projectile -> damager.shooter as? Player
+            else -> null
+        } ?: return
+
+        // クリエイティブモードはスキップ
+        if (attacker.gameMode == GameMode.CREATIVE) return
+
+        // 警告がOFFの場合はスキップ
+        if (!chatService.isWarningsEnabled(attacker.uniqueId)) return
+
+        // クールダウンチェック
+        if (!shouldShowWarning(attacker.uniqueId, "villager:${villager.uniqueId}")) return
+
+        // 警告メッセージを表示
+        val message = i18nManager.get("warning.attack_villager", "warning.attack_villager")
+        attacker.sendMessage(message)
+    }
+
+    /**
+     * アイアンゴーレムを攻撃した時の警告
+     */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    fun onGolemAttackWarning(event: EntityDamageByEntityEvent) {
+        val golem = event.entity as? IronGolem ?: return
+
+        // 攻撃者を特定
+        val attacker = when (val damager = event.damager) {
+            is Player -> damager
+            is Projectile -> damager.shooter as? Player
+            else -> null
+        } ?: return
+
+        // クリエイティブモードはスキップ
+        if (attacker.gameMode == GameMode.CREATIVE) return
+
+        // 警告がOFFの場合はスキップ
+        if (!chatService.isWarningsEnabled(attacker.uniqueId)) return
+
+        // クールダウンチェック
+        if (!shouldShowWarning(attacker.uniqueId, "golem:${golem.uniqueId}")) return
+
+        // 警告メッセージを表示
+        val message = i18nManager.get("warning.attack_golem", "warning.attack_golem")
+        attacker.sendMessage(message)
+    }
 
     // 赤・灰プレイヤーの移動検知
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
