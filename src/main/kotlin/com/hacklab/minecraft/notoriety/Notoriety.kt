@@ -171,7 +171,7 @@ class Notoriety : JavaPlugin() {
         pm.registerEvents(ExplosionProtectionListener(ownershipService), this)
         pm.registerEvents(VillagerListener(this, villagerService, golemService, crimeService), this)
         pm.registerEvents(TradeListener(playerManager, reputationService), this)
-        pm.registerEvents(CombatListener(playerManager, crimeService, reputationService, bountyService, trustService), this)
+        pm.registerEvents(CombatListener(playerManager, crimeService, reputationService, bountyService, trustService, chatService, i18nManager), this)
         pm.registerEvents(CrimeNotificationListener(i18nManager), this)
         pm.registerEvents(BountySignListener(bountyService.signManager), this)
         pm.registerEvents(InspectListener(inspectService, inspectionStick), this)
