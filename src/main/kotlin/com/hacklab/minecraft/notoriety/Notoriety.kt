@@ -167,7 +167,7 @@ class Notoriety : JavaPlugin() {
         val pm = server.pluginManager
 
         pm.registerEvents(PlayerListener(playerManager, reputationService), this)
-        pm.registerEvents(OwnershipListener(this, ownershipService, guildService, crimeService), this)
+        pm.registerEvents(OwnershipListener(this, ownershipService, guildService, crimeService, chatService), this)
         pm.registerEvents(ExplosionProtectionListener(ownershipService), this)
         pm.registerEvents(VillagerListener(this, villagerService, golemService, crimeService), this)
         pm.registerEvents(TradeListener(playerManager, reputationService), this)

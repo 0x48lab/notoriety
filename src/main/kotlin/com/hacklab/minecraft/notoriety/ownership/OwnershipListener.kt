@@ -1,6 +1,7 @@
 package com.hacklab.minecraft.notoriety.ownership
 
 import com.hacklab.minecraft.notoriety.Notoriety
+import com.hacklab.minecraft.notoriety.chat.service.ChatService
 import com.hacklab.minecraft.notoriety.core.BlockLocation
 import com.hacklab.minecraft.notoriety.core.toBlockLoc
 import com.hacklab.minecraft.notoriety.crime.CrimeService
@@ -27,7 +28,8 @@ class OwnershipListener(
     private val plugin: Notoriety,
     private val ownershipService: OwnershipService,
     private val guildService: GuildService,
-    private val crimeService: CrimeService
+    private val crimeService: CrimeService,
+    private val chatService: ChatService
 ) : Listener {
 
     // 警告のクールダウン（同じブロックに対して連続警告を防ぐ）
@@ -66,6 +68,9 @@ class OwnershipListener(
         // クリエイティブモードはスキップ
         if (player.gameMode == GameMode.CREATIVE) return
 
+        // 警告がOFFの場合はスキップ
+        if (!chatService.isWarningsEnabled(player.uniqueId)) return
+
         val holder = event.inventory.holder
         if (holder !is Container) return
 
@@ -101,6 +106,9 @@ class OwnershipListener(
 
         // クリエイティブモードはスキップ
         if (player.gameMode == GameMode.CREATIVE) return
+
+        // 警告がOFFの場合はスキップ
+        if (!chatService.isWarningsEnabled(player.uniqueId)) return
 
         val block = event.block
         val owner = ownershipService.getOwner(block.location) ?: return

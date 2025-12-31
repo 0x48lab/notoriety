@@ -81,6 +81,29 @@ class ChatService(
         setRomajiEnabled(player, !settings.romajiEnabled)
     }
 
+    fun setWarningsEnabled(player: Player, enabled: Boolean) {
+        chatSettingsRepository.updateWarningsEnabled(player.uniqueId, enabled)
+        val settings = getSettings(player.uniqueId).copy(warningsEnabled = enabled)
+        settingsCache[player.uniqueId] = settings
+
+        if (enabled) {
+            player.sendMessage(Component.text("Crime warnings enabled")
+                .color(NamedTextColor.GREEN))
+        } else {
+            player.sendMessage(Component.text("Crime warnings disabled")
+                .color(NamedTextColor.YELLOW))
+        }
+    }
+
+    fun toggleWarnings(player: Player) {
+        val settings = getSettings(player.uniqueId)
+        setWarningsEnabled(player, !settings.warningsEnabled)
+    }
+
+    fun isWarningsEnabled(playerUuid: UUID): Boolean {
+        return getSettings(playerUuid).warningsEnabled
+    }
+
     fun getEffectiveChatMode(player: Player, message: String): ChatMode {
         // プレフィックスで一時的にモード変更
         ChatMode.fromPrefix(message)?.let { return it }

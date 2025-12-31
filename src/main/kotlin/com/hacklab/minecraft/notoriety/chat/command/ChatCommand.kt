@@ -46,6 +46,17 @@ class ChatCommand(
                     chatService.toggleRomaji(sender)
                 }
             }
+            "warning", "warnings", "w" -> {
+                if (args.size > 1) {
+                    when (args[1].lowercase()) {
+                        "on", "enable" -> chatService.setWarningsEnabled(sender, true)
+                        "off", "disable" -> chatService.setWarningsEnabled(sender, false)
+                        else -> chatService.toggleWarnings(sender)
+                    }
+                } else {
+                    chatService.toggleWarnings(sender)
+                }
+            }
             "status" -> showStatus(sender)
             else -> showUsage(sender)
         }
@@ -63,6 +74,8 @@ class ChatCommand(
             .append(Component.text(" - Guild chat (@ prefix)").color(NamedTextColor.GRAY)))
         player.sendMessage(Component.text("/chat romaji").color(NamedTextColor.YELLOW)
             .append(Component.text(" - Toggle romaji conversion").color(NamedTextColor.GRAY)))
+        player.sendMessage(Component.text("/chat warning").color(NamedTextColor.YELLOW)
+            .append(Component.text(" - Toggle crime warnings").color(NamedTextColor.GRAY)))
         player.sendMessage(Component.text("/chat status").color(NamedTextColor.YELLOW)
             .append(Component.text(" - Show current settings").color(NamedTextColor.GRAY)))
         player.sendMessage(Component.text("").color(NamedTextColor.GRAY))
@@ -84,6 +97,9 @@ class ChatCommand(
         player.sendMessage(Component.text("Romaji: ").color(NamedTextColor.GRAY)
             .append(Component.text(if (settings.romajiEnabled) "Enabled" else "Disabled")
                 .color(if (settings.romajiEnabled) NamedTextColor.GREEN else NamedTextColor.RED)))
+        player.sendMessage(Component.text("Warnings: ").color(NamedTextColor.GRAY)
+            .append(Component.text(if (settings.warningsEnabled) "Enabled" else "Disabled")
+                .color(if (settings.warningsEnabled) NamedTextColor.GREEN else NamedTextColor.RED)))
     }
 
     override fun onTabComplete(
@@ -93,10 +109,10 @@ class ChatCommand(
         args: Array<out String>
     ): List<String> {
         if (args.size == 1) {
-            val options = listOf("local", "global", "guild", "romaji", "status")
+            val options = listOf("local", "global", "guild", "romaji", "warning", "status")
             return options.filter { it.startsWith(args[0].lowercase()) }
         }
-        if (args.size == 2 && args[0].lowercase() == "romaji") {
+        if (args.size == 2 && args[0].lowercase() in listOf("romaji", "warning", "warnings")) {
             return listOf("on", "off").filter { it.startsWith(args[1].lowercase()) }
         }
         return emptyList()

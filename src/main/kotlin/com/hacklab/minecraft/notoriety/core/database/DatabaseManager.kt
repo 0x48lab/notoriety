@@ -213,6 +213,13 @@ class DatabaseManager(
                         romaji_enabled BOOLEAN NOT NULL DEFAULT FALSE
                     )
                 """.trimIndent())
+
+                // Migration: Add warnings_enabled column to player_chat_settings
+                try {
+                    stmt.executeUpdate("ALTER TABLE player_chat_settings ADD COLUMN warnings_enabled BOOLEAN NOT NULL DEFAULT TRUE")
+                } catch (e: Exception) {
+                    // Column already exists, ignore
+                }
             }
         }
         plugin.logger.info("Database tables initialized successfully")
