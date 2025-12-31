@@ -194,6 +194,25 @@
                     <td class="penalty">-10</td>
                     <td>Replace within 5 sec to cancel</td>
                 </tr>
+                <tr>
+                    <td>Kill villager (no bed)</td>
+                    <td class="penalty">-10</td>
+                    <td>Villager not linked to a bed</td>
+                </tr>
+            </table>
+
+            <h3>Moderate Crimes (-20)</h3>
+            <table>
+                <tr>
+                    <th>Action</th>
+                    <th>Penalty</th>
+                    <th>Notes</th>
+                </tr>
+                <tr>
+                    <td>Kill animals</td>
+                    <td class="penalty">-20</td>
+                    <td>When witnessed by villager or golem</td>
+                </tr>
             </table>
 
             <h3>Minor Crimes (-1)</h3>
@@ -202,6 +221,11 @@
                     <th>Action</th>
                     <th>Penalty</th>
                     <th>Notes</th>
+                </tr>
+                <tr>
+                    <td>Harvest crops</td>
+                    <td class="penalty">-1</td>
+                    <td>When witnessed by villager</td>
                 </tr>
                 <tr>
                     <td>Attack another player</td>
@@ -219,28 +243,13 @@
                     <td>Even without killing</td>
                 </tr>
                 <tr>
-                    <td>Kill animals</td>
-                    <td class="penalty">-1</td>
-                    <td>When witnessed by villager/golem</td>
-                </tr>
-                <tr>
-                    <td>Harvest crops</td>
-                    <td class="penalty">-1</td>
-                    <td>When witnessed by villager</td>
-                </tr>
-                <tr>
-                    <td>Kill villager (no bed)</td>
-                    <td class="penalty">-1</td>
-                    <td>Villager not linked to a bed</td>
-                </tr>
-                <tr>
                     <td>Destroy villager's bed</td>
-                    <td class="penalty">-1</td>
+                    <td class="penalty">-5</td>
                     <td>Exempt if you or trusted player placed it</td>
                 </tr>
                 <tr>
                     <td>Destroy villager's workstation</td>
-                    <td class="penalty">-1</td>
+                    <td class="penalty">-5</td>
                     <td>Exempt if you or trusted player placed it</td>
                 </tr>
             </table>
@@ -526,6 +535,7 @@
 
             <h3>Key Features</h3>
             <ul>
+                <li><strong>Creation Cost</strong> - 50,000 gold</li>
                 <li><strong>Automatic Trust</strong> - Guild members automatically trust each other (unless explicitly distrusted)</li>
                 <li><strong>Guild Tags</strong> - 1-4 character tags displayed before player names</li>
                 <li><strong>Customizable Colors</strong> - 16 colors available for guild tags</li>
@@ -579,19 +589,19 @@
                     <td>Local</td>
                     <td>50 blocks</td>
                     <td>(none)</td>
-                    <td><code>/ch local</code></td>
+                    <td><code>/chat local</code></td>
                 </tr>
                 <tr>
                     <td>Global</td>
                     <td>Server-wide</td>
                     <td><code>!</code></td>
-                    <td><code>/ch global</code></td>
+                    <td><code>/chat global</code></td>
                 </tr>
                 <tr>
                     <td>Guild</td>
                     <td>Guild members only</td>
                     <td><code>@</code></td>
-                    <td><code>/ch guild</code></td>
+                    <td><code>/chat guild</code></td>
                 </tr>
                 <tr>
                     <td>Whisper</td>
@@ -612,8 +622,8 @@
             <h3>Romaji Conversion</h3>
             <p>Auto-converts romaji input to hiragana for Japanese players.</p>
             <ul>
-                <li><code>/romaji on</code> - Enable conversion</li>
-                <li><code>/romaji off</code> - Disable conversion</li>
+                <li><code>/chat romaji on</code> - Enable conversion</li>
+                <li><code>/chat romaji off</code> - Disable conversion</li>
                 <li>URLs, numbers, and commands are not converted</li>
             </ul>
         </section>
@@ -632,6 +642,7 @@
                 <tr><td><code>/noty status [player]</code></td><td>View another player's status</td></tr>
                 <tr><td><code>/noty history</code></td><td>View your crime history</td></tr>
                 <tr><td><code>/noty history [player]</code></td><td>View another player's crime history</td></tr>
+                <tr><td><code>/noty locale [ja|en|reset]</code></td><td>Change language (per-player setting)</td></tr>
             </table>
 
             <h3>Trust Commands</h3>
@@ -653,7 +664,7 @@
                     <th>Command</th>
                     <th>Description</th>
                 </tr>
-                <tr><td><code>/guild create [name] [tag]</code></td><td>Create a new guild</td></tr>
+                <tr><td><code>/guild create [name] [tag]</code></td><td>Create a new guild (50,000 gold)</td></tr>
                 <tr><td><code>/guild disband</code></td><td>Disband your guild (Master only)</td></tr>
                 <tr><td><code>/guild invite [player]</code></td><td>Invite a player</td></tr>
                 <tr><td><code>/guild accept [guild]</code></td><td>Accept an invitation</td></tr>
@@ -672,12 +683,14 @@
                     <th>Command</th>
                     <th>Description</th>
                 </tr>
-                <tr><td><code>/ch local</code></td><td>Switch to local chat</td></tr>
-                <tr><td><code>/ch global</code></td><td>Switch to global chat</td></tr>
-                <tr><td><code>/ch guild</code></td><td>Switch to guild chat</td></tr>
+                <tr><td><code>/chat local</code></td><td>Switch to local chat</td></tr>
+                <tr><td><code>/chat global</code></td><td>Switch to global chat</td></tr>
+                <tr><td><code>/chat guild</code></td><td>Switch to guild chat</td></tr>
+                <tr><td><code>/chat romaji [on|off]</code></td><td>Toggle romaji conversion</td></tr>
+                <tr><td><code>/chat warning [on|off]</code></td><td>Toggle crime warnings</td></tr>
+                <tr><td><code>/chat status</code></td><td>Show current chat settings</td></tr>
                 <tr><td><code>/w [player] [message]</code></td><td>Send whisper</td></tr>
                 <tr><td><code>/r [message]</code></td><td>Reply to last whisper</td></tr>
-                <tr><td><code>/romaji on|off</code></td><td>Toggle romaji conversion</td></tr>
             </table>
 
             <h3>Bounty Commands</h3>

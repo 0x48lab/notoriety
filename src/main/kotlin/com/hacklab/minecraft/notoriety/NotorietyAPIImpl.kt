@@ -102,7 +102,7 @@ class NotorietyAPIImpl(private val plugin: Notoriety) : NotorietyAPI {
         location: Location?,
         detail: String?
     ) {
-        plugin.crimeService.commitCrime(
+        plugin.notorietyService.commitCrime(
             criminal = criminal,
             crimeType = crimeType,
             alignmentPenalty = crimeType.defaultPenalty,
@@ -113,11 +113,11 @@ class NotorietyAPIImpl(private val plugin: Notoriety) : NotorietyAPI {
     }
 
     override fun getCrimeHistory(player: UUID, limit: Int): List<CrimeRecord> =
-        plugin.crimeService.getHistory(player, 1, limit)
+        plugin.notorietyService.getHistory(player, 1, limit)
 
     private fun updateDisplayIfOnline(player: UUID) {
         Bukkit.getPlayer(player)?.let {
-            plugin.reputationService.updateDisplay(it)
+            plugin.notorietyService.updateDisplay(it)
         }
     }
 }

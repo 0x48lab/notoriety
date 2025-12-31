@@ -1,13 +1,12 @@
 package com.hacklab.minecraft.notoriety.village
 
-import com.hacklab.minecraft.notoriety.Notoriety
-import com.hacklab.minecraft.notoriety.chat.service.ChatService
-import com.hacklab.minecraft.notoriety.core.BlockLocation
-import com.hacklab.minecraft.notoriety.core.i18n.I18nManager
-import com.hacklab.minecraft.notoriety.core.toBlockLoc
-import com.hacklab.minecraft.notoriety.crime.CrimeService
+import com.hacklab.minecraft.notoriety.CrimeCheckResult
+import com.hacklab.minecraft.notoriety.NotorietyService
+import com.hacklab.minecraft.notoriety.core.player.PlayerManager
 import com.hacklab.minecraft.notoriety.crime.CrimeType
+import com.hacklab.minecraft.notoriety.ownership.OwnershipService
 import com.hacklab.minecraft.notoriety.reputation.NameColor
+import com.hacklab.minecraft.notoriety.trust.TrustService
 import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.entity.Animals
@@ -30,37 +29,15 @@ import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.entity.EntityTargetEvent
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.PlayerMoveEvent
-import java.time.Instant
-import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 
 class VillagerListener(
-    private val plugin: Notoriety,
+    private val playerManager: PlayerManager,
     private val villagerService: VillagerService,
     private val golemService: GolemService,
-    private val crimeService: CrimeService,
-    private val chatService: ChatService,
-    private val i18nManager: I18nManager
+    private val notorietyService: NotorietyService,
+    private val ownershipService: OwnershipService,
+    private val trustService: TrustService
 ) : Listener {
-
-    // 警告のクールダウン
-    private data class WarningKey(val playerUuid: UUID, val targetId: String)
-    private val warningCooldowns = ConcurrentHashMap<WarningKey, Instant>()
-    private val WARNING_COOLDOWN_SECONDS = 10L
-
-    /**
-     * クールダウンをチェックして警告を表示するか判定
-     */
-    private fun shouldShowWarning(playerUuid: UUID, targetId: String): Boolean {
-        val warningKey = WarningKey(playerUuid, targetId)
-        val lastWarning = warningCooldowns[warningKey]
-        val now = Instant.now()
-        if (lastWarning != null && java.time.Duration.between(lastWarning, now).seconds < WARNING_COOLDOWN_SECONDS) {
-            return false
-        }
-        warningCooldowns[warningKey] = now
-        return true
-    }
 
     /**
      * 村人のベッドを壊そうとした時の警告
@@ -72,28 +49,13 @@ class VillagerListener(
         // クリエイティブモードはスキップ
         if (player.gameMode == GameMode.CREATIVE) return
 
-        // 警告がOFFの場合はスキップ
-        if (!chatService.isWarningsEnabled(player.uniqueId)) return
-
         val block = event.block
 
         // ベッドのみ対象
         if (!isBed(block.type)) return
 
-        // 自分で設置したブロック、または信頼されたプレイヤーなら警告不要
-        val owner = plugin.ownershipService.getOwner(block.location)
-        if (owner != null && (owner == player.uniqueId || plugin.trustService.isTrusted(owner, player.uniqueId))) return
-
-        // このベッドに紐づいている村人を探す
-        val affectedVillager = findVillagerWithBed(block.location) ?: return
-
-        // クールダウンチェック
-        val locationKey = "${block.location.world.name}:${block.location.blockX}:${block.location.blockY}:${block.location.blockZ}"
-        if (!shouldShowWarning(player.uniqueId, "bed:$locationKey")) return
-
-        // 警告メッセージを表示
-        val message = i18nManager.get("warning.villager_bed", "warning.villager_bed")
-        player.sendMessage(message)
+        // NotorietyServiceで犯罪チェック（警告表示も含む）
+        notorietyService.checkVillagerBedCrime(player, block.location)
     }
 
     /**
@@ -106,25 +68,8 @@ class VillagerListener(
         // クリエイティブモードはスキップ
         if (player.gameMode == GameMode.CREATIVE) return
 
-        // 警告がOFFの場合はスキップ
-        if (!chatService.isWarningsEnabled(player.uniqueId)) return
-
-        val block = event.block
-
-        // 自分で設置したブロック、または信頼されたプレイヤーなら警告不要
-        val owner = plugin.ownershipService.getOwner(block.location)
-        if (owner != null && (owner == player.uniqueId || plugin.trustService.isTrusted(owner, player.uniqueId))) return
-
-        // この職業ブロックに紐づいている村人を探す
-        val affectedVillager = findVillagerWithWorkstation(block.location) ?: return
-
-        // クールダウンチェック
-        val locationKey = "${block.location.world.name}:${block.location.blockX}:${block.location.blockY}:${block.location.blockZ}"
-        if (!shouldShowWarning(player.uniqueId, "workstation:$locationKey")) return
-
-        // 警告メッセージを表示
-        val message = i18nManager.get("warning.villager_workstation", "warning.villager_workstation")
-        player.sendMessage(message)
+        // NotorietyServiceで犯罪チェック（警告表示も含む）
+        notorietyService.checkVillagerWorkstationCrime(player, event.block.location)
     }
 
     /**
@@ -144,15 +89,8 @@ class VillagerListener(
         // クリエイティブモードはスキップ
         if (attacker.gameMode == GameMode.CREATIVE) return
 
-        // 警告がOFFの場合はスキップ
-        if (!chatService.isWarningsEnabled(attacker.uniqueId)) return
-
-        // クールダウンチェック
-        if (!shouldShowWarning(attacker.uniqueId, "villager:${villager.uniqueId}")) return
-
-        // 警告メッセージを表示
-        val message = i18nManager.get("warning.attack_villager", "warning.attack_villager")
-        attacker.sendMessage(message)
+        // NotorietyServiceで犯罪チェック（警告表示も含む）
+        notorietyService.checkVillagerAttackCrime(attacker, villager)
     }
 
     /**
@@ -172,15 +110,8 @@ class VillagerListener(
         // クリエイティブモードはスキップ
         if (attacker.gameMode == GameMode.CREATIVE) return
 
-        // 警告がOFFの場合はスキップ
-        if (!chatService.isWarningsEnabled(attacker.uniqueId)) return
-
-        // クールダウンチェック
-        if (!shouldShowWarning(attacker.uniqueId, "golem:${golem.uniqueId}")) return
-
-        // 警告メッセージを表示
-        val message = i18nManager.get("warning.attack_golem", "warning.attack_golem")
-        attacker.sendMessage(message)
+        // NotorietyServiceで犯罪チェック（警告表示も含む）
+        notorietyService.checkGolemAttackCrime(attacker, golem)
     }
 
     // 赤・灰プレイヤーの移動検知
@@ -189,14 +120,15 @@ class VillagerListener(
         if (!hasBlockChanged(event)) return
 
         val player = event.player
-        val data = plugin.playerManager.getPlayer(player) ?: return
+        val data = playerManager.getPlayer(player) ?: return
 
         when (data.getNameColor()) {
             NameColor.RED -> {
                 // 村人の反応
                 val villager = villagerService.checkRedPlayerProximity(player)
                 if (villager != null) {
-                    villagerService.shoutMurderer(villager)
+                    // クールダウン中でなければ叫ぶ（ゴーレムは常に呼ぶ）
+                    villagerService.shoutMurderer(villager, player.uniqueId)
                     golemService.callGolemToAttack(player, villager.location)
                 } else {
                     // 村人がいなくても、ゴーレムが独自に赤プレイヤーを検知
@@ -222,11 +154,11 @@ class VillagerListener(
         // クリエイティブモードは犯罪判定をスキップ
         if (killer.gameMode == GameMode.CREATIVE) return
 
-        val data = plugin.playerManager.getPlayer(killer) ?: return
+        playerManager.getPlayer(killer) ?: return
 
         // ベッドに紐づいているかどうかでペナルティを変える
         val hasBed = victim.getMemory(MemoryKey.HOME) != null
-        val penalty = if (hasBed) 50 else 1
+        val penalty = if (hasBed) 50 else 10
 
         // 殺された村人の断末魔
         villagerService.dyingMessage(victim, killer)
@@ -244,13 +176,12 @@ class VillagerListener(
         // 周囲のゴーレムを全て召集して強化
         golemService.callAllGolemsToAttack(killer, victim.location)
 
-        crimeService.commitCrime(
+        notorietyService.commitCrime(
             criminal = killer.uniqueId,
             crimeType = CrimeType.KILL_VILLAGER,
             alignmentPenalty = penalty,
             location = victim.location
         )
-        plugin.reputationService.updateDisplay(killer)
     }
 
     // 灰色・赤色プレイヤーの動物殺害
@@ -269,7 +200,7 @@ class VillagerListener(
         // ペットは別処理（CombatListener）
         if (entity is Tameable && entity.isTamed) return
 
-        val data = plugin.playerManager.getPlayer(killer) ?: return
+        val data = playerManager.getPlayer(killer) ?: return
 
         // 青色プレイヤーは犯罪にならない
         if (data.getNameColor() == NameColor.BLUE) return
@@ -286,18 +217,14 @@ class VillagerListener(
         }
 
         if (witness != null || golemWitnessed) {
-            // Alignment -20（動物殺害の軽微な犯罪）
-            data.addAlignment(-20)
-
-            // 犯罪履歴には記録
-            crimeService.recordCrimeHistory(
+            // 動物殺害の犯罪を記録（Alignment -20）
+            notorietyService.commitCrime(
                 criminal = killer.uniqueId,
                 crimeType = CrimeType.KILL_ANIMAL,
-                alignmentPenalty = 0,
+                alignmentPenalty = 20,
                 location = entity.location,
                 detail = entity.type.name
             )
-            plugin.reputationService.updateDisplay(killer)
         }
     }
 
@@ -313,7 +240,7 @@ class VillagerListener(
 
         if (!isCrop(block.type)) return
 
-        val data = plugin.playerManager.getPlayer(player) ?: return
+        val data = playerManager.getPlayer(player) ?: return
         if (data.getNameColor() != NameColor.GRAY) return
 
         val witness = villagerService.checkGrayCrimeWitness(player, block.location)
@@ -327,14 +254,13 @@ class VillagerListener(
         }
 
         if (witness != null || golemWitnessed) {
-            crimeService.commitCrime(
+            notorietyService.commitCrime(
                 criminal = player.uniqueId,
                 crimeType = CrimeType.HARVEST_CROP,
                 alignmentPenalty = 1,
                 location = block.location,
                 detail = block.type.name
             )
-            plugin.reputationService.updateDisplay(player)
         }
     }
 
@@ -351,11 +277,11 @@ class VillagerListener(
         // コンテナまたは家具のみ対象
         if (block.state !is Container && !isFurniture(block.type)) return
 
-        val data = plugin.playerManager.getPlayer(player) ?: return
+        val data = playerManager.getPlayer(player) ?: return
         if (data.getNameColor() != NameColor.GRAY) return
 
         // 所有権があるブロックはOwnershipListenerで処理
-        if (plugin.ownershipService.isProtected(block.location)) return
+        if (ownershipService.isProtected(block.location)) return
 
         val witness = villagerService.checkGrayCrimeWitness(player, block.location)
         val golemWitnessed = if (witness == null) {
@@ -368,14 +294,13 @@ class VillagerListener(
         }
 
         if (witness != null || golemWitnessed) {
-            crimeService.commitCrime(
+            notorietyService.commitCrime(
                 criminal = player.uniqueId,
                 crimeType = CrimeType.DESTROY,
                 alignmentPenalty = 10,
                 location = block.location,
                 detail = block.type.name
             )
-            plugin.reputationService.updateDisplay(player)
         }
     }
 
@@ -392,13 +317,13 @@ class VillagerListener(
         if (event.clickedInventory != event.inventory) return
         if (event.currentItem == null || event.currentItem?.type?.isAir == true) return
 
-        val data = plugin.playerManager.getPlayer(player) ?: return
+        val data = playerManager.getPlayer(player) ?: return
         if (data.getNameColor() != NameColor.GRAY) return
 
         val location = holder.block.location
 
         // 所有権があるブロックはOwnershipListenerで処理
-        if (plugin.ownershipService.isProtected(location)) return
+        if (ownershipService.isProtected(location)) return
 
         val witness = villagerService.checkGrayCrimeWitness(player, location)
         val golemWitnessed = if (witness == null) {
@@ -411,13 +336,12 @@ class VillagerListener(
         }
 
         if (witness != null || golemWitnessed) {
-            crimeService.commitCrime(
+            notorietyService.commitCrime(
                 criminal = player.uniqueId,
                 crimeType = CrimeType.THEFT,
                 alignmentPenalty = 50,
                 location = location
             )
-            plugin.reputationService.updateDisplay(player)
         }
     }
 
@@ -434,11 +358,11 @@ class VillagerListener(
         // ベッドのみ対象
         if (!isBed(block.type)) return
 
-        plugin.playerManager.getPlayer(player) ?: return
+        playerManager.getPlayer(player) ?: return
 
         // 自分で設置したブロック、または信頼されたプレイヤーなら犯罪にならない
-        val owner = plugin.ownershipService.getOwner(block.location)
-        if (owner != null && (owner == player.uniqueId || plugin.trustService.isTrusted(owner, player.uniqueId))) return
+        val owner = ownershipService.getOwner(block.location)
+        if (owner != null && (owner == player.uniqueId || trustService.isTrusted(owner, player.uniqueId))) return
 
         // このベッドに紐づいている村人を探す
         val affectedVillager = findVillagerWithBed(block.location) ?: return
@@ -450,13 +374,12 @@ class VillagerListener(
         golemService.callGolemToAttack(player, affectedVillager.location)
 
         // 犯罪記録（Alignment -5）
-        crimeService.commitCrime(
+        notorietyService.commitCrime(
             criminal = player.uniqueId,
             crimeType = CrimeType.DESTROY_VILLAGER_BED,
-            alignmentPenalty = 1,
+            alignmentPenalty = 5,
             location = block.location
         )
-        plugin.reputationService.updateDisplay(player)
     }
 
     // 村人仕事場破壊（村人が紐づいている職業ブロックを壊すと犯罪）- 全プレイヤー対象
@@ -468,11 +391,11 @@ class VillagerListener(
         if (player.gameMode == GameMode.CREATIVE) return
 
         val block = event.block
-        plugin.playerManager.getPlayer(player) ?: return
+        playerManager.getPlayer(player) ?: return
 
         // 自分で設置したブロック、または信頼されたプレイヤーなら犯罪にならない
-        val owner = plugin.ownershipService.getOwner(block.location)
-        if (owner != null && (owner == player.uniqueId || plugin.trustService.isTrusted(owner, player.uniqueId))) return
+        val owner = ownershipService.getOwner(block.location)
+        if (owner != null && (owner == player.uniqueId || trustService.isTrusted(owner, player.uniqueId))) return
 
         // この職業ブロックに紐づいている村人を探す
         val affectedVillager = findVillagerWithWorkstation(block.location) ?: return
@@ -483,15 +406,14 @@ class VillagerListener(
         // ゴーレムを呼ぶ
         golemService.callGolemToAttack(player, affectedVillager.location)
 
-        // 犯罪記録（Alignment -10）
-        crimeService.commitCrime(
+        // 犯罪記録（Alignment -5）
+        notorietyService.commitCrime(
             criminal = player.uniqueId,
             crimeType = CrimeType.DESTROY_VILLAGER_WORKSTATION,
-            alignmentPenalty = 1,
+            alignmentPenalty = 5,
             location = block.location,
             detail = block.type.name
         )
-        plugin.reputationService.updateDisplay(player)
     }
 
     /**
@@ -594,7 +516,7 @@ class VillagerListener(
         golemService.onGolemDeath(golem)
     }
 
-    // ゴーレム殺害（全プレイヤー対象）- Alignment -100
+    // ゴーレム殺害（全プレイヤー対象）- Alignment -50
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onGolemKill(event: EntityDeathEvent) {
         val golem = event.entity as? IronGolem ?: return
@@ -603,7 +525,7 @@ class VillagerListener(
         // クリエイティブモードは犯罪判定をスキップ
         if (killer.gameMode == GameMode.CREATIVE) return
 
-        plugin.playerManager.getPlayer(killer) ?: return
+        playerManager.getPlayer(killer) ?: return
 
         // 目撃した村人の叫び
         val witness = golem.world.getNearbyEntities(
@@ -618,17 +540,16 @@ class VillagerListener(
         // 周囲のゴーレムを全て召集して強化
         golemService.callAllGolemsToAttack(killer, golem.location)
 
-        // 犯罪記録（Alignment -100）
-        crimeService.commitCrime(
+        // 犯罪記録（Alignment -50）
+        notorietyService.commitCrime(
             criminal = killer.uniqueId,
             crimeType = CrimeType.KILL_GOLEM,
             alignmentPenalty = 50,
             location = golem.location
         )
-        plugin.reputationService.updateDisplay(killer)
     }
 
-    // 村人攻撃（全プレイヤー対象）- Alignment -5（攻撃の度）
+    // 村人攻撃（全プレイヤー対象）- Alignment -1（攻撃の度）
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onVillagerAttack(event: EntityDamageByEntityEvent) {
         val villager = event.entity as? Villager ?: return
@@ -643,7 +564,7 @@ class VillagerListener(
         // クリエイティブモードは犯罪判定をスキップ
         if (attacker.gameMode == GameMode.CREATIVE) return
 
-        plugin.playerManager.getPlayer(attacker) ?: return
+        playerManager.getPlayer(attacker) ?: return
 
         // 目撃した村人の叫び（攻撃された村人以外）
         val witness = villager.world.getNearbyEntities(
@@ -659,13 +580,12 @@ class VillagerListener(
         golemService.callGolemToAttack(attacker, villager.location)
 
         // 犯罪記録（Alignment -1）
-        crimeService.commitCrime(
+        notorietyService.commitCrime(
             criminal = attacker.uniqueId,
             crimeType = CrimeType.ATTACK_VILLAGER,
             alignmentPenalty = 1,
             location = villager.location
         )
-        plugin.reputationService.updateDisplay(attacker)
     }
 
     // モンスター討伐（全プレイヤー対象）- Alignment +1
@@ -677,11 +597,11 @@ class VillagerListener(
         // クリエイティブモードはスキップ
         if (killer.gameMode == GameMode.CREATIVE) return
 
-        val data = plugin.playerManager.getPlayer(killer) ?: return
+        val data = playerManager.getPlayer(killer) ?: return
 
         // Alignment +1
         data.addAlignment(1)
-        plugin.reputationService.updateDisplay(killer)
+        notorietyService.updateDisplay(killer)
     }
 
     // ゴーレムがスポーンした時に強化（攻撃された時にテレポートできるように）

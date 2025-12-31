@@ -10,7 +10,8 @@ data class PlayerData(
     var pkCount: Int = 0,        // 殺人回数
     var fame: Int = 0,           // 名声
     var playTimeMinutes: Long = 0,
-    var lastSeen: Instant = Instant.now()
+    var lastSeen: Instant = Instant.now(),
+    var locale: String? = null   // プレイヤーの言語設定（null=サーバーデフォルト）
 ) {
     fun getNameColor(): NameColor = when {
         pkCount >= 1 -> NameColor.RED

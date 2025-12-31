@@ -47,6 +47,13 @@ class DatabaseManager(
                     // Column already exists, ignore
                 }
 
+                // Migration: Add locale column for per-player language setting
+                try {
+                    stmt.executeUpdate("ALTER TABLE player_data ADD COLUMN locale VARCHAR(8)")
+                } catch (e: Exception) {
+                    // Column already exists, ignore
+                }
+
                 // Block ownership table
                 stmt.executeUpdate("""
                     CREATE TABLE IF NOT EXISTS block_ownership (

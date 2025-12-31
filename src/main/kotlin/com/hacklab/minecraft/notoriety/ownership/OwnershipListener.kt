@@ -1,14 +1,11 @@
 package com.hacklab.minecraft.notoriety.ownership
 
-import com.hacklab.minecraft.notoriety.Notoriety
-import com.hacklab.minecraft.notoriety.chat.service.ChatService
-import com.hacklab.minecraft.notoriety.core.BlockLocation
+import com.hacklab.minecraft.notoriety.CrimeCheckResult
+import com.hacklab.minecraft.notoriety.NotorietyService
 import com.hacklab.minecraft.notoriety.core.toBlockLoc
-import com.hacklab.minecraft.notoriety.crime.CrimeService
 import com.hacklab.minecraft.notoriety.crime.CrimeType
 import com.hacklab.minecraft.notoriety.guild.service.GuildService
 import com.hacklab.minecraft.notoriety.reputation.NameColor
-import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.block.Container
 import org.bukkit.entity.Player
@@ -18,24 +15,19 @@ import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.block.BlockDamageEvent
 import org.bukkit.event.block.BlockPlaceEvent
+import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryOpenEvent
+import org.bukkit.plugin.java.JavaPlugin
 import java.time.Instant
-import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 
 class OwnershipListener(
-    private val plugin: Notoriety,
+    private val plugin: JavaPlugin,
     private val ownershipService: OwnershipService,
     private val guildService: GuildService,
-    private val crimeService: CrimeService,
-    private val chatService: ChatService
+    private val notorietyService: NotorietyService,
+    private val getPlayerNameColor: (Player) -> NameColor?
 ) : Listener {
-
-    // 警告のクールダウン（同じブロックに対して連続警告を防ぐ）
-    private data class WarningKey(val playerUuid: UUID, val location: BlockLocation)
-    private val warningCooldowns = ConcurrentHashMap<WarningKey, Instant>()
-    private val WARNING_COOLDOWN_SECONDS = 10L
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onBlockPlace(event: BlockPlaceEvent) {
@@ -44,10 +36,10 @@ class OwnershipListener(
         // クリエイティブモードは所有権システムをスキップ
         if (player.gameMode == GameMode.CREATIVE) return
 
-        val data = plugin.playerManager.getPlayer(player) ?: return
+        val color = getPlayerNameColor(player) ?: return
 
         // 青プレイヤーのみ所有権を登録
-        if (data.getNameColor() == NameColor.BLUE) {
+        if (color == NameColor.BLUE) {
             ownershipService.registerOwnership(event.block.location, player.uniqueId)
         }
 
@@ -68,33 +60,13 @@ class OwnershipListener(
         // クリエイティブモードはスキップ
         if (player.gameMode == GameMode.CREATIVE) return
 
-        // 警告がOFFの場合はスキップ
-        if (!chatService.isWarningsEnabled(player.uniqueId)) return
-
         val holder = event.inventory.holder
         if (holder !is Container) return
 
         val location = holder.block.location
-        val owner = ownershipService.getOwner(location) ?: return
 
-        // アクセス権がある場合は警告不要（取り出しも可能な場合）
-        if (ownershipService.canTakeFromContainer(location, player.uniqueId, guildService)) return
-
-        // クールダウンチェック
-        val warningKey = WarningKey(player.uniqueId, location.toBlockLoc())
-        val lastWarning = warningCooldowns[warningKey]
-        val now = Instant.now()
-        if (lastWarning != null && java.time.Duration.between(lastWarning, now).seconds < WARNING_COOLDOWN_SECONDS) {
-            return
-        }
-        warningCooldowns[warningKey] = now
-
-        // 所有者名を取得
-        val ownerName = Bukkit.getOfflinePlayer(owner).name ?: "???"
-
-        // 警告メッセージを表示
-        val message = plugin.i18nManager.get("warning.chest_open", "warning.chest_open").format(ownerName)
-        player.sendMessage(message)
+        // NotorietyServiceで犯罪チェック（警告表示も含む）
+        notorietyService.checkContainerAccessCrime(player, location)
     }
 
     /**
@@ -107,31 +79,11 @@ class OwnershipListener(
         // クリエイティブモードはスキップ
         if (player.gameMode == GameMode.CREATIVE) return
 
-        // 警告がOFFの場合はスキップ
-        if (!chatService.isWarningsEnabled(player.uniqueId)) return
-
         val block = event.block
-        val owner = ownershipService.getOwner(block.location) ?: return
+        val isContainer = block.state is Container
 
-        // アクセス権がある場合は警告不要
-        if (ownershipService.canAccess(block.location, player.uniqueId, guildService)) return
-
-        // クールダウンチェック（同じブロックに対する連続警告を防ぐ）
-        val warningKey = WarningKey(player.uniqueId, block.location.toBlockLoc())
-        val lastWarning = warningCooldowns[warningKey]
-        val now = Instant.now()
-        if (lastWarning != null && java.time.Duration.between(lastWarning, now).seconds < WARNING_COOLDOWN_SECONDS) {
-            return
-        }
-        warningCooldowns[warningKey] = now
-
-        // 所有者名を取得
-        val ownerName = Bukkit.getOfflinePlayer(owner).name ?: "???"
-
-        // 警告メッセージを表示
-        val messageKey = if (block.state is Container) "warning.container_break" else "warning.block_break"
-        val message = plugin.i18nManager.get(messageKey, messageKey).format(ownerName)
-        player.sendMessage(message)
+        // NotorietyServiceで犯罪チェック（警告表示も含む）
+        notorietyService.checkBlockBreakCrime(player, block.location, isContainer)
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -150,9 +102,11 @@ class OwnershipListener(
             return
         }
 
+        val isContainer = block.state is Container
+
         // コンテナは即時犯罪
-        if (block.state is Container) {
-            crimeService.commitCrime(
+        if (isContainer) {
+            notorietyService.commitCrime(
                 criminal = player.uniqueId,
                 crimeType = CrimeType.DESTROY,
                 alignmentPenalty = 10,
@@ -160,7 +114,6 @@ class OwnershipListener(
                 location = block.location,
                 detail = block.type.name
             )
-            plugin.reputationService.updateDisplay(player)
         } else {
             // 保留犯罪として登録
             ownershipService.addPendingCrime(PendingCrime(
@@ -174,7 +127,7 @@ class OwnershipListener(
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     fun onInventoryClick(event: InventoryClickEvent) {
         val player = event.whoClicked as? Player ?: return
 
@@ -184,26 +137,50 @@ class OwnershipListener(
         val inventory = event.inventory
         val holder = inventory.holder
 
-        // コンテナからアイテムを取り出す場合のみチェック
+        // コンテナのみ対象
         if (holder !is Container) return
-        if (event.clickedInventory != inventory) return
-        if (event.currentItem == null || event.currentItem?.type?.isAir == true) return
 
         val location = holder.block.location
         val owner = ownershipService.getOwner(location) ?: return
 
-        // 本人または信頼されたプレイヤーは許可（ギルドメンバー含む）
-        // ただし、不信頼に設定されている場合は取り出し不可
-        if (ownershipService.canTakeFromContainer(location, player.uniqueId, guildService)) return
+        // 本人は許可
+        if (owner == player.uniqueId) return
 
-        // 窃盗として犯罪確定
-        crimeService.commitCrime(
+        // アイテムを実際に取り出す操作かチェック
+        // 1. Shift+クリックでプレイヤーインベントリに移動
+        // 2. コンテナからカーソルに取ったアイテムをプレイヤーインベントリに置く
+        val isExtraction = when {
+            // Shift+クリックでコンテナからプレイヤーインベントリへ移動
+            event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY &&
+                event.clickedInventory == inventory -> true
+            // カーソルにアイテムを持った状態でプレイヤーインベントリに置く
+            event.action in listOf(
+                InventoryAction.PLACE_ALL,
+                InventoryAction.PLACE_ONE,
+                InventoryAction.PLACE_SOME,
+                InventoryAction.SWAP_WITH_CURSOR
+            ) && event.clickedInventory == player.inventory -> true
+            else -> false
+        }
+
+        if (!isExtraction) return
+
+        // DISTRUST（不信頼）の場合は取り出し不可
+        if (!ownershipService.canTakeFromContainer(location, player.uniqueId, guildService)) {
+            event.isCancelled = true
+            return
+        }
+
+        // TRUSTまたは同じギルドメンバーの場合は犯罪なし
+        if (guildService.isAccessAllowed(owner, player.uniqueId)) return
+
+        // 未設定の場合: 取り出せるが窃盗として犯罪確定（名声マイナス）
+        notorietyService.commitCrime(
             criminal = player.uniqueId,
             crimeType = CrimeType.THEFT,
             alignmentPenalty = 50,
             victim = owner,
             location = location
         )
-        plugin.reputationService.updateDisplay(player)
     }
 }

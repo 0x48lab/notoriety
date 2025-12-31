@@ -8,6 +8,10 @@ import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Location
 import org.bukkit.entity.Player
 import org.bukkit.entity.Villager
+import java.time.Duration
+import java.time.Instant
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class VillagerService(
     private val playerManager: PlayerManager,
@@ -19,10 +23,14 @@ class VillagerService(
         const val GRAY_WARNING_COOLDOWN = 120_000L  // 2分間のクールダウン
         const val GRAY_WARNING_CHANCE = 0.05        // 5%の確率で警告
         const val GRAY_WARNING_COUNT = 6            // 警告メッセージの数
+        const val MURDERER_SHOUT_COOLDOWN_SECONDS = 30L  // 「人殺しが来た」のクールダウン
     }
 
     // プレイヤーUUID -> 最終警告時刻
     private val lastWarningTime = mutableMapOf<java.util.UUID, Long>()
+
+    // 「人殺しが来た」のクールダウン（プレイヤーごと）
+    private val murdererShoutCooldowns = ConcurrentHashMap<UUID, Instant>()
 
     fun checkRedPlayerProximity(player: Player): Villager? {
         val data = playerManager.getPlayer(player) ?: return null
@@ -88,8 +96,23 @@ class VillagerService(
         }
     }
 
-    fun shoutMurderer(villager: Villager) {
+    /**
+     * 「人殺しが来た」と叫ぶ（プレイヤーごとにクールダウンあり）
+     * @return 叫んだ場合true、クールダウン中の場合false
+     */
+    fun shoutMurderer(villager: Villager, playerUuid: UUID): Boolean {
+        val now = Instant.now()
+        val lastShout = murdererShoutCooldowns[playerUuid]
+
+        // クールダウン中ならスキップ
+        if (lastShout != null && Duration.between(lastShout, now).seconds < MURDERER_SHOUT_COOLDOWN_SECONDS) {
+            return false
+        }
+
+        // 叫ぶ
+        murdererShoutCooldowns[playerUuid] = now
         villagerShout(villager, i18n.get("villager.murderer", "人殺しが来た！"))
+        return true
     }
 
     fun shoutCrime(villager: Villager, criminalName: String, crimeKey: String) {

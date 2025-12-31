@@ -123,6 +123,36 @@ warning:
   attack_villager: "§c⚠ 警告: §e村人を攻撃すると犯罪になります！ §7(Alignment -1)"
   attack_golem: "§c⚠ 警告: §eアイアンゴーレムを攻撃すると犯罪になります！ §7(Alignment -50)"
 
+# Locale messages
+locale:
+  title: "言語設定"
+  current: "現在の言語: %s"
+  current_default: "現在の言語: %s（サーバーデフォルト）"
+  changed: "言語を %s に変更しました"
+  reset: "言語をサーバーデフォルト（%s）に戻しました"
+  unsupported: "サポートされていない言語です: %s"
+  supported: "利用可能な言語: %s"
+  usage: "使用法: /noty locale <ja|en|reset>"
+
+# Guild messages
+guild:
+  # Create command
+  create_usage: "使用法: /guild create <名前> <タグ> [説明]"
+  create_name_hint: "名前: 3-32文字（日本語、英数字、スペース、アンダースコア、ハイフン）"
+  create_tag_hint: "タグ: 2-4文字（英数字のみ）"
+  create_cost_hint: "作成費用: %s"
+  create_insufficient_funds: "所持金が不足しています。必要: %s、所持金: %s"
+  create_success: "ギルドを作成しました！"
+  create_cost_display: "(作成費用: %s)"
+  create_withdraw_failed: "費用の徴収に失敗しました。もう一度お試しください。"
+  # Error messages
+  error_invalid_name: "無効なギルド名です。3-32文字（日本語、英数字、スペース、アンダースコア、ハイフン）で入力してください"
+  error_invalid_tag: "無効なギルドタグです。2-4文字（英数字のみ）で入力してください"
+  error_name_taken: "この名前のギルドは既に存在します"
+  error_tag_taken: "このタグのギルドは既に存在します"
+  error_already_in_guild: "既にギルドに所属しています。先に現在のギルドを脱退してください"
+  error_generic: "ギルドの作成に失敗しました: %s"
+
 # Admin messages
 admin:
   gray_list_title: "=== 灰色プレイヤー一覧 (%d人) ==="

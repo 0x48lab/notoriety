@@ -1,10 +1,10 @@
 package com.hacklab.minecraft.notoriety.guild.listener
 
+import com.hacklab.minecraft.notoriety.NotorietyService
 import com.hacklab.minecraft.notoriety.chat.service.ChatService
 import com.hacklab.minecraft.notoriety.guild.display.GuildTagManager
 import com.hacklab.minecraft.notoriety.guild.event.*
 import com.hacklab.minecraft.notoriety.guild.service.GuildService
-import com.hacklab.minecraft.notoriety.reputation.ReputationService
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
@@ -17,7 +17,7 @@ class GuildEventListener(
     private val guildService: GuildService,
     private val chatService: ChatService,
     private val guildTagManager: GuildTagManager,
-    private val reputationService: ReputationService
+    private val notorietyService: NotorietyService
 ) : Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -37,7 +37,7 @@ class GuildEventListener(
                     .build())
 
                 // 表示を更新
-                reputationService.updateDisplay(player)
+                notorietyService.updateDisplay(player)
             }
         }
     }
@@ -49,7 +49,7 @@ class GuildEventListener(
 
         // 離脱/追放されたプレイヤーの表示を更新
         Bukkit.getPlayer(event.memberUuid)?.let { player ->
-            reputationService.updateDisplay(player)
+            notorietyService.updateDisplay(player)
         }
 
         // ギルドメンバーに通知（解散以外）
@@ -78,7 +78,7 @@ class GuildEventListener(
         guildTagManager.setGuildTag(event.member, event.guild)
 
         // 表示を更新
-        reputationService.updateDisplay(event.member)
+        notorietyService.updateDisplay(event.member)
 
         // ギルドメンバーに通知
         val members = guildService.getMembers(event.guild.id, 0, 1000)
@@ -117,7 +117,7 @@ class GuildEventListener(
         val player = event.creator ?: return
 
         // 表示を更新
-        reputationService.updateDisplay(player)
+        notorietyService.updateDisplay(player)
 
         // サーバーにアナウンス
         Bukkit.broadcast(Component.text()

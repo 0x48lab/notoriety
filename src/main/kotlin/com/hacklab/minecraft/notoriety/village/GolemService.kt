@@ -32,6 +32,9 @@ class GolemService(private val playerManager: PlayerManager) {
     fun callGolemToAttack(target: Player, nearVillager: Location): Boolean {
         val golem = findNearbyGolem(nearVillager) ?: return false
 
+        // すでにこのプレイヤーをターゲットにしているならスキップ（攻撃を中断しないため）
+        if (golem.target == target) return true
+
         // ホーム位置を保存（まだ保存されていない場合）
         saveHomeLocation(golem)
 
@@ -98,6 +101,9 @@ class GolemService(private val playerManager: PlayerManager) {
         // 近くのゴーレムを探す（視認範囲内）
         val golem = findNearbyGolemWithLineOfSight(player.location, player) ?: return false
 
+        // すでにこのプレイヤーをターゲットにしているならスキップ（攻撃を中断しないため）
+        if (golem.target == player) return true
+
         // ホーム位置を保存
         saveHomeLocation(golem)
 
@@ -119,6 +125,9 @@ class GolemService(private val playerManager: PlayerManager) {
 
         // 犯罪現場の近くのゴーレムを探す（視認範囲内）
         val golem = findNearbyGolemWithLineOfSight(crimeLocation, player) ?: return false
+
+        // すでにこのプレイヤーをターゲットにしているならスキップ（攻撃を中断しないため）
+        if (golem.target == player) return true
 
         // ホーム位置を保存
         saveHomeLocation(golem)
@@ -202,6 +211,9 @@ class GolemService(private val playerManager: PlayerManager) {
         ).filterIsInstance<IronGolem>()
 
         golems.forEach { golem ->
+            // すでにこのプレイヤーをターゲットにしているならスキップ（攻撃を中断しないため）
+            if (golem.target == target) return@forEach
+
             // ホーム位置を保存
             saveHomeLocation(golem)
             // ゴーレムをプレイヤーの位置にテレポート

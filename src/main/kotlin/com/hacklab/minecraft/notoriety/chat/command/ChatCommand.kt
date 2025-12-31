@@ -20,6 +20,13 @@ class ChatCommand(
         label: String,
         args: Array<out String>
     ): Boolean {
+        return handleCommand(sender, args)
+    }
+
+    /**
+     * コマンド処理のコア部分（ラッパーからも呼び出し可能）
+     */
+    fun handleCommand(sender: CommandSender, args: Array<out String>): Boolean {
         if (sender !is Player) {
             sender.sendMessage(Component.text("This command can only be used by players")
                 .color(NamedTextColor.RED))
@@ -108,6 +115,13 @@ class ChatCommand(
         label: String,
         args: Array<out String>
     ): List<String> {
+        return handleTabComplete(sender, args)
+    }
+
+    /**
+     * タブ補完処理のコア部分（ラッパーからも呼び出し可能）
+     */
+    fun handleTabComplete(sender: CommandSender, args: Array<out String>): List<String> {
         if (args.size == 1) {
             val options = listOf("local", "global", "guild", "romaji", "warning", "status")
             return options.filter { it.startsWith(args[0].lowercase()) }

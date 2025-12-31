@@ -16,7 +16,10 @@ class NotorietyCommand(private val plugin: Notoriety) : CommandExecutor, TabComp
             "bounty" to BountyCommand(plugin),
             "trust" to TrustCommand(plugin),
             "admin" to AdminCommand(plugin),
-            "inspect" to InspectCommand(plugin.inspectService, plugin.inspectionStick, plugin.i18nManager)
+            "inspect" to InspectCommand(plugin.inspectService, plugin.inspectionStick, plugin.i18nManager),
+            "locale" to LocaleCommand(plugin),
+            "guild" to GuildCommandWrapper(plugin),
+            "chat" to ChatCommandWrapper(plugin.chatService)
         )
     }
 
@@ -61,7 +64,10 @@ class NotorietyCommand(private val plugin: Notoriety) : CommandExecutor, TabComp
         sender.sendMessage("/noty history [player] - Show crime history")
         sender.sendMessage("/noty bounty <set|list|check> - Bounty system")
         sender.sendMessage("/noty trust <add|remove|list|check> - Trust system")
+        sender.sendMessage("/noty guild <subcommand> - Guild system")
+        sender.sendMessage("/noty chat <mode> - Chat settings")
         sender.sendMessage("/noty inspect [tool] - Inspect mode / Get inspection stick")
-        sender.sendMessage("/noty admin <player> <param> <set|add> <value> - Admin commands")
+        sender.sendMessage("/noty locale [ja|en|reset] - Change language")
+        sender.sendMessage("/noty admin ... - Admin commands")
     }
 }

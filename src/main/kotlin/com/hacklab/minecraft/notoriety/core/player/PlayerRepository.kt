@@ -22,7 +22,8 @@ class PlayerRepository(private val databaseManager: DatabaseManager) {
                     pkCount = rs.getInt("pk_count"),
                     fame = rs.getInt("fame"),
                     playTimeMinutes = rs.getLong("play_time_minutes"),
-                    lastSeen = rs.getTimestamp("last_seen")?.toInstant() ?: Instant.now()
+                    lastSeen = rs.getTimestamp("last_seen")?.toInstant() ?: Instant.now(),
+                    locale = rs.getString("locale")
                 )
             } else {
                 null
@@ -33,14 +34,15 @@ class PlayerRepository(private val databaseManager: DatabaseManager) {
     fun save(data: PlayerData) {
         databaseManager.provider.useConnection { conn ->
             val stmt = conn.prepareStatement("""
-                INSERT INTO player_data (uuid, alignment, pk_count, fame, play_time_minutes, last_seen)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO player_data (uuid, alignment, pk_count, fame, play_time_minutes, last_seen, locale)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(uuid) DO UPDATE SET
                     alignment = excluded.alignment,
                     pk_count = excluded.pk_count,
                     fame = excluded.fame,
                     play_time_minutes = excluded.play_time_minutes,
-                    last_seen = excluded.last_seen
+                    last_seen = excluded.last_seen,
+                    locale = excluded.locale
             """.trimIndent())
 
             stmt.setString(1, data.uuid.toString())
@@ -49,6 +51,7 @@ class PlayerRepository(private val databaseManager: DatabaseManager) {
             stmt.setInt(4, data.fame)
             stmt.setLong(5, data.playTimeMinutes)
             stmt.setTimestamp(6, Timestamp.from(data.lastSeen))
+            stmt.setString(7, data.locale)
             stmt.executeUpdate()
         }
     }
@@ -78,7 +81,8 @@ class PlayerRepository(private val databaseManager: DatabaseManager) {
                     pkCount = rs.getInt("pk_count"),
                     fame = rs.getInt("fame"),
                     playTimeMinutes = rs.getLong("play_time_minutes"),
-                    lastSeen = rs.getTimestamp("last_seen")?.toInstant() ?: Instant.now()
+                    lastSeen = rs.getTimestamp("last_seen")?.toInstant() ?: Instant.now(),
+                    locale = rs.getString("locale")
                 ))
             }
             players
@@ -102,7 +106,8 @@ class PlayerRepository(private val databaseManager: DatabaseManager) {
                     pkCount = rs.getInt("pk_count"),
                     fame = rs.getInt("fame"),
                     playTimeMinutes = rs.getLong("play_time_minutes"),
-                    lastSeen = rs.getTimestamp("last_seen")?.toInstant() ?: Instant.now()
+                    lastSeen = rs.getTimestamp("last_seen")?.toInstant() ?: Instant.now(),
+                    locale = rs.getString("locale")
                 ))
             }
             players

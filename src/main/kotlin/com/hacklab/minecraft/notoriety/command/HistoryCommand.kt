@@ -32,7 +32,7 @@ class HistoryCommand(private val plugin: Notoriety) : SubCommand {
         val page = args.getOrNull(1)?.toIntOrNull() ?: 1
         val targetName = Bukkit.getOfflinePlayer(target).name ?: "Unknown"
 
-        val totalCount = plugin.crimeService.getHistoryCount(target)
+        val totalCount = plugin.notorietyService.getHistoryCount(target)
         val totalPages = (totalCount + PAGE_SIZE - 1) / PAGE_SIZE
 
         if (totalCount == 0) {
@@ -40,7 +40,7 @@ class HistoryCommand(private val plugin: Notoriety) : SubCommand {
             return true
         }
 
-        val history = plugin.crimeService.getHistory(target, page, PAGE_SIZE)
+        val history = plugin.notorietyService.getHistory(target, page, PAGE_SIZE)
 
         sender.sendMessage("§7=== §c$targetName §7の犯罪履歴 [$page/$totalPages] ===")
 

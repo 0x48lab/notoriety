@@ -1,5 +1,7 @@
 package com.hacklab.minecraft.notoriety.guild.command
 
+import com.hacklab.minecraft.notoriety.core.economy.EconomyService
+import com.hacklab.minecraft.notoriety.core.i18n.I18nManager
 import com.hacklab.minecraft.notoriety.guild.gui.GuildGUIManager
 import com.hacklab.minecraft.notoriety.guild.service.GuildService
 import net.kyori.adventure.text.Component
@@ -14,7 +16,9 @@ import org.bukkit.plugin.java.JavaPlugin
 class GuildCommand(
     private val plugin: JavaPlugin,
     private val guildService: GuildService,
-    private val guiManager: GuildGUIManager
+    private val guiManager: GuildGUIManager,
+    private val economyService: EconomyService,
+    private val i18n: I18nManager
 ) : CommandExecutor, TabCompleter {
 
     private val subCommands = mutableMapOf<String, GuildSubCommand>()
@@ -23,7 +27,7 @@ class GuildCommand(
     init {
         // サブコマンドを登録
         registerSubCommand(GuildMenuCommand(guiManager))
-        registerSubCommand(GuildCreateCommand(guildService))
+        registerSubCommand(GuildCreateCommand(guildService, economyService, i18n))
         registerSubCommand(GuildInfoCommand(guildService))
         registerSubCommand(GuildListCommand(guildService))
         registerSubCommand(GuildMembersCommand(guildService))
@@ -63,6 +67,13 @@ class GuildCommand(
             return subCommands["help"]?.execute(sender, emptyArray()) ?: true
         }
 
+        return handleCommand(sender, args)
+    }
+
+    /**
+     * コマンド処理のコア部分（ラッパーからも呼び出し可能）
+     */
+    fun handleCommand(sender: CommandSender, args: Array<out String>): Boolean {
         val subCommandName = args[0].lowercase()
         val actualName = aliasMap[subCommandName] ?: subCommandName
         val subCommand = subCommands[actualName]
@@ -70,7 +81,7 @@ class GuildCommand(
         if (subCommand == null) {
             sender.sendMessage(Component.text("Unknown subcommand: ${args[0]}")
                 .color(NamedTextColor.RED))
-            sender.sendMessage(Component.text("Use /guild help for a list of commands")
+            sender.sendMessage(Component.text("Use /noty guild help for a list of commands")
                 .color(NamedTextColor.GRAY))
             return true
         }
@@ -100,6 +111,13 @@ class GuildCommand(
         label: String,
         args: Array<out String>
     ): List<String> {
+        return handleTabComplete(sender, args)
+    }
+
+    /**
+     * タブ補完処理のコア部分（ラッパーからも呼び出し可能）
+     */
+    fun handleTabComplete(sender: CommandSender, args: Array<out String>): List<String> {
         if (args.size == 1) {
             // サブコマンド名の補完
             val allNames = subCommands.keys + aliasMap.keys

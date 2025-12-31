@@ -3,13 +3,11 @@ package com.hacklab.minecraft.notoriety
 import com.hacklab.minecraft.notoriety.bounty.BountyService
 import com.hacklab.minecraft.notoriety.bounty.BountySignListener
 import com.hacklab.minecraft.notoriety.chat.ChatListener
-import com.hacklab.minecraft.notoriety.chat.command.ChatCommand
 import com.hacklab.minecraft.notoriety.chat.command.WhisperCommand
 import com.hacklab.minecraft.notoriety.chat.repository.ChatSettingsRepository
 import com.hacklab.minecraft.notoriety.chat.service.ChatService
 import com.hacklab.minecraft.notoriety.combat.CombatListener
 import com.hacklab.minecraft.notoriety.command.NotorietyCommand
-import com.hacklab.minecraft.notoriety.core.BlockLocation
 import com.hacklab.minecraft.notoriety.core.config.ConfigManager
 import com.hacklab.minecraft.notoriety.core.database.DatabaseManager
 import com.hacklab.minecraft.notoriety.core.economy.EconomyService
@@ -20,11 +18,9 @@ import com.hacklab.minecraft.notoriety.core.player.PlayerRepository
 import com.hacklab.minecraft.notoriety.core.toLocation
 import com.hacklab.minecraft.notoriety.crime.CrimeNotificationListener
 import com.hacklab.minecraft.notoriety.crime.CrimeRepository
-import com.hacklab.minecraft.notoriety.crime.CrimeService
 import com.hacklab.minecraft.notoriety.crime.CrimeType
 import com.hacklab.minecraft.notoriety.event.PlayerColorChangeEvent
 import com.hacklab.minecraft.notoriety.guild.cache.GuildCache
-import com.hacklab.minecraft.notoriety.guild.command.GuildCommand
 import com.hacklab.minecraft.notoriety.guild.display.GuildTagManager
 import com.hacklab.minecraft.notoriety.guild.gui.GuildGUIManager
 import com.hacklab.minecraft.notoriety.guild.listener.GuildEventListener
@@ -33,7 +29,6 @@ import com.hacklab.minecraft.notoriety.guild.repository.GuildMembershipRepositor
 import com.hacklab.minecraft.notoriety.guild.repository.GuildRepository
 import com.hacklab.minecraft.notoriety.guild.service.GuildService
 import com.hacklab.minecraft.notoriety.guild.service.GuildServiceImpl
-import com.hacklab.minecraft.notoriety.inspect.InspectCommand
 import com.hacklab.minecraft.notoriety.inspect.InspectListener
 import com.hacklab.minecraft.notoriety.inspect.InspectService
 import com.hacklab.minecraft.notoriety.inspect.InspectionStick
@@ -41,7 +36,6 @@ import com.hacklab.minecraft.notoriety.ownership.ExplosionProtectionListener
 import com.hacklab.minecraft.notoriety.ownership.OwnershipListener
 import com.hacklab.minecraft.notoriety.ownership.OwnershipRepository
 import com.hacklab.minecraft.notoriety.ownership.OwnershipService
-import com.hacklab.minecraft.notoriety.reputation.ReputationService
 import com.hacklab.minecraft.notoriety.reputation.TeamManager
 import com.hacklab.minecraft.notoriety.trust.TrustRepository
 import com.hacklab.minecraft.notoriety.trust.TrustService
@@ -69,9 +63,7 @@ class Notoriety : JavaPlugin() {
         private set
     lateinit var trustService: TrustService
         private set
-    lateinit var crimeService: CrimeService
-        private set
-    lateinit var reputationService: ReputationService
+    lateinit var notorietyService: NotorietyService
         private set
     lateinit var villagerService: VillagerService
         private set
@@ -94,8 +86,10 @@ class Notoriety : JavaPlugin() {
     private lateinit var guildCache: GuildCache
     private lateinit var whisperCommand: WhisperCommand
     private lateinit var guildTagManager: GuildTagManager
+    private lateinit var teamManager: TeamManager
 
     private lateinit var ownershipRepository: OwnershipRepository
+    private lateinit var crimeRepository: CrimeRepository
 
     val api: NotorietyAPI by lazy { NotorietyAPIImpl(this) }
 
@@ -114,25 +108,23 @@ class Notoriety : JavaPlugin() {
 
         // 4. コアサービス初期化
         playerManager = PlayerManager(this, PlayerRepository(databaseManager))
+
+        // I18nManagerにプレイヤーロケール取得関数を設定
+        i18nManager.getPlayerLocale = { uuid -> playerManager.getPlayer(uuid)?.locale }
+
         ownershipRepository = OwnershipRepository(databaseManager)
         ownershipService = OwnershipService(ownershipRepository)
         trustService = TrustService(TrustRepository(databaseManager))
-        crimeService = CrimeService(CrimeRepository(databaseManager), playerManager)
-        reputationService = ReputationService(playerManager, TeamManager(this))
-        villagerService = VillagerService(playerManager, i18nManager)
-        golemService = GolemService(playerManager)
-        bountyService = BountyService(this, economyService)
-        bountyService.initializeSignManager()
-        inspectService = InspectService(this, ownershipRepository, trustService, i18nManager)
-        inspectionStick = InspectionStick(this, i18nManager)
+        crimeRepository = CrimeRepository(databaseManager)
+        teamManager = TeamManager(this)
 
-        // ギルドシステム初期化
+        // ギルドシステム初期化（NotorietyServiceより先に初期化）
         val guildRepository = GuildRepository(databaseManager)
         val membershipRepository = GuildMembershipRepository(databaseManager)
         val invitationRepository = GuildInvitationRepository(databaseManager)
         val chatSettingsRepository = ChatSettingsRepository(databaseManager)
         guildCache = GuildCache()
-        guildTagManager = GuildTagManager(reputationService.teamManager)
+        guildTagManager = GuildTagManager(teamManager)
         guildService = GuildServiceImpl(
             plugin = this,
             guildRepository = guildRepository,
@@ -143,6 +135,27 @@ class Notoriety : JavaPlugin() {
             guildTagManager = guildTagManager
         )
         chatService = ChatService(chatSettingsRepository, guildService)
+
+        // NotorietyService初期化（中央集約サービス）
+        notorietyService = NotorietyService(
+            playerManager = playerManager,
+            crimeRepository = crimeRepository,
+            teamManager = teamManager,
+            ownershipService = ownershipService,
+            trustService = trustService,
+            guildService = guildService,
+            chatService = chatService,
+            i18nManager = i18nManager
+        )
+
+        // その他サービス初期化
+        villagerService = VillagerService(playerManager, i18nManager)
+        golemService = GolemService(playerManager)
+        bountyService = BountyService(this, economyService)
+        bountyService.initializeSignManager()
+        inspectService = InspectService(this, ownershipRepository, trustService, i18nManager)
+        inspectionStick = InspectionStick(this, i18nManager)
+
         guildGUIManager = GuildGUIManager(this, guildService)
 
         // 5. イベントリスナー登録
@@ -166,18 +179,45 @@ class Notoriety : JavaPlugin() {
     private fun registerListeners() {
         val pm = server.pluginManager
 
-        pm.registerEvents(PlayerListener(playerManager, reputationService), this)
-        pm.registerEvents(OwnershipListener(this, ownershipService, guildService, crimeService, chatService), this)
+        pm.registerEvents(PlayerListener(playerManager, notorietyService, teamManager), this)
+        pm.registerEvents(
+            OwnershipListener(
+                plugin = this,
+                ownershipService = ownershipService,
+                guildService = guildService,
+                notorietyService = notorietyService,
+                getPlayerNameColor = { player -> playerManager.getPlayer(player)?.getNameColor() }
+            ),
+            this
+        )
         pm.registerEvents(ExplosionProtectionListener(ownershipService), this)
-        pm.registerEvents(VillagerListener(this, villagerService, golemService, crimeService, chatService, i18nManager), this)
-        pm.registerEvents(TradeListener(playerManager, reputationService), this)
-        pm.registerEvents(CombatListener(playerManager, crimeService, reputationService, bountyService, trustService, chatService, i18nManager), this)
+        pm.registerEvents(
+            VillagerListener(
+                playerManager = playerManager,
+                villagerService = villagerService,
+                golemService = golemService,
+                notorietyService = notorietyService,
+                ownershipService = ownershipService,
+                trustService = trustService
+            ),
+            this
+        )
+        pm.registerEvents(TradeListener(playerManager, notorietyService), this)
+        pm.registerEvents(
+            CombatListener(
+                playerManager = playerManager,
+                notorietyService = notorietyService,
+                bountyService = bountyService,
+                trustService = trustService
+            ),
+            this
+        )
         pm.registerEvents(CrimeNotificationListener(i18nManager), this)
         pm.registerEvents(BountySignListener(bountyService.signManager), this)
         pm.registerEvents(InspectListener(inspectService, inspectionStick), this)
 
         // ギルドシステムリスナー
-        pm.registerEvents(GuildEventListener(guildService, chatService, guildTagManager, reputationService), this)
+        pm.registerEvents(GuildEventListener(guildService, chatService, guildTagManager, notorietyService), this)
         pm.registerEvents(ChatListener(chatService, guildService), this)
         pm.registerEvents(guildGUIManager, this)
     }
@@ -212,28 +252,34 @@ class Notoriety : JavaPlugin() {
             }
         }
 
+        // /inspect - /noty inspect へのエイリアス
         getCommand("inspect")?.let {
-            val inspectCommand = InspectCommand(inspectService, inspectionStick, i18nManager)
             it.setExecutor { sender, _, _, args ->
-                inspectCommand.execute(sender, args)
+                mainCommand.onCommand(sender, it, "inspect", arrayOf("inspect") + args)
             }
-            it.tabCompleter = org.bukkit.command.TabCompleter { sender, _, _, args ->
-                inspectCommand.tabComplete(sender, args)
+            it.tabCompleter = TabCompleter { sender, _, _, args ->
+                mainCommand.onTabComplete(sender, it, "inspect", arrayOf("inspect") + args)
             }
         }
 
-        // ギルドコマンド
-        val guildCommand = GuildCommand(this, guildService, guildGUIManager)
+        // /guild - /noty guild へのエイリアス
         getCommand("guild")?.let {
-            it.setExecutor(guildCommand)
-            it.tabCompleter = guildCommand
+            it.setExecutor { sender, _, _, args ->
+                mainCommand.onCommand(sender, it, "guild", arrayOf("guild") + args)
+            }
+            it.tabCompleter = TabCompleter { sender, _, _, args ->
+                mainCommand.onTabComplete(sender, it, "guild", arrayOf("guild") + args)
+            }
         }
 
-        // チャットコマンド
-        val chatCommand = ChatCommand(chatService)
+        // /chat - /noty chat へのエイリアス
         getCommand("chat")?.let {
-            it.setExecutor(chatCommand)
-            it.tabCompleter = chatCommand
+            it.setExecutor { sender, _, _, args ->
+                mainCommand.onCommand(sender, it, "chat", arrayOf("chat") + args)
+            }
+            it.tabCompleter = TabCompleter { sender, _, _, args ->
+                mainCommand.onTabComplete(sender, it, "chat", arrayOf("chat") + args)
+            }
         }
 
         // ウィスパーコマンド
@@ -271,7 +317,7 @@ class Notoriety : JavaPlugin() {
 
                 // 表示更新
                 Bukkit.getPlayer(data.uuid)?.let {
-                    reputationService.updateDisplay(it)
+                    notorietyService.updateDisplay(it)
                 }
             }
         }, 72000L, 72000L)  // 1時間 = 72000 ticks
@@ -279,7 +325,7 @@ class Notoriety : JavaPlugin() {
         // 保留犯罪のチェック（1秒ごと）
         server.scheduler.runTaskTimer(this, Runnable {
             ownershipService.getExpiredPendingCrimes().forEach { pending ->
-                crimeService.commitCrime(
+                notorietyService.commitCrime(
                     criminal = pending.playerUuid,
                     crimeType = CrimeType.DESTROY,
                     alignmentPenalty = pending.alignmentPenalty,

@@ -552,8 +552,15 @@ class GuildServiceImpl(
     }
 
     override fun canTakeFromContainer(owner: UUID, accessor: UUID): Boolean {
-        // コンテナからアイテムを取り出す場合も同じロジック
-        return isAccessAllowed(owner, accessor)
+        // 同じプレイヤーなら許可
+        if (owner == accessor) return true
+
+        // DISTRUSTの場合のみ取り出し不可
+        // TRUST → 取り出し可能（犯罪なし）
+        // 未設定 → 取り出し可能（犯罪になる）
+        // DISTRUST → 取り出し不可
+        val trustState = trustService.getTrustState(owner, accessor)
+        return trustState != TrustState.DISTRUST
     }
 
     override fun setTrustState(truster: UUID, trusted: UUID, state: TrustState) {

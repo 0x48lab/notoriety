@@ -25,6 +25,9 @@ sealed class GuildException(message: String) : Exception(message) {
     class AlreadyViceMaster(playerUuid: UUID) : GuildException("Player is already a vice master: $playerUuid")
     class AlreadyMember(playerUuid: UUID) : GuildException("Player is already a regular member: $playerUuid")
 
+    // 経済関連
+    class InsufficientFunds(required: Double, current: Double) : GuildException("Insufficient funds: required $required, have $current")
+
     // 招待関連
     class AlreadyInvited(playerUuid: UUID, guildId: Long) : GuildException("Player $playerUuid already invited to guild $guildId")
     class InvitationNotFound(invitationId: Long) : GuildException("Invitation not found: $invitationId")

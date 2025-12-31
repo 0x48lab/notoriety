@@ -1,12 +1,11 @@
 package com.hacklab.minecraft.notoriety.village
 
+import com.hacklab.minecraft.notoriety.NotorietyService
 import com.hacklab.minecraft.notoriety.core.player.PlayerManager
 import com.hacklab.minecraft.notoriety.reputation.NameColor
-import com.hacklab.minecraft.notoriety.reputation.ReputationService
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.entity.Player
-import org.bukkit.entity.Villager
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
@@ -21,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 class TradeListener(
     private val playerManager: PlayerManager,
-    private val reputationService: ReputationService
+    private val notorietyService: NotorietyService
 ) : Listener {
 
     // 元のspecialPriceを保存（プレイヤーUUID -> レシピインデックス -> 元のspecialPrice）
@@ -165,7 +164,7 @@ class TradeListener(
         }
 
         // 善行として記録（灰も青も回復できる）
-        reputationService.onGoodDeed(
+        notorietyService.onGoodDeed(
             playerUuid = player.uniqueId,
             alignmentGain = 5,
             fameGain = 0

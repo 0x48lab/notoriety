@@ -194,6 +194,25 @@
                     <td class="penalty">-10</td>
                     <td>5秒以内に戻せばキャンセル</td>
                 </tr>
+                <tr>
+                    <td>村人を殺害（ベッドなし）</td>
+                    <td class="penalty">-10</td>
+                    <td>ベッドに紐づいていない村人</td>
+                </tr>
+            </table>
+
+            <h3>中程度の犯罪（-20）</h3>
+            <table>
+                <tr>
+                    <th>行動</th>
+                    <th>ペナルティ</th>
+                    <th>備考</th>
+                </tr>
+                <tr>
+                    <td>動物を殺す</td>
+                    <td class="penalty">-20</td>
+                    <td>村人またはゴーレムに目撃された場合</td>
+                </tr>
             </table>
 
             <h3>軽微な犯罪（-1）</h3>
@@ -202,6 +221,11 @@
                     <th>行動</th>
                     <th>ペナルティ</th>
                     <th>備考</th>
+                </tr>
+                <tr>
+                    <td>作物を収穫する</td>
+                    <td class="penalty">-1</td>
+                    <td>村人に目撃された場合のみ</td>
                 </tr>
                 <tr>
                     <td>他プレイヤーを攻撃</td>
@@ -219,28 +243,13 @@
                     <td>殺害しなくても</td>
                 </tr>
                 <tr>
-                    <td>動物を殺す</td>
-                    <td class="penalty">-1</td>
-                    <td>村人/ゴーレムに目撃された場合</td>
-                </tr>
-                <tr>
-                    <td>作物を収穫</td>
-                    <td class="penalty">-1</td>
-                    <td>村人に目撃された場合</td>
-                </tr>
-                <tr>
-                    <td>村人を殺害（ベッドなし）</td>
-                    <td class="penalty">-1</td>
-                    <td>ベッドに紐づいていない村人</td>
-                </tr>
-                <tr>
                     <td>村人のベッドを破壊</td>
-                    <td class="penalty">-1</td>
+                    <td class="penalty">-5</td>
                     <td>自分または信頼者が設置した場合は免除</td>
                 </tr>
                 <tr>
                     <td>村人の仕事場を破壊</td>
-                    <td class="penalty">-1</td>
+                    <td class="penalty">-5</td>
                     <td>自分または信頼者が設置した場合は免除</td>
                 </tr>
             </table>
@@ -528,6 +537,7 @@
 
             <h3>主な機能</h3>
             <ul>
+                <li><strong>作成費用</strong> - 50,000ゴールド</li>
                 <li><strong>自動信頼</strong> - ギルドメンバー間は自動的に信頼関係が構築される</li>
                 <li><strong>ギルドタグ</strong> - 名前の前に表示される1-4文字のタグ（例: [BC] PlayerName）</li>
                 <li><strong>ギルドチャット</strong> - <code>@</code>プレフィックスでメンバーのみに送信</li>
@@ -612,7 +622,7 @@
             <ul>
                 <li><code>konnichiha</code> → <code>こんにちは</code></li>
                 <li>URL、英単語、コマンドは自動的にスキップ</li>
-                <li><code>/romaji on</code> / <code>/romaji off</code> で切り替え</li>
+                <li><code>/chat romaji on</code> / <code>/chat romaji off</code> で切り替え</li>
             </ul>
 
             <div class="info">
@@ -634,6 +644,7 @@
                 <tr><td><code>/noty status [プレイヤー]</code></td><td>指定プレイヤーのステータスを表示</td></tr>
                 <tr><td><code>/noty history</code></td><td>自分の犯罪履歴を表示</td></tr>
                 <tr><td><code>/noty history [プレイヤー]</code></td><td>指定プレイヤーの犯罪履歴を表示</td></tr>
+                <tr><td><code>/noty locale [ja|en|reset]</code></td><td>言語を切り替え（個人設定）</td></tr>
             </table>
 
             <h3>信頼コマンド</h3>
@@ -655,7 +666,7 @@
                     <th>コマンド</th>
                     <th>説明</th>
                 </tr>
-                <tr><td><code>/guild create &lt;名前&gt; &lt;タグ&gt; [説明]</code></td><td>ギルドを作成</td></tr>
+                <tr><td><code>/guild create &lt;名前&gt; &lt;タグ&gt; [説明]</code></td><td>ギルドを作成（50,000ゴールド）</td></tr>
                 <tr><td><code>/guild disband</code></td><td>ギルドを解散（マスターのみ）</td></tr>
                 <tr><td><code>/guild info [ギルド名]</code></td><td>ギルド情報を表示</td></tr>
                 <tr><td><code>/guild list</code></td><td>ギルド一覧を表示</td></tr>
@@ -680,8 +691,12 @@
                 </tr>
                 <tr><td><code>/w &lt;プレイヤー&gt; &lt;メッセージ&gt;</code></td><td>ウィスパーを送信</td></tr>
                 <tr><td><code>/r &lt;メッセージ&gt;</code></td><td>最後のウィスパーに返信</td></tr>
-                <tr><td><code>/romaji on</code></td><td>ローマ字変換を有効化</td></tr>
-                <tr><td><code>/romaji off</code></td><td>ローマ字変換を無効化</td></tr>
+                <tr><td><code>/chat local</code></td><td>ローカルチャットに切り替え</td></tr>
+                <tr><td><code>/chat global</code></td><td>グローバルチャットに切り替え</td></tr>
+                <tr><td><code>/chat guild</code></td><td>ギルドチャットに切り替え</td></tr>
+                <tr><td><code>/chat romaji [on|off]</code></td><td>ローマ字変換の切り替え</td></tr>
+                <tr><td><code>/chat warning [on|off]</code></td><td>犯罪警告の切り替え</td></tr>
+                <tr><td><code>/chat status</code></td><td>現在のチャット設定を表示</td></tr>
             </table>
 
             <h3>懸賞金コマンド</h3>

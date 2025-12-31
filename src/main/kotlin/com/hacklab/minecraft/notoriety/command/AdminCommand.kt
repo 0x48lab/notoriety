@@ -68,7 +68,7 @@ class AdminCommand(private val plugin: Notoriety) : SubCommand {
         }
 
         Bukkit.getPlayer(target)?.let {
-            plugin.reputationService.updateDisplay(it)
+            plugin.notorietyService.updateDisplay(it)
         }
         sender.sendMessage(i18n.get("admin.updated", "Updated %s's %s").format(args[0], param))
         return true
@@ -126,11 +126,11 @@ class AdminCommand(private val plugin: Notoriety) : SubCommand {
         }
 
         val tag = args[1]
-        val teamManager = plugin.reputationService.teamManager
+        val teamManager = plugin.notorietyService.teamManager
 
         if (tag.lowercase() == "clear") {
             teamManager.setTestGuildTag(targetPlayer.uniqueId, null)
-            plugin.reputationService.updateDisplay(targetPlayer)
+            plugin.notorietyService.updateDisplay(targetPlayer)
             sender.sendMessage(Component.text("Cleared guild tag for ${targetPlayer.name}").color(NamedTextColor.GREEN))
         } else {
             if (tag.length > 5) {
@@ -138,7 +138,7 @@ class AdminCommand(private val plugin: Notoriety) : SubCommand {
                 return true
             }
             teamManager.setTestGuildTag(targetPlayer.uniqueId, tag)
-            plugin.reputationService.updateDisplay(targetPlayer)
+            plugin.notorietyService.updateDisplay(targetPlayer)
             sender.sendMessage(
                 Component.text("Set guild tag for ${targetPlayer.name} to ")
                     .color(NamedTextColor.GREEN)

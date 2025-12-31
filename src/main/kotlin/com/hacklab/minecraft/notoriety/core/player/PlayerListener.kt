@@ -1,6 +1,7 @@
 package com.hacklab.minecraft.notoriety.core.player
 
-import com.hacklab.minecraft.notoriety.reputation.ReputationService
+import com.hacklab.minecraft.notoriety.NotorietyService
+import com.hacklab.minecraft.notoriety.reputation.TeamManager
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
@@ -10,7 +11,8 @@ import java.time.Instant
 
 class PlayerListener(
     private val playerManager: PlayerManager,
-    private val reputationService: ReputationService
+    private val notorietyService: NotorietyService,
+    private val teamManager: TeamManager
 ) : Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -22,7 +24,7 @@ class PlayerListener(
         data.lastSeen = Instant.now()
 
         // 表示を更新
-        reputationService.updateDisplay(player)
+        notorietyService.updateDisplay(player)
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -33,6 +35,6 @@ class PlayerListener(
         playerManager.unloadPlayer(player.uniqueId)
 
         // Teamから削除
-        reputationService.teamManager.removePlayerTeam(player)
+        teamManager.removePlayerTeam(player)
     }
 }

@@ -123,6 +123,36 @@ warning:
   attack_villager: "§c⚠ Warning: §eAttacking villagers is a CRIME! §7(Alignment -1)"
   attack_golem: "§c⚠ Warning: §eAttacking Iron Golems is a CRIME! §7(Alignment -50)"
 
+# Locale messages
+locale:
+  title: "Language Settings"
+  current: "Current language: %s"
+  current_default: "Current language: %s (server default)"
+  changed: "Language changed to %s"
+  reset: "Language reset to server default (%s)"
+  unsupported: "Unsupported language: %s"
+  supported: "Supported languages: %s"
+  usage: "Usage: /noty locale <ja|en|reset>"
+
+# Guild messages
+guild:
+  # Create command
+  create_usage: "Usage: /guild create <name> <tag> [description]"
+  create_name_hint: "Name: 3-32 characters (letters, numbers, spaces, underscores, hyphens)"
+  create_tag_hint: "Tag: 2-4 characters (letters and numbers only)"
+  create_cost_hint: "Creation cost: %s"
+  create_insufficient_funds: "Insufficient funds. Required: %s, You have: %s"
+  create_success: "Guild created!"
+  create_cost_display: "(Cost: %s)"
+  create_withdraw_failed: "Failed to withdraw funds. Please try again."
+  # Error messages
+  error_invalid_name: "Invalid guild name. Use 3-32 characters (letters, numbers, spaces, underscores, hyphens)"
+  error_invalid_tag: "Invalid guild tag. Use 2-4 characters (letters and numbers only)"
+  error_name_taken: "A guild with this name already exists"
+  error_tag_taken: "A guild with this tag already exists"
+  error_already_in_guild: "You are already in a guild. Leave your current guild first"
+  error_generic: "Failed to create guild: %s"
+
 # Admin messages
 admin:
   gray_list_title: "=== Gray Players (%d) ==="

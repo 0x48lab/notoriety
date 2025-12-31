@@ -1,13 +1,11 @@
 package com.hacklab.minecraft.notoriety.combat
 
+import com.hacklab.minecraft.notoriety.CrimeCheckResult
+import com.hacklab.minecraft.notoriety.NotorietyService
 import com.hacklab.minecraft.notoriety.bounty.BountyService
-import com.hacklab.minecraft.notoriety.chat.service.ChatService
-import com.hacklab.minecraft.notoriety.core.i18n.I18nManager
 import com.hacklab.minecraft.notoriety.core.player.PlayerManager
-import com.hacklab.minecraft.notoriety.crime.CrimeService
 import com.hacklab.minecraft.notoriety.crime.CrimeType
 import com.hacklab.minecraft.notoriety.reputation.NameColor
-import com.hacklab.minecraft.notoriety.reputation.ReputationService
 import com.hacklab.minecraft.notoriety.trust.TrustService
 import org.bukkit.entity.Monster
 import org.bukkit.entity.Player
@@ -18,24 +16,13 @@ import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.entity.PlayerDeathEvent
-import java.time.Instant
-import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 
 class CombatListener(
     private val playerManager: PlayerManager,
-    private val crimeService: CrimeService,
-    private val reputationService: ReputationService,
+    private val notorietyService: NotorietyService,
     private val bountyService: BountyService,
-    private val trustService: TrustService,
-    private val chatService: ChatService,
-    private val i18nManager: I18nManager
+    private val trustService: TrustService
 ) : Listener {
-
-    // 警告のクールダウン（同じターゲットに対して連続警告を防ぐ）
-    private data class WarningKey(val attackerUuid: UUID, val targetUuid: UUID)
-    private val warningCooldowns = ConcurrentHashMap<WarningKey, Instant>()
-    private val WARNING_COOLDOWN_SECONDS = 10L
 
     /**
      * プレイヤー攻撃時の警告表示（犯罪判定より先に実行）
@@ -45,29 +32,8 @@ class CombatListener(
         val attacker = event.damager as? Player ?: return
         val victim = event.entity as? Player ?: return
 
-        // 警告がOFFの場合はスキップ
-        if (!chatService.isWarningsEnabled(attacker.uniqueId)) return
-
-        // 被害者が加害者を信頼していれば犯罪にならない
-        if (trustService.isTrusted(victim.uniqueId, attacker.uniqueId)) return
-
-        val victimData = playerManager.getPlayer(victim) ?: return
-
-        // 青プレイヤーへの攻撃のみ警告
-        if (victimData.getNameColor() != NameColor.BLUE) return
-
-        // クールダウンチェック
-        val warningKey = WarningKey(attacker.uniqueId, victim.uniqueId)
-        val lastWarning = warningCooldowns[warningKey]
-        val now = Instant.now()
-        if (lastWarning != null && java.time.Duration.between(lastWarning, now).seconds < WARNING_COOLDOWN_SECONDS) {
-            return
-        }
-        warningCooldowns[warningKey] = now
-
-        // 警告メッセージを表示
-        val message = i18nManager.get("warning.attack_player", "warning.attack_player").format(victim.name)
-        attacker.sendMessage(message)
+        // NotorietyServiceで犯罪チェック（警告表示も含む）
+        notorietyService.checkPlayerAttackCrime(attacker, victim)
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -75,20 +41,17 @@ class CombatListener(
         val attacker = event.damager as? Player ?: return
         val victim = event.entity as? Player ?: return
 
-        // 被害者が加害者を信頼していれば犯罪にならない
-        if (trustService.isTrusted(victim.uniqueId, attacker.uniqueId)) return
-
-        val victimData = playerManager.getPlayer(victim) ?: return
-
-        // 青を攻撃したらAlignment減少
-        if (victimData.getNameColor() == NameColor.BLUE) {
-            crimeService.commitCrime(
-                criminal = attacker.uniqueId,
-                crimeType = CrimeType.ATTACK,
-                alignmentPenalty = 1,
-                victim = victim.uniqueId
-            )
-            reputationService.updateDisplay(attacker)
+        // 犯罪判定
+        when (val result = notorietyService.checkPlayerAttackCrime(attacker, victim)) {
+            is CrimeCheckResult.IsCrime -> {
+                notorietyService.commitCrime(
+                    criminal = attacker.uniqueId,
+                    crimeType = CrimeType.ATTACK,
+                    alignmentPenalty = result.penalty,
+                    victim = result.victimUuid
+                )
+            }
+            else -> { /* 犯罪にならない */ }
         }
     }
 
@@ -100,38 +63,8 @@ class CombatListener(
         val attacker = event.damager as? Player ?: return
         val pet = event.entity as? Tameable ?: return
 
-        // 警告がOFFの場合はスキップ
-        if (!chatService.isWarningsEnabled(attacker.uniqueId)) return
-
-        // テイムされていなければ対象外
-        if (!pet.isTamed) return
-
-        // 所有者がオンラインプレイヤーでなければ対象外
-        val owner = pet.owner as? Player ?: return
-
-        // 自分のペットは対象外
-        if (owner.uniqueId == attacker.uniqueId) return
-
-        // 所有者が攻撃者を信頼していれば犯罪にならない
-        if (trustService.isTrusted(owner.uniqueId, attacker.uniqueId)) return
-
-        val ownerData = playerManager.getPlayer(owner) ?: return
-
-        // 青色プレイヤーのペットのみ保護
-        if (ownerData.getNameColor() != NameColor.BLUE) return
-
-        // クールダウンチェック
-        val warningKey = WarningKey(attacker.uniqueId, owner.uniqueId)
-        val lastWarning = warningCooldowns[warningKey]
-        val now = Instant.now()
-        if (lastWarning != null && java.time.Duration.between(lastWarning, now).seconds < WARNING_COOLDOWN_SECONDS) {
-            return
-        }
-        warningCooldowns[warningKey] = now
-
-        // 警告メッセージを表示
-        val message = i18nManager.get("warning.attack_pet", "warning.attack_pet").format(owner.name)
-        attacker.sendMessage(message)
+        // NotorietyServiceで犯罪チェック（警告表示も含む）
+        notorietyService.checkPetAttackCrime(attacker, pet)
     }
 
     // ペット攻撃判定
@@ -140,33 +73,19 @@ class CombatListener(
         val attacker = event.damager as? Player ?: return
         val pet = event.entity as? Tameable ?: return
 
-        // テイムされていなければ対象外
-        if (!pet.isTamed) return
-
-        // 所有者がオンラインプレイヤーでなければ対象外
-        val owner = pet.owner as? Player ?: return
-
-        // 自分のペットは対象外
-        if (owner.uniqueId == attacker.uniqueId) return
-
-        // 所有者が攻撃者を信頼していれば犯罪にならない
-        if (trustService.isTrusted(owner.uniqueId, attacker.uniqueId)) return
-
-        val ownerData = playerManager.getPlayer(owner) ?: return
-
-        // 青色プレイヤーのペットのみ保護
-        if (ownerData.getNameColor() != NameColor.BLUE) return
-
-        // Alignment -1
-        crimeService.commitCrime(
-            criminal = attacker.uniqueId,
-            crimeType = CrimeType.ATTACK,
-            alignmentPenalty = 1,
-            victim = owner.uniqueId,
-            detail = "Pet: ${pet.type.name}"
-        )
-
-        reputationService.updateDisplay(attacker)
+        // 犯罪判定
+        when (val result = notorietyService.checkPetAttackCrime(attacker, pet)) {
+            is CrimeCheckResult.IsCrime -> {
+                notorietyService.commitCrime(
+                    criminal = attacker.uniqueId,
+                    crimeType = CrimeType.ATTACK,
+                    alignmentPenalty = result.penalty,
+                    victim = result.victimUuid,
+                    detail = "Pet: ${pet.type.name}"
+                )
+            }
+            else -> { /* 犯罪にならない */ }
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -196,7 +115,7 @@ class CombatListener(
 
             if (!isTrusted) {
                 // PK判定と報酬処理
-                reputationService.onPlayerKill(killer.uniqueId, victim.uniqueId)
+                notorietyService.onPlayerKill(killer.uniqueId, victim.uniqueId)
 
                 // 赤プレイヤーを倒した場合、懸賞金処理
                 if (victimData.getNameColor() == NameColor.RED) {
@@ -205,10 +124,10 @@ class CombatListener(
             }
 
             // 表示を更新
-            reputationService.updateDisplay(killer)
+            notorietyService.updateDisplay(killer)
         }
 
-        reputationService.updateDisplay(victim)
+        notorietyService.updateDisplay(victim)
     }
 
     // モンスター討伐でFame+1
@@ -225,6 +144,6 @@ class CombatListener(
         killerData.addFame(1)
 
         // 表示を更新
-        reputationService.updateDisplay(killer)
+        notorietyService.updateDisplay(killer)
     }
 }
