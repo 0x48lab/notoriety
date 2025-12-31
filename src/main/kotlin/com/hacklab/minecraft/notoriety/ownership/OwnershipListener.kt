@@ -7,6 +7,7 @@ import com.hacklab.minecraft.notoriety.crime.CrimeService
 import com.hacklab.minecraft.notoriety.crime.CrimeType
 import com.hacklab.minecraft.notoriety.guild.service.GuildService
 import com.hacklab.minecraft.notoriety.reputation.NameColor
+import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.block.Container
 import org.bukkit.entity.Player
@@ -14,9 +15,13 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockBreakEvent
+import org.bukkit.event.block.BlockDamageEvent
 import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.inventory.InventoryOpenEvent
 import java.time.Instant
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class OwnershipListener(
     private val plugin: Notoriety,
@@ -24,6 +29,11 @@ class OwnershipListener(
     private val guildService: GuildService,
     private val crimeService: CrimeService
 ) : Listener {
+
+    // 警告のクールダウン（同じブロックに対して連続警告を防ぐ）
+    private data class WarningKey(val playerUuid: UUID, val location: BlockLocation)
+    private val warningCooldowns = ConcurrentHashMap<WarningKey, Instant>()
+    private val WARNING_COOLDOWN_SECONDS = 10L
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onBlockPlace(event: BlockPlaceEvent) {
@@ -44,6 +54,76 @@ class OwnershipListener(
         if (ownershipService.cancelPendingCrime(location, player.uniqueId, event.block.type)) {
             // キャンセル成功 - 犯罪にならなかった
         }
+    }
+
+    /**
+     * コンテナを開いた時に警告を表示
+     */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    fun onInventoryOpen(event: InventoryOpenEvent) {
+        val player = event.player as? Player ?: return
+
+        // クリエイティブモードはスキップ
+        if (player.gameMode == GameMode.CREATIVE) return
+
+        val holder = event.inventory.holder
+        if (holder !is Container) return
+
+        val location = holder.block.location
+        val owner = ownershipService.getOwner(location) ?: return
+
+        // アクセス権がある場合は警告不要（取り出しも可能な場合）
+        if (ownershipService.canTakeFromContainer(location, player.uniqueId, guildService)) return
+
+        // クールダウンチェック
+        val warningKey = WarningKey(player.uniqueId, location.toBlockLoc())
+        val lastWarning = warningCooldowns[warningKey]
+        val now = Instant.now()
+        if (lastWarning != null && java.time.Duration.between(lastWarning, now).seconds < WARNING_COOLDOWN_SECONDS) {
+            return
+        }
+        warningCooldowns[warningKey] = now
+
+        // 所有者名を取得
+        val ownerName = Bukkit.getOfflinePlayer(owner).name ?: "???"
+
+        // 警告メッセージを表示
+        val message = plugin.i18nManager.get("warning.chest_open", "warning.chest_open").format(ownerName)
+        player.sendMessage(message)
+    }
+
+    /**
+     * ブロックを壊し始めた時に警告を表示
+     */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    fun onBlockDamage(event: BlockDamageEvent) {
+        val player = event.player
+
+        // クリエイティブモードはスキップ
+        if (player.gameMode == GameMode.CREATIVE) return
+
+        val block = event.block
+        val owner = ownershipService.getOwner(block.location) ?: return
+
+        // アクセス権がある場合は警告不要
+        if (ownershipService.canAccess(block.location, player.uniqueId, guildService)) return
+
+        // クールダウンチェック（同じブロックに対する連続警告を防ぐ）
+        val warningKey = WarningKey(player.uniqueId, block.location.toBlockLoc())
+        val lastWarning = warningCooldowns[warningKey]
+        val now = Instant.now()
+        if (lastWarning != null && java.time.Duration.between(lastWarning, now).seconds < WARNING_COOLDOWN_SECONDS) {
+            return
+        }
+        warningCooldowns[warningKey] = now
+
+        // 所有者名を取得
+        val ownerName = Bukkit.getOfflinePlayer(owner).name ?: "???"
+
+        // 警告メッセージを表示
+        val messageKey = if (block.state is Container) "warning.container_break" else "warning.block_break"
+        val message = plugin.i18nManager.get(messageKey, messageKey).format(ownerName)
+        player.sendMessage(message)
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)

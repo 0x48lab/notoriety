@@ -111,6 +111,12 @@ inspect:
   stick_received: "You received an Inspection Stick!"
   stick_dropped: "Inventory full! Inspection Stick dropped at your feet."
 
+# Warning messages (before crime)
+warning:
+  chest_open: "§c⚠ Warning: §eThis chest belongs to §f%s§e. Taking items will be THEFT! §7(Alignment -50)"
+  block_break: "§c⚠ Warning: §eThis block belongs to §f%s§e. Breaking it will be a CRIME! §7(Alignment -10)"
+  container_break: "§c⚠ Warning: §eThis container belongs to §f%s§e. Breaking it will be an INSTANT CRIME! §7(Alignment -10)"
+
 # Admin messages
 admin:
   gray_list_title: "=== Gray Players (%d) ==="
