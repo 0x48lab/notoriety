@@ -166,6 +166,11 @@
                     <th>備考</th>
                 </tr>
                 <tr>
+                    <td>他プレイヤーを殺害</td>
+                    <td class="penalty">-50</td>
+                    <td>PKCountも+1</td>
+                </tr>
+                <tr>
                     <td>村人を殺害（ベッドあり）</td>
                     <td class="penalty">-50</td>
                     <td>ベッドに紐づいている村人</td>
@@ -190,9 +195,9 @@
                     <th>備考</th>
                 </tr>
                 <tr>
-                    <td>他プレイヤーの所有物を破壊</td>
+                    <td>動物を殺す</td>
                     <td class="penalty">-10</td>
-                    <td>5秒以内に戻せばキャンセル</td>
+                    <td>灰色以上。村人またはゴーレムに目撃された場合</td>
                 </tr>
                 <tr>
                     <td>村人を殺害（ベッドなし）</td>
@@ -201,7 +206,7 @@
                 </tr>
             </table>
 
-            <h3>中程度の犯罪（-20）</h3>
+            <h3>軽い犯罪（-5）</h3>
             <table>
                 <tr>
                     <th>行動</th>
@@ -209,23 +214,28 @@
                     <th>備考</th>
                 </tr>
                 <tr>
-                    <td>動物を殺す</td>
-                    <td class="penalty">-20</td>
-                    <td>村人またはゴーレムに目撃された場合</td>
+                    <td>他プレイヤーの所有物を破壊</td>
+                    <td class="penalty">-5</td>
+                    <td>5秒以内に戻せばキャンセル</td>
+                </tr>
+                <tr>
+                    <td>村人のベッドを破壊</td>
+                    <td class="penalty">-5</td>
+                    <td>自分または信頼者が設置した場合は免除</td>
+                </tr>
+                <tr>
+                    <td>村人の仕事場を破壊</td>
+                    <td class="penalty">-5</td>
+                    <td>自分または信頼者が設置した場合は免除</td>
                 </tr>
             </table>
 
-            <h3>軽微な犯罪（-1）</h3>
+            <h3>微罪（-1）</h3>
             <table>
                 <tr>
                     <th>行動</th>
                     <th>ペナルティ</th>
                     <th>備考</th>
-                </tr>
-                <tr>
-                    <td>作物を収穫する</td>
-                    <td class="penalty">-1</td>
-                    <td>村人に目撃された場合のみ</td>
                 </tr>
                 <tr>
                     <td>他プレイヤーを攻撃</td>
@@ -243,14 +253,9 @@
                     <td>殺害しなくても</td>
                 </tr>
                 <tr>
-                    <td>村人のベッドを破壊</td>
-                    <td class="penalty">-5</td>
-                    <td>自分または信頼者が設置した場合は免除</td>
-                </tr>
-                <tr>
-                    <td>村人の仕事場を破壊</td>
-                    <td class="penalty">-5</td>
-                    <td>自分または信頼者が設置した場合は免除</td>
+                    <td>作物を収穫する</td>
+                    <td class="penalty">-1</td>
+                    <td>灰色以上。村人に目撃された場合</td>
                 </tr>
             </table>
 
@@ -658,6 +663,7 @@
                 <tr><td><code>/trust remove &lt;プレイヤー&gt;</code></td><td>信頼設定を解除（UNSET）</td></tr>
                 <tr><td><code>/trust list</code></td><td>信頼関係一覧を表示</td></tr>
                 <tr><td><code>/trust check &lt;プレイヤー&gt;</code></td><td>指定プレイヤーとの信頼関係を確認</td></tr>
+                <tr><td><code>/noty abandon</code></td><td>見ているブロックの所有権を放棄</td></tr>
             </table>
 
             <h3>ギルドコマンド</h3>

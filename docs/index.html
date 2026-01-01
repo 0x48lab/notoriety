@@ -166,6 +166,11 @@
                     <th>Notes</th>
                 </tr>
                 <tr>
+                    <td>Kill another player</td>
+                    <td class="penalty">-50</td>
+                    <td>PKCount +1</td>
+                </tr>
+                <tr>
                     <td>Kill villager (with bed)</td>
                     <td class="penalty">-50</td>
                     <td>Villager linked to a bed</td>
@@ -190,9 +195,9 @@
                     <th>Notes</th>
                 </tr>
                 <tr>
-                    <td>Destroy player's property</td>
+                    <td>Kill animals</td>
                     <td class="penalty">-10</td>
-                    <td>Replace within 5 sec to cancel</td>
+                    <td>Gray or above. When witnessed by villager or golem</td>
                 </tr>
                 <tr>
                     <td>Kill villager (no bed)</td>
@@ -201,7 +206,7 @@
                 </tr>
             </table>
 
-            <h3>Moderate Crimes (-20)</h3>
+            <h3>Petty Crimes (-5)</h3>
             <table>
                 <tr>
                     <th>Action</th>
@@ -209,23 +214,28 @@
                     <th>Notes</th>
                 </tr>
                 <tr>
-                    <td>Kill animals</td>
-                    <td class="penalty">-20</td>
-                    <td>When witnessed by villager or golem</td>
+                    <td>Destroy player's property</td>
+                    <td class="penalty">-5</td>
+                    <td>Replace within 5 sec to cancel</td>
+                </tr>
+                <tr>
+                    <td>Destroy villager's bed</td>
+                    <td class="penalty">-5</td>
+                    <td>Exempt if you or trusted player placed it</td>
+                </tr>
+                <tr>
+                    <td>Destroy villager's workstation</td>
+                    <td class="penalty">-5</td>
+                    <td>Exempt if you or trusted player placed it</td>
                 </tr>
             </table>
 
-            <h3>Minor Crimes (-1)</h3>
+            <h3>Trivial Offenses (-1)</h3>
             <table>
                 <tr>
                     <th>Action</th>
                     <th>Penalty</th>
                     <th>Notes</th>
-                </tr>
-                <tr>
-                    <td>Harvest crops</td>
-                    <td class="penalty">-1</td>
-                    <td>When witnessed by villager</td>
                 </tr>
                 <tr>
                     <td>Attack another player</td>
@@ -243,14 +253,9 @@
                     <td>Even without killing</td>
                 </tr>
                 <tr>
-                    <td>Destroy villager's bed</td>
-                    <td class="penalty">-5</td>
-                    <td>Exempt if you or trusted player placed it</td>
-                </tr>
-                <tr>
-                    <td>Destroy villager's workstation</td>
-                    <td class="penalty">-5</td>
-                    <td>Exempt if you or trusted player placed it</td>
+                    <td>Harvest crops</td>
+                    <td class="penalty">-1</td>
+                    <td>Gray or above. When witnessed by villager</td>
                 </tr>
             </table>
 
@@ -656,6 +661,7 @@
                 <tr><td><code>/trust remove [player]</code></td><td>Remove trust setting (UNSET)</td></tr>
                 <tr><td><code>/trust list</code></td><td>View your trust list</td></tr>
                 <tr><td><code>/trust check [player]</code></td><td>Check trust relationship</td></tr>
+                <tr><td><code>/noty abandon</code></td><td>Abandon ownership of the block you're looking at</td></tr>
             </table>
 
             <h3>Guild Commands</h3>

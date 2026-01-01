@@ -202,10 +202,8 @@ class VillagerListener(
 
         val data = playerManager.getPlayer(killer) ?: return
 
-        // 青色プレイヤーは犯罪にならない
+        // 青色プレイヤーは犯罪にならない（灰色・赤色のみ対象）
         if (data.getNameColor() == NameColor.BLUE) return
-
-        // 灰色・赤色プレイヤーのみ処理
         val witness = villagerService.checkGrayCrimeWitness(killer, entity.location)
         val golemWitnessed = if (witness == null) {
             // 村人が目撃していなくても、ゴーレムが目撃しているかチェック
@@ -217,11 +215,11 @@ class VillagerListener(
         }
 
         if (witness != null || golemWitnessed) {
-            // 動物殺害の犯罪を記録（Alignment -20）
+            // 動物殺害の犯罪を記録（Alignment -10）
             notorietyService.commitCrime(
                 criminal = killer.uniqueId,
                 crimeType = CrimeType.KILL_ANIMAL,
-                alignmentPenalty = 20,
+                alignmentPenalty = 10,
                 location = entity.location,
                 detail = entity.type.name
             )
@@ -241,7 +239,9 @@ class VillagerListener(
         if (!isCrop(block.type)) return
 
         val data = playerManager.getPlayer(player) ?: return
-        if (data.getNameColor() != NameColor.GRAY) return
+
+        // 青色プレイヤーは犯罪にならない（灰色・赤色のみ対象）
+        if (data.getNameColor() == NameColor.BLUE) return
 
         val witness = villagerService.checkGrayCrimeWitness(player, block.location)
         val golemWitnessed = if (witness == null) {
@@ -278,7 +278,9 @@ class VillagerListener(
         if (block.state !is Container && !isFurniture(block.type)) return
 
         val data = playerManager.getPlayer(player) ?: return
-        if (data.getNameColor() != NameColor.GRAY) return
+
+        // 青色プレイヤーは犯罪にならない（灰色・赤色のみ対象）
+        if (data.getNameColor() == NameColor.BLUE) return
 
         // 所有権があるブロックはOwnershipListenerで処理
         if (ownershipService.isProtected(block.location)) return
@@ -318,7 +320,9 @@ class VillagerListener(
         if (event.currentItem == null || event.currentItem?.type?.isAir == true) return
 
         val data = playerManager.getPlayer(player) ?: return
-        if (data.getNameColor() != NameColor.GRAY) return
+
+        // 青色プレイヤーは犯罪にならない（灰色・赤色のみ対象）
+        if (data.getNameColor() == NameColor.BLUE) return
 
         val location = holder.block.location
 
