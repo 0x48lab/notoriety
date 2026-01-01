@@ -109,7 +109,7 @@ class OwnershipListener(
             notorietyService.commitCrime(
                 criminal = player.uniqueId,
                 crimeType = CrimeType.DESTROY,
-                alignmentPenalty = 10,
+                alignmentPenalty = 5,
                 victim = owner,
                 location = block.location,
                 detail = block.type.name
@@ -122,7 +122,7 @@ class OwnershipListener(
                 playerUuid = player.uniqueId,
                 ownerUuid = owner,
                 brokenAt = Instant.now(),
-                alignmentPenalty = 10
+                alignmentPenalty = 5
             ))
         }
     }

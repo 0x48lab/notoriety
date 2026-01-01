@@ -299,7 +299,7 @@ class VillagerListener(
             notorietyService.commitCrime(
                 criminal = player.uniqueId,
                 crimeType = CrimeType.DESTROY,
-                alignmentPenalty = 10,
+                alignmentPenalty = 5,
                 location = block.location,
                 detail = block.type.name
             )
