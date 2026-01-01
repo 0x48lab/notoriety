@@ -4,9 +4,9 @@ import com.hacklab.minecraft.notoriety.CrimeCheckResult
 import com.hacklab.minecraft.notoriety.NotorietyService
 import com.hacklab.minecraft.notoriety.core.player.PlayerManager
 import com.hacklab.minecraft.notoriety.crime.CrimeType
+import com.hacklab.minecraft.notoriety.guild.service.GuildService
 import com.hacklab.minecraft.notoriety.ownership.OwnershipService
 import com.hacklab.minecraft.notoriety.reputation.NameColor
-import com.hacklab.minecraft.notoriety.trust.TrustService
 import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.entity.Animals
@@ -36,7 +36,7 @@ class VillagerListener(
     private val golemService: GolemService,
     private val notorietyService: NotorietyService,
     private val ownershipService: OwnershipService,
-    private val trustService: TrustService
+    private val guildService: GuildService
 ) : Listener {
 
     /**
@@ -364,9 +364,9 @@ class VillagerListener(
 
         playerManager.getPlayer(player) ?: return
 
-        // 自分で設置したブロック、または信頼されたプレイヤーなら犯罪にならない
+        // 自分で設置したブロック、信頼されたプレイヤー、またはギルドメンバーなら犯罪にならない
         val owner = ownershipService.getOwner(block.location)
-        if (owner != null && (owner == player.uniqueId || trustService.isTrusted(owner, player.uniqueId))) return
+        if (owner != null && (owner == player.uniqueId || guildService.isAccessAllowed(owner, player.uniqueId))) return
 
         // このベッドに紐づいている村人を探す
         val affectedVillager = findVillagerWithBed(block.location) ?: return
@@ -397,9 +397,9 @@ class VillagerListener(
         val block = event.block
         playerManager.getPlayer(player) ?: return
 
-        // 自分で設置したブロック、または信頼されたプレイヤーなら犯罪にならない
+        // 自分で設置したブロック、信頼されたプレイヤー、またはギルドメンバーなら犯罪にならない
         val owner = ownershipService.getOwner(block.location)
-        if (owner != null && (owner == player.uniqueId || trustService.isTrusted(owner, player.uniqueId))) return
+        if (owner != null && (owner == player.uniqueId || guildService.isAccessAllowed(owner, player.uniqueId))) return
 
         // この職業ブロックに紐づいている村人を探す
         val affectedVillager = findVillagerWithWorkstation(block.location) ?: return

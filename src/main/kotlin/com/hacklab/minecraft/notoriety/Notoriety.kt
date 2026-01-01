@@ -198,7 +198,7 @@ class Notoriety : JavaPlugin() {
                 golemService = golemService,
                 notorietyService = notorietyService,
                 ownershipService = ownershipService,
-                trustService = trustService
+                guildService = guildService
             ),
             this
         )
