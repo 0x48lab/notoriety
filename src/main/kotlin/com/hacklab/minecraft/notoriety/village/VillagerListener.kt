@@ -350,7 +350,8 @@ class VillagerListener(
     }
 
     // 村人ベッド破壊（村人が紐づいているベッドを壊すと犯罪）- 全プレイヤー対象
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    // 優先度NORMALで実行（OwnershipListenerのHIGHより前に所有権チェックを行う）
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     fun onVillagerBedBreak(event: BlockBreakEvent) {
         val player = event.player
 
@@ -387,7 +388,8 @@ class VillagerListener(
     }
 
     // 村人仕事場破壊（村人が紐づいている職業ブロックを壊すと犯罪）- 全プレイヤー対象
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    // 優先度NORMALで実行（OwnershipListenerのHIGHより前に所有権チェックを行う）
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     fun onVillagerWorkstationBreak(event: BlockBreakEvent) {
         val player = event.player
 
