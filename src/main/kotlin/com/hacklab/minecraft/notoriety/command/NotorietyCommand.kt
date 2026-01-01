@@ -15,6 +15,7 @@ class NotorietyCommand(private val plugin: Notoriety) : CommandExecutor, TabComp
             "history" to HistoryCommand(plugin),
             "bounty" to BountyCommand(plugin),
             "trust" to TrustCommand(plugin),
+            "abandon" to AbandonCommand(plugin.ownershipService),
             "admin" to AdminCommand(plugin),
             "inspect" to InspectCommand(plugin.inspectService, plugin.inspectionStick, plugin.i18nManager),
             "locale" to LocaleCommand(plugin),
@@ -64,6 +65,7 @@ class NotorietyCommand(private val plugin: Notoriety) : CommandExecutor, TabComp
         sender.sendMessage("/noty history [player] - Show crime history")
         sender.sendMessage("/noty bounty <set|list|check> - Bounty system")
         sender.sendMessage("/noty trust <add|remove|list|check> - Trust system")
+        sender.sendMessage("/noty abandon - Abandon ownership of target block")
         sender.sendMessage("/noty guild <subcommand> - Guild system")
         sender.sendMessage("/noty chat <mode> - Chat settings")
         sender.sendMessage("/noty inspect [tool] - Inspect mode / Get inspection stick")
