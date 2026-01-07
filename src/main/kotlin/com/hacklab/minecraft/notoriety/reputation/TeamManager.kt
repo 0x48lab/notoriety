@@ -1,12 +1,10 @@
 package com.hacklab.minecraft.notoriety.reputation
 
-import io.papermc.paper.scoreboard.numbers.NumberFormat
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
-import org.bukkit.scoreboard.Criteria
-import org.bukkit.scoreboard.DisplaySlot
 import org.bukkit.scoreboard.Scoreboard
 
 class TeamManager(private val plugin: JavaPlugin) {
@@ -32,15 +30,8 @@ class TeamManager(private val plugin: JavaPlugin) {
     fun getTestGuildTag(playerUuid: java.util.UUID): String? = testGuildTags[playerUuid]
 
     init {
-        // BELOW_NAME用のObjectiveを作成
-        if (scoreboard.getObjective(BELOW_NAME_OBJECTIVE) == null) {
-            val objective = scoreboard.registerNewObjective(
-                BELOW_NAME_OBJECTIVE,
-                Criteria.DUMMY,
-                Component.empty()
-            )
-            objective.displaySlot = DisplaySlot.BELOW_NAME
-        }
+        // 既存のBELOW_NAME Objectiveを削除（古い実装のクリーンアップ）
+        scoreboard.getObjective(BELOW_NAME_OBJECTIVE)?.unregister()
     }
 
     fun updatePlayerTeam(player: Player, color: NameColor, title: String?) {
@@ -50,12 +41,19 @@ class TeamManager(private val plugin: JavaPlugin) {
         val team = scoreboard.getTeam(teamName) ?: scoreboard.registerNewTeam(teamName)
         team.color(color.chatColor)
 
-        // ギルドタグをprefixに表示
-        val guildTag = testGuildTags[player.uniqueId]
-        if (guildTag != null) {
-            team.prefix(Component.text("[$guildTag] ").color(net.kyori.adventure.text.format.NamedTextColor.GOLD))
+        // 称号をprefixに表示（名前の前）
+        if (title != null) {
+            team.prefix(Component.text("$title ").color(color.prefixColor))
         } else {
             team.prefix(Component.empty())
+        }
+
+        // ギルドタグをsuffixに表示（名前の後ろ）
+        val guildTag = testGuildTags[player.uniqueId]
+        if (guildTag != null) {
+            team.suffix(Component.text(" [$guildTag]").color(NamedTextColor.GOLD))
+        } else {
+            team.suffix(Component.empty())
         }
 
         if (!team.hasEntry(player.name)) {
@@ -66,25 +64,6 @@ class TeamManager(private val plugin: JavaPlugin) {
                 }
             }
             team.addEntry(player.name)
-        }
-
-        // BELOW_NAMEに称号を表示
-        updateBelowName(player, color, title)
-    }
-
-    private fun updateBelowName(player: Player, color: NameColor, title: String?) {
-        val objective = scoreboard.getObjective(BELOW_NAME_OBJECTIVE) ?: return
-        val score = objective.getScore(player.name)
-        score.score = 0
-
-        if (title != null) {
-            // 称号をカスタムフォーマットで表示
-            score.numberFormat(NumberFormat.fixed(
-                Component.text(title).color(color.prefixColor)
-            ))
-        } else {
-            // 称号がない場合は空白
-            score.numberFormat(NumberFormat.blank())
         }
     }
 
@@ -97,10 +76,8 @@ class TeamManager(private val plugin: JavaPlugin) {
             }
         }
 
-        // BELOW_NAMEのスコアをリセット
-        scoreboard.getObjective(BELOW_NAME_OBJECTIVE)?.let { objective ->
-            scoreboard.resetScores(player.name)
-        }
+        // 古いBELOW_NAMEスコアをクリーンアップ
+        scoreboard.resetScores(player.name)
     }
 
     private fun getTeamName(player: Player): String {

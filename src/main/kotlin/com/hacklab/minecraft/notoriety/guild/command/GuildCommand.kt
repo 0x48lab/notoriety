@@ -52,6 +52,13 @@ class GuildCommand(
         }
     }
 
+    /**
+     * 外部からサブコマンドを追加する（領地システムなど）
+     */
+    fun addSubCommand(subCommand: GuildSubCommand) {
+        registerSubCommand(subCommand)
+    }
+
     override fun onCommand(
         sender: CommandSender,
         command: Command,

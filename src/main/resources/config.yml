@@ -3,6 +3,19 @@
 # Language setting (ja or en)
 locale: ja
 
+# Ownership settings
+ownership:
+  # Number of days before ownership expires when owner hasn't logged in
+  # Set to 0 to disable expiration
+  expiration-days: 30
+
+# Territory settings
+territory:
+  # Maximum number of chunks a guild can own
+  max-chunks: 10
+  # Number of members required per chunk (10 = 1 chunk per 10 members)
+  members-per-chunk: 10
+
 # Database configuration
 database:
   # Database type: sqlite or mysql

@@ -1,8 +1,10 @@
 package com.hacklab.minecraft.notoriety.inspect
 
 import com.hacklab.minecraft.notoriety.core.i18n.I18nManager
+import com.hacklab.minecraft.notoriety.guild.service.GuildService
 import com.hacklab.minecraft.notoriety.ownership.BlockOwnershipInfo
 import com.hacklab.minecraft.notoriety.ownership.OwnershipRepository
+import com.hacklab.minecraft.notoriety.territory.service.TerritoryService
 import com.hacklab.minecraft.notoriety.trust.TrustService
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -17,7 +19,9 @@ class InspectService(
     private val plugin: JavaPlugin,
     private val ownershipRepository: OwnershipRepository,
     private val trustService: TrustService,
-    private val i18n: I18nManager
+    private val i18n: I18nManager,
+    private val territoryService: TerritoryService? = null,
+    private val guildService: GuildService? = null
 ) {
     private val inspectingPlayers = ConcurrentHashMap.newKeySet<UUID>()
     private var actionBarTask: Int = -1
@@ -142,6 +146,47 @@ class InspectService(
                 Component.text(i18n.get("inspect.no_owner", "Owner: None (Free to use)"))
                     .color(NamedTextColor.GRAY)
             )
+        }
+
+        // Territory info
+        if (territoryService != null && guildService != null) {
+            val territory = territoryService.getTerritoryAt(location)
+            if (territory != null) {
+                val guild = guildService.getGuild(territory.guildId)
+                val guildName = guild?.name ?: "Unknown"
+                val guildTag = guild?.tag ?: "?"
+
+                messages.add(Component.empty())
+                messages.add(
+                    Component.text(i18n.get("inspect.territory_header", "--- Territory Info ---"))
+                        .color(NamedTextColor.GOLD)
+                )
+                messages.add(
+                    Component.text(i18n.get("inspect.territory_guild", "Guild: [%s] %s", guildTag, guildName))
+                        .color(NamedTextColor.LIGHT_PURPLE)
+                )
+
+                // Check if player is a member
+                val playerGuild = guildService.getPlayerGuild(player.uniqueId)
+                val isMember = playerGuild?.id == territory.guildId
+
+                if (isMember) {
+                    messages.add(
+                        Component.text(i18n.get("inspect.territory_member", "You are a member of this guild"))
+                            .color(NamedTextColor.GREEN)
+                    )
+                } else {
+                    messages.add(
+                        Component.text(i18n.get("inspect.territory_not_member", "You are NOT a member (Protected)"))
+                            .color(NamedTextColor.RED)
+                    )
+                }
+
+                messages.add(
+                    Component.text(i18n.get("inspect.territory_chunks", "Territory size: %d chunks", territory.chunkCount))
+                        .color(NamedTextColor.GRAY)
+                )
+            }
         }
 
         return messages

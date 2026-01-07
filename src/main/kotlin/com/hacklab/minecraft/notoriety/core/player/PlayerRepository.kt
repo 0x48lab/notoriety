@@ -113,4 +113,22 @@ class PlayerRepository(private val databaseManager: DatabaseManager) {
             players
         }
     }
+
+    /**
+     * プレイヤーの最終ログイン日時を取得
+     */
+    fun getLastSeen(uuid: UUID): Instant? {
+        return databaseManager.provider.useConnection { conn ->
+            val stmt = conn.prepareStatement(
+                "SELECT last_seen FROM player_data WHERE uuid = ?"
+            )
+            stmt.setString(1, uuid.toString())
+            val rs = stmt.executeQuery()
+            if (rs.next()) {
+                rs.getTimestamp("last_seen")?.toInstant()
+            } else {
+                null
+            }
+        }
+    }
 }

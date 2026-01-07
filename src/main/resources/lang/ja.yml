@@ -110,6 +110,12 @@ inspect:
   stick_lore3: "特別なアイテム"
   stick_received: "調査の棒を受け取りました！"
   stick_dropped: "インベントリが満杯です！足元に調査の棒を落としました。"
+  # Territory info in inspect
+  territory_header: "--- 領地情報 ---"
+  territory_guild: "ギルド: [%s] %s"
+  territory_member: "あなたはこのギルドのメンバーです"
+  territory_not_member: "あなたはメンバーではありません（保護されています）"
+  territory_chunks: "領地サイズ: %d チャンク"
 
 # Warning messages (before crime)
 warning:
@@ -152,6 +158,82 @@ guild:
   error_tag_taken: "このタグのギルドは既に存在します"
   error_already_in_guild: "既にギルドに所属しています。先に現在のギルドを脱退してください"
   error_generic: "ギルドの作成に失敗しました: %s"
+
+  # Application messages
+  application_submitted: "%s に入会申請しました"
+  application_approved: "%s の入会申請を承認しました"
+  application_rejected: "%s の入会申請を拒否しました"
+  application_cancelled: "入会申請をキャンセルしました"
+  application_approved_notification: "%s への入会申請が承認されました！"
+  application_rejected_notification: "%s への入会申請が拒否されました"
+  application_received: "%s が %s への入会を申請しました"
+  error_already_applied: "既に入会申請中です"
+  error_application_not_found: "入会申請が見つかりません"
+  error_application_expired: "入会申請の期限が切れています"
+
+# Territory messages
+territory:
+  # Command messages
+  claim_success: "領地を確保しました！ (%d/%d チャンク)"
+  claim_no_guild: "領地を確保するにはギルドに所属している必要があります"
+  claim_not_master: "領地を確保できるのはギルドマスターのみです"
+  claim_not_enough_members: "領地を確保するには最低 %d 人のメンバーが必要です（現在: %d 人）"
+  claim_max_chunks: "ギルドの領地上限（%d チャンク）に達しています"
+  claim_member_limit: "現在のメンバー数（%d 人）では %d チャンクまでしか確保できません"
+  claim_overlap: "この場所は %s の領地と重なっています"
+  claim_already_owned: "この場所は既にあなたのギルドの領地です"
+
+  release_success: "すべての領地を解放しました（%d チャンク）"
+  release_no_guild: "ギルドに所属していません"
+  release_not_master: "領地を解放できるのはギルドマスターのみです"
+  release_no_territory: "ギルドには領地がありません"
+  release_confirm: "§c警告: §eすべての領地を解放しますか？§7（5秒以内にもう一度実行で確定）"
+
+  info_header: "=== %s の領地情報 ==="
+  info_chunks: "チャンク数: %d / %d"
+  info_current_chunk: "現在のチャンク: (%d, %d) - %s"
+  info_no_territory: "ギルドには領地がありません"
+  info_not_in_guild: "ギルドに所属していません"
+  info_allowed_chunks: "確保可能チャンク: %d（メンバー数: %d 人）"
+  info_chunk_list: "--- チャンク一覧 ---"
+  info_chunk_entry: "  #%d: (%d, %d) %s"
+  info_current_location: " ← 現在地"
+  release_chunk_success: "チャンク #%d を解放しました"
+  release_chunk_not_found: "チャンク #%d が見つかりません"
+  release_usage: "使用法: /guild territory release <番号|all>"
+
+  # Inspect integration
+  inspect_territory: "領地: %s"
+  inspect_protected: "§a[保護されています]"
+  inspect_not_territory: "領地外"
+
+  # Enter/Leave notifications
+  enter_territory: "§a▶ %s の領地に入りました"
+  leave_territory: "§7◀ %s の領地を出ました"
+  enter_own_territory: "§a▶ ギルドの領地に入りました"
+  leave_own_territory: "§7◀ ギルドの領地を出ました"
+
+  # Protection messages
+  protected_break: "§cこのブロックは %s の領地内にあり、保護されています"
+  protected_beacon: "§c領地ビーコンは破壊できません（%s）"
+  protected_place: "§cこの場所は %s の領地内で、ブロックを設置できません"
+  protected_interact: "§cこの場所は %s の領地内で、操作できません"
+
+  # GM login notifications
+  gm_territory_status: "=== ギルド領地状況 ==="
+  gm_chunks_info: "領地: %d / %d チャンク"
+  gm_can_expand: "§a追加で %d チャンク確保可能です"
+  gm_no_territory_can_claim: "§e領地を確保していません。最大 %d チャンクまで確保できます！(/guild territory set)"
+  gm_no_territory_need_members: "§e領地を確保していません。あと %d 人のメンバーが必要です。"
+  gm_member_warning: "§c⚠ 警告: メンバーが %d 人しかいません。脱退すると領地が縮小される可能性があります"
+  gm_can_claim_more: "§a追加の領地を確保できます！"
+  gm_at_limit: "§7領地は上限に達しています"
+  gm_shrink_warning: "§c警告: メンバー減少により領地が縮小される可能性があります"
+  gm_no_territory: "領地を確保していません"
+
+  # Shrink notifications
+  shrink_warning: "§c警告: メンバー不足により領地が %d チャンクに縮小されました"
+  shrink_member_left: "メンバー脱退により領地が縮小される可能性があります"
 
 # Admin messages
 admin:

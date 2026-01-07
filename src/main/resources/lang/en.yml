@@ -110,6 +110,12 @@ inspect:
   stick_lore3: "Special Item"
   stick_received: "You received an Inspection Stick!"
   stick_dropped: "Inventory full! Inspection Stick dropped at your feet."
+  # Territory info in inspect
+  territory_header: "--- Territory Info ---"
+  territory_guild: "Guild: [%s] %s"
+  territory_member: "You are a member of this guild"
+  territory_not_member: "You are NOT a member (Protected)"
+  territory_chunks: "Territory size: %d chunks"
 
 # Warning messages (before crime)
 warning:
@@ -152,6 +158,82 @@ guild:
   error_tag_taken: "A guild with this tag already exists"
   error_already_in_guild: "You are already in a guild. Leave your current guild first"
   error_generic: "Failed to create guild: %s"
+
+  # Application messages
+  application_submitted: "Applied to join %s"
+  application_approved: "Approved %s's application"
+  application_rejected: "Rejected %s's application"
+  application_cancelled: "Application cancelled"
+  application_approved_notification: "Your application to %s has been approved!"
+  application_rejected_notification: "Your application to %s has been rejected"
+  application_received: "%s has applied to join %s"
+  error_already_applied: "You have already applied to this guild"
+  error_application_not_found: "Application not found"
+  error_application_expired: "Application has expired"
+
+# Territory messages
+territory:
+  # Command messages
+  claim_success: "Territory claimed! (%d/%d chunks)"
+  claim_no_guild: "You must be in a guild to claim territory"
+  claim_not_master: "Only the guild master can claim territory"
+  claim_not_enough_members: "You need at least %d members to claim territory (current: %d)"
+  claim_max_chunks: "Your guild has reached the maximum territory limit (%d chunks)"
+  claim_member_limit: "Your current member count (%d) only allows %d chunks"
+  claim_overlap: "This location overlaps with %s's territory"
+  claim_already_owned: "This location is already part of your guild's territory"
+
+  release_success: "Released all territory (%d chunks)"
+  release_no_guild: "You are not in a guild"
+  release_not_master: "Only the guild master can release territory"
+  release_no_territory: "Your guild has no territory"
+  release_confirm: "§cWarning: §eRelease all territory? §7(Run again within 5 seconds to confirm)"
+
+  info_header: "=== %s Territory Info ==="
+  info_chunks: "Chunks: %d / %d"
+  info_current_chunk: "Current chunk: (%d, %d) - %s"
+  info_no_territory: "Your guild has no territory"
+  info_not_in_guild: "You are not in a guild"
+  info_allowed_chunks: "Allowed chunks: %d (members: %d)"
+  info_chunk_list: "--- Chunk List ---"
+  info_chunk_entry: "  #%d: (%d, %d) %s"
+  info_current_location: " <- Current"
+  release_chunk_success: "Released chunk #%d"
+  release_chunk_not_found: "Chunk #%d not found"
+  release_usage: "Usage: /guild territory release <number|all>"
+
+  # Inspect integration
+  inspect_territory: "Territory: %s"
+  inspect_protected: "§a[Protected]"
+  inspect_not_territory: "Not in territory"
+
+  # Enter/Leave notifications
+  enter_territory: "§a▶ Entered %s's territory"
+  leave_territory: "§7◀ Left %s's territory"
+  enter_own_territory: "§a▶ Entered your guild's territory"
+  leave_own_territory: "§7◀ Left your guild's territory"
+
+  # Protection messages
+  protected_break: "§cThis block is protected by %s's territory"
+  protected_beacon: "§cTerritory beacon cannot be destroyed (%s)"
+  protected_place: "§cYou cannot place blocks in %s's territory"
+  protected_interact: "§cYou cannot interact with this in %s's territory"
+
+  # GM login notifications
+  gm_territory_status: "=== Guild Territory Status ==="
+  gm_chunks_info: "Territory: %d / %d chunks"
+  gm_can_expand: "§aYou can expand by %d more chunks"
+  gm_no_territory_can_claim: "§eYou have no territory. You can claim up to %d chunks! (/guild territory set)"
+  gm_no_territory_need_members: "§eYou have no territory. Need %d more members to claim territory."
+  gm_member_warning: "§c⚠ Warning: With only %d members, you may lose territory if members leave"
+  gm_can_claim_more: "§aYou can claim more territory!"
+  gm_at_limit: "§7Territory is at maximum"
+  gm_shrink_warning: "§cWarning: Territory may shrink due to member decrease"
+  gm_no_territory: "No territory claimed"
+
+  # Shrink notifications
+  shrink_warning: "§cWarning: Territory shrunk to %d chunks due to insufficient members"
+  shrink_member_left: "Territory may shrink due to member leaving"
 
 # Admin messages
 admin:

@@ -36,4 +36,10 @@ sealed class GuildException(message: String) : Exception(message) {
     class InvitationExpired(invitationId: Long) : GuildException("Invitation expired: $invitationId")
     class NotInvitee(playerUuid: UUID, invitationId: Long) : GuildException("Player $playerUuid is not the invitee of invitation $invitationId")
     class PlayerNotFound(playerName: String) : GuildException("Player not found: $playerName")
+
+    // 入会申請関連
+    class AlreadyApplied(playerUuid: UUID, guildId: Long) : GuildException("Player $playerUuid already applied to guild $guildId")
+    class ApplicationNotFound(applicationId: Long) : GuildException("Application not found: $applicationId")
+    class ApplicationNotFoundByGuild(guildId: Long) : GuildException("No application for guild: $guildId")
+    class ApplicationExpired(applicationId: Long) : GuildException("Application expired: $applicationId")
 }

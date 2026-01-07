@@ -6,6 +6,42 @@
 
 ## [Unreleased]
 
+### Added
+- 領地システム（Territory System）
+  - `/guild territory set` - 現在地を領地の中心として設定
+  - `/guild territory info` - 領地情報を表示
+  - `/guild territory remove` - 領地を削除
+  - 領地出入り通知（プレイヤーが領地に出入りするとメッセージ表示）
+  - 領地保護（非ギルドメンバーのブロック破壊/設置を防止）
+  - ビーコン自動設置（領地の中心にビーコンが設置される）
+  - ギルドメンバー数に応じた領地サイズ制限
+- ギルド申請システム（Guild Application System）
+  - `/guild apply <guild>` - ギルドに加入申請
+  - `/guild applications` - 受信した申請一覧（マスター/副マスター用）
+  - `/guild applications accept <player>` - 申請を承認
+  - `/guild applications reject <player>` - 申請を却下
+  - 申請有効期限: 7日間
+- ギルドマスターログイン通知（領地状態をログイン時に表示）
+- 調査モードで領地情報を表示（所有ギルド名を表示）
+
+### Changed
+- プレイヤー表示形式を変更
+  - 旧: `[Title] Name` → 新: `Title Name [Guild]`
+  - BELOW_NAME表示を廃止し、Team prefix/suffixを使用
+  - 称号をprefix、ギルドタグをsuffixに表示
+- レガシーカラーコード(§)の処理を修正
+  - `Component.text()`から`LegacyComponentSerializer`に変更
+  - 対象: TerritoryEntryListener, HistoryCommand
+
+### Fixed
+- SQLite接続プールのデッドロック問題を修正
+  - `TerritoryRepository`でネストされたDB接続を回避
+  - 同一接続を再利用する`getChunksWithConnection()`メソッドを追加
+- プレイヤー名の下に「0」が表示される問題を修正
+- Adventure APIでのレガシーカラーコード警告を修正
+
+## [0.2.9] - 2025-01-07
+
 ### Changed
 - ペナルティバランスを5段階に調整
   - 重大犯罪（村人殺害[ベッド付]/窃盗/ゴーレム殺害）: -50

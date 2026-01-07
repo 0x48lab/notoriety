@@ -1,6 +1,8 @@
 package com.hacklab.minecraft.notoriety.ownership
 
 import com.hacklab.minecraft.notoriety.core.BlockLocation
+import com.hacklab.minecraft.notoriety.core.config.ConfigManager
+import com.hacklab.minecraft.notoriety.core.player.PlayerRepository
 import com.hacklab.minecraft.notoriety.core.toBlockLoc
 import com.hacklab.minecraft.notoriety.guild.service.GuildService
 import com.hacklab.minecraft.notoriety.trust.TrustService
@@ -11,7 +13,11 @@ import java.time.Instant
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
-class OwnershipService(private val repository: OwnershipRepository) {
+class OwnershipService(
+    private val repository: OwnershipRepository,
+    private val playerRepository: PlayerRepository? = null,
+    private val configManager: ConfigManager? = null
+) {
     private val pendingCrimes = ConcurrentHashMap<BlockLocation, PendingCrime>()
 
     companion object {
@@ -26,8 +32,48 @@ class OwnershipService(private val repository: OwnershipRepository) {
         repository.removeOwner(location.toBlockLoc())
     }
 
-    fun getOwner(location: Location): UUID? =
-        repository.getOwner(location.toBlockLoc())
+    /**
+     * Returns the owner UUID of the block at the given location.
+     * Returns null if:
+     * - The block has no owner
+     * - The ownership has expired (owner hasn't logged in for expiration-days AND block was placed expiration-days ago)
+     */
+    fun getOwner(location: Location): UUID? {
+        val expirationDays = configManager?.ownershipExpirationDays ?: 0
+
+        // If expiration is disabled (0), just return the owner without checking
+        if (expirationDays <= 0 || playerRepository == null) {
+            return repository.getOwner(location.toBlockLoc())
+        }
+
+        // Get ownership info including placed_at timestamp
+        val ownershipInfo = repository.getOwnershipInfo(location) ?: return null
+        val ownerUuid = ownershipInfo.ownerUuid
+        val placedAt = ownershipInfo.placedAt ?: return ownerUuid // If no placed_at, don't expire
+
+        // Check if the block was placed more than expiration days ago
+        val now = Instant.now()
+        val daysSincePlaced = Duration.between(placedAt, now).toDays()
+        if (daysSincePlaced < expirationDays) {
+            // Block is still within grace period based on placement date
+            return ownerUuid
+        }
+
+        // Block is old enough to potentially expire, now check owner's last login
+        val lastSeen = playerRepository.getLastSeen(ownerUuid)
+        if (lastSeen == null) {
+            // Player has no login record - ownership expires
+            return null
+        }
+
+        val daysSinceLogin = Duration.between(lastSeen, now).toDays()
+        if (daysSinceLogin >= expirationDays) {
+            // Owner hasn't logged in for expiration days - ownership expires
+            return null
+        }
+
+        return ownerUuid
+    }
 
     fun isProtected(location: Location): Boolean =
         getOwner(location) != null

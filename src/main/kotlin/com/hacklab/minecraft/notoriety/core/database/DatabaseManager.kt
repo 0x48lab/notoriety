@@ -205,6 +205,34 @@ class DatabaseManager(
                     ON guild_invitations (guild_id, invitee_uuid)
                 """.trimIndent())
 
+                // Guild applications table (players apply to join guilds)
+                stmt.executeUpdate("""
+                    CREATE TABLE IF NOT EXISTS guild_applications (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        guild_id INTEGER NOT NULL,
+                        applicant_uuid VARCHAR(36) NOT NULL,
+                        message VARCHAR(255),
+                        applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        expires_at TIMESTAMP NOT NULL,
+                        FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+
+                stmt.executeUpdate("""
+                    CREATE INDEX IF NOT EXISTS idx_application_applicant
+                    ON guild_applications (applicant_uuid)
+                """.trimIndent())
+
+                stmt.executeUpdate("""
+                    CREATE INDEX IF NOT EXISTS idx_application_guild
+                    ON guild_applications (guild_id)
+                """.trimIndent())
+
+                stmt.executeUpdate("""
+                    CREATE UNIQUE INDEX IF NOT EXISTS idx_application_unique
+                    ON guild_applications (guild_id, applicant_uuid)
+                """.trimIndent())
+
                 // Migration: Add state column to player_trust for three-state trust
                 try {
                     stmt.executeUpdate("ALTER TABLE player_trust ADD COLUMN state VARCHAR(16) NOT NULL DEFAULT 'TRUST'")
@@ -227,6 +255,53 @@ class DatabaseManager(
                 } catch (e: Exception) {
                     // Column already exists, ignore
                 }
+
+                // ===== Guild Territory System Tables =====
+
+                // Guild territories table (1 guild : 0..1 territory)
+                stmt.executeUpdate("""
+                    CREATE TABLE IF NOT EXISTS guild_territories (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        guild_id INTEGER NOT NULL UNIQUE,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+
+                stmt.executeUpdate("""
+                    CREATE INDEX IF NOT EXISTS idx_territory_guild
+                    ON guild_territories (guild_id)
+                """.trimIndent())
+
+                // Territory chunks table (1 territory : N chunks)
+                stmt.executeUpdate("""
+                    CREATE TABLE IF NOT EXISTS territory_chunks (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        territory_id INTEGER NOT NULL,
+                        world_name VARCHAR(64) NOT NULL,
+                        center_x INT NOT NULL,
+                        center_z INT NOT NULL,
+                        beacon_y INT NOT NULL,
+                        add_order INT NOT NULL,
+                        added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (territory_id) REFERENCES guild_territories(id) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+
+                stmt.executeUpdate("""
+                    CREATE INDEX IF NOT EXISTS idx_chunk_territory
+                    ON territory_chunks (territory_id)
+                """.trimIndent())
+
+                stmt.executeUpdate("""
+                    CREATE INDEX IF NOT EXISTS idx_chunk_world
+                    ON territory_chunks (world_name)
+                """.trimIndent())
+
+                stmt.executeUpdate("""
+                    CREATE INDEX IF NOT EXISTS idx_chunk_coords
+                    ON territory_chunks (world_name, center_x, center_z)
+                """.trimIndent())
             }
         }
         plugin.logger.info("Database tables initialized successfully")
