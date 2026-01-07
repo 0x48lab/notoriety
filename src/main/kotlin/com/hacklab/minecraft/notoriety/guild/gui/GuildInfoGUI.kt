@@ -1,6 +1,7 @@
 package com.hacklab.minecraft.notoriety.guild.gui
 
 import com.hacklab.minecraft.notoriety.guild.model.GuildRole
+import com.hacklab.minecraft.notoriety.guild.service.GuildException
 import com.hacklab.minecraft.notoriety.guild.service.GuildService
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -149,6 +150,46 @@ class GuildInfoGUI(
                 Component.text("メンバー管理").color(NamedTextColor.GREEN),
                 Component.text("クリックでメンバー一覧へ").color(NamedTextColor.GRAY)
             ))
+        } else if (myGuild == null && guild != null) {
+            // 自分がどのギルドにも所属していない場合は入会申請ボタンを表示
+            val hasInvitation = guildService.hasInvitation(guild.id, player.uniqueId)
+            val hasApplication = guildService.hasApplication(guild.id, player.uniqueId)
+
+            when {
+                hasInvitation -> {
+                    // 既に招待がある場合
+                    _inventory.setItem(40, createItem(
+                        Material.WRITABLE_BOOK,
+                        Component.text("招待を受けています").color(NamedTextColor.GREEN),
+                        Component.text("クリックで招待を承諾").color(NamedTextColor.GRAY)
+                    ))
+                }
+                hasApplication -> {
+                    // 既に申請済みの場合
+                    _inventory.setItem(40, createItem(
+                        Material.CLOCK,
+                        Component.text("申請中").color(NamedTextColor.YELLOW),
+                        Component.text("審査待ちです").color(NamedTextColor.GRAY),
+                        Component.text("クリックで申請をキャンセル").color(NamedTextColor.RED)
+                    ))
+                }
+                memberCount < guild.maxMembers -> {
+                    // メンバーに空きがある場合のみ申請可能
+                    _inventory.setItem(40, createItem(
+                        Material.PAPER,
+                        Component.text("入会申請").color(NamedTextColor.AQUA),
+                        Component.text("クリックでこのギルドに入会申請").color(NamedTextColor.GRAY)
+                    ))
+                }
+                else -> {
+                    // ギルドが満員
+                    _inventory.setItem(40, createItem(
+                        Material.BARRIER,
+                        Component.text("入会不可").color(NamedTextColor.RED),
+                        Component.text("このギルドは満員です").color(NamedTextColor.GRAY)
+                    ))
+                }
+            }
         }
     }
 
@@ -156,6 +197,71 @@ class GuildInfoGUI(
         when (event.slot) {
             SLOT_BACK -> guiManager.openGuildList(player)
             SLOT_CLOSE -> player.closeInventory()
+            40 -> {
+                if (myGuild == null && guild != null) {
+                    val hasInvitation = guildService.hasInvitation(guild.id, player.uniqueId)
+                    val hasApplication = guildService.hasApplication(guild.id, player.uniqueId)
+
+                    when {
+                        hasInvitation -> {
+                            // 招待を承諾
+                            try {
+                                guildService.acceptInvitationByGuildId(guild.id, player.uniqueId)
+                                player.sendMessage(Component.text("${guild.name} に参加しました！")
+                                    .color(NamedTextColor.GREEN))
+                                player.closeInventory()
+                            } catch (e: GuildException) {
+                                player.sendMessage(Component.text(e.message ?: "エラーが発生しました")
+                                    .color(NamedTextColor.RED))
+                            }
+                        }
+                        hasApplication -> {
+                            // 申請をキャンセル
+                            guiManager.openConfirmDialog(
+                                player,
+                                "申請キャンセル",
+                                listOf("${guild.name} への入会申請をキャンセルしますか？"),
+                                onConfirm = {
+                                    try {
+                                        guildService.cancelApplication(guild.id, player.uniqueId)
+                                        player.sendMessage(Component.text("入会申請をキャンセルしました")
+                                            .color(NamedTextColor.YELLOW))
+                                        guiManager.openGuildInfo(player, guildId)
+                                    } catch (e: GuildException) {
+                                        player.sendMessage(Component.text(e.message ?: "エラーが発生しました")
+                                            .color(NamedTextColor.RED))
+                                    }
+                                },
+                                onCancel = {
+                                    guiManager.openGuildInfo(player, guildId)
+                                }
+                            )
+                        }
+                        else -> {
+                            // 入会申請
+                            guiManager.openConfirmDialog(
+                                player,
+                                "入会申請",
+                                listOf("${guild.name} に入会申請しますか？"),
+                                onConfirm = {
+                                    try {
+                                        guildService.applyToGuild(guild.id, player.uniqueId)
+                                        player.sendMessage(Component.text("${guild.name} に入会申請しました")
+                                            .color(NamedTextColor.GREEN))
+                                        guiManager.openGuildInfo(player, guildId)
+                                    } catch (e: GuildException) {
+                                        player.sendMessage(Component.text(e.message ?: "エラーが発生しました")
+                                            .color(NamedTextColor.RED))
+                                    }
+                                },
+                                onCancel = {
+                                    guiManager.openGuildInfo(player, guildId)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
             49 -> {
                 if (isMyGuild) {
                     guiManager.openMembersList(player)

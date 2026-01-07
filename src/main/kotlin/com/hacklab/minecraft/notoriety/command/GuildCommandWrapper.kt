@@ -2,6 +2,7 @@ package com.hacklab.minecraft.notoriety.command
 
 import com.hacklab.minecraft.notoriety.Notoriety
 import com.hacklab.minecraft.notoriety.guild.command.GuildCommand
+import com.hacklab.minecraft.notoriety.territory.command.GuildTerritoryCommand
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.command.CommandSender
@@ -13,7 +14,14 @@ import org.bukkit.entity.Player
 class GuildCommandWrapper(private val plugin: Notoriety) : SubCommand {
 
     private val guildCommand: GuildCommand by lazy {
-        GuildCommand(plugin, plugin.guildService, plugin.guildGUIManager, plugin.economyService, plugin.i18nManager)
+        val command = GuildCommand(plugin, plugin.guildService, plugin.guildGUIManager, plugin.economyService, plugin.i18nManager)
+        // 領地システムのサブコマンドを追加
+        command.addSubCommand(GuildTerritoryCommand(
+            territoryService = plugin.territoryService,
+            guildService = plugin.guildService,
+            i18n = plugin.i18nManager
+        ))
+        command
     }
 
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {

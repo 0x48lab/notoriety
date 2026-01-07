@@ -4,6 +4,7 @@ import com.hacklab.minecraft.notoriety.guild.cache.GuildCache
 import com.hacklab.minecraft.notoriety.guild.display.GuildTagManager
 import com.hacklab.minecraft.notoriety.guild.event.*
 import com.hacklab.minecraft.notoriety.guild.model.*
+import com.hacklab.minecraft.notoriety.guild.repository.GuildApplicationRepository
 import com.hacklab.minecraft.notoriety.guild.repository.GuildInvitationRepository
 import com.hacklab.minecraft.notoriety.guild.repository.GuildMembershipRepository
 import com.hacklab.minecraft.notoriety.guild.repository.GuildRepository
@@ -20,13 +21,15 @@ class GuildServiceImpl(
     private val guildRepository: GuildRepository,
     private val membershipRepository: GuildMembershipRepository,
     private val invitationRepository: GuildInvitationRepository,
+    private val applicationRepository: GuildApplicationRepository,
     private val trustService: TrustService,
     private val guildCache: GuildCache,
     private val guildTagManager: GuildTagManager
 ) : GuildService {
 
     companion object {
-        private val NAME_PATTERN = Regex("^[a-zA-Z0-9_\\-\\s]{3,32}$")
+        // 日本語（漢字・ひらがな・カタカナ）、英数字、スペース、アンダースコア、ハイフンを許可
+        private val NAME_PATTERN = Regex("^[a-zA-Z0-9_\\-\\s\\p{IsHan}\\p{IsHiragana}\\p{IsKatakana}ー]{3,32}$")
         private val TAG_PATTERN = Regex("^[a-zA-Z0-9]{2,4}$")
     }
 
@@ -527,6 +530,142 @@ class GuildServiceImpl(
 
     override fun cleanupExpiredInvitations() {
         invitationRepository.deleteExpired()
+    }
+
+    // === 入会申請管理 ===
+
+    override fun applyToGuild(guildId: Long, applicantUuid: UUID, message: String?): GuildApplication {
+        val guild = getGuildOrThrow(guildId)
+
+        // 既にギルドに所属している場合はエラー
+        if (membershipRepository.findByPlayerUuid(applicantUuid) != null) {
+            throw GuildException.AlreadyInGuild(applicantUuid)
+        }
+        // 既に申請済みの場合はエラー
+        if (applicationRepository.existsByGuildAndApplicant(guildId, applicantUuid)) {
+            throw GuildException.AlreadyApplied(applicantUuid, guildId)
+        }
+        // 招待がある場合は申請不要
+        if (invitationRepository.existsByGuildAndInvitee(guildId, applicantUuid)) {
+            throw GuildException.AlreadyInvited(applicantUuid, guildId)
+        }
+        // ギルドが満員でないかチェック
+        val memberCount = membershipRepository.countByGuildId(guildId)
+        if (memberCount >= guild.maxMembers) {
+            throw GuildException.GuildFull(guildId)
+        }
+
+        val application = GuildApplication(
+            id = 0,
+            guildId = guildId,
+            applicantUuid = applicantUuid,
+            message = message,
+            appliedAt = Instant.now(),
+            expiresAt = Instant.now().plus(7, ChronoUnit.DAYS)
+        )
+        val applicationId = applicationRepository.insert(application)
+
+        // イベント発火
+        Bukkit.getPluginManager().callEvent(
+            GuildApplicationEvent(guild, applicantUuid, message)
+        )
+
+        return application.copy(id = applicationId)
+    }
+
+    override fun approveApplication(applicationId: Long, approverUuid: UUID) {
+        val application = applicationRepository.findById(applicationId)
+            ?: throw GuildException.ApplicationNotFound(applicationId)
+
+        val guild = getGuildOrThrow(application.guildId)
+        val approverMembership = membershipRepository.findByPlayerUuid(approverUuid)
+            ?: throw GuildException.NotMember(approverUuid, application.guildId)
+
+        if (approverMembership.guildId != application.guildId) {
+            throw GuildException.NotMember(approverUuid, application.guildId)
+        }
+        // マスターまたは副マスターのみ承認可能
+        if (!approverMembership.role.canInvite()) {
+            throw GuildException.NotMasterOrVice(approverUuid)
+        }
+        // 期限切れチェック
+        if (application.isExpired()) {
+            applicationRepository.delete(applicationId)
+            throw GuildException.ApplicationExpired(applicationId)
+        }
+        // 既にギルドに所属している場合はエラー
+        if (membershipRepository.findByPlayerUuid(application.applicantUuid) != null) {
+            applicationRepository.delete(applicationId)
+            throw GuildException.AlreadyInGuild(application.applicantUuid)
+        }
+        // ギルドが満員でないかチェック
+        val memberCount = membershipRepository.countByGuildId(application.guildId)
+        if (memberCount >= guild.maxMembers) {
+            throw GuildException.GuildFull(application.guildId)
+        }
+
+        // メンバーとして追加
+        val membership = GuildMembership(
+            id = 0,
+            guildId = application.guildId,
+            playerUuid = application.applicantUuid,
+            role = GuildRole.MEMBER,
+            joinedAt = Instant.now()
+        )
+        membershipRepository.insert(membership)
+
+        // 申請を削除
+        applicationRepository.delete(applicationId)
+
+        // ギルドタグを表示
+        Bukkit.getPlayer(application.applicantUuid)?.let { player ->
+            guildTagManager.setGuildTag(player, guild)
+            // イベント発火
+            Bukkit.getPluginManager().callEvent(
+                GuildMemberJoinEvent(guild, player, membership)
+            )
+        }
+    }
+
+    override fun rejectApplication(applicationId: Long, rejectorUuid: UUID) {
+        val application = applicationRepository.findById(applicationId)
+            ?: throw GuildException.ApplicationNotFound(applicationId)
+
+        val rejectorMembership = membershipRepository.findByPlayerUuid(rejectorUuid)
+            ?: throw GuildException.NotMember(rejectorUuid, application.guildId)
+
+        if (rejectorMembership.guildId != application.guildId) {
+            throw GuildException.NotMember(rejectorUuid, application.guildId)
+        }
+        // マスターまたは副マスターのみ拒否可能
+        if (!rejectorMembership.role.canInvite()) {
+            throw GuildException.NotMasterOrVice(rejectorUuid)
+        }
+
+        applicationRepository.delete(applicationId)
+    }
+
+    override fun cancelApplication(guildId: Long, applicantUuid: UUID) {
+        val application = applicationRepository.findByGuildAndApplicant(guildId, applicantUuid)
+            ?: throw GuildException.ApplicationNotFoundByGuild(guildId)
+
+        applicationRepository.delete(application.id)
+    }
+
+    override fun getPendingApplications(guildId: Long): List<GuildApplication> {
+        return applicationRepository.findByGuildId(guildId)
+    }
+
+    override fun getPlayerApplications(playerUuid: UUID): List<GuildApplication> {
+        return applicationRepository.findByApplicantUuid(playerUuid)
+    }
+
+    override fun hasApplication(guildId: Long, playerUuid: UUID): Boolean {
+        return applicationRepository.existsByGuildAndApplicant(guildId, playerUuid)
+    }
+
+    override fun cleanupExpiredApplications() {
+        applicationRepository.deleteExpired()
     }
 
     // === 信頼システム統合 ===

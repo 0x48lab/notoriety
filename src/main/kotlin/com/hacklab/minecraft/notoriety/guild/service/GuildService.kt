@@ -1,6 +1,10 @@
 package com.hacklab.minecraft.notoriety.guild.service
 
-import com.hacklab.minecraft.notoriety.guild.model.*
+import com.hacklab.minecraft.notoriety.guild.model.Guild
+import com.hacklab.minecraft.notoriety.guild.model.GuildApplication
+import com.hacklab.minecraft.notoriety.guild.model.GuildInvitation
+import com.hacklab.minecraft.notoriety.guild.model.GuildMembership
+import com.hacklab.minecraft.notoriety.guild.model.TagColor
 import com.hacklab.minecraft.notoriety.trust.TrustState
 import java.util.UUID
 
@@ -41,6 +45,17 @@ interface GuildService {
     fun getSentInvitations(guildId: Long): List<GuildInvitation>
     fun hasInvitation(guildId: Long, playerUuid: UUID): Boolean
     fun cleanupExpiredInvitations()
+
+    // === 入会申請管理 ===
+
+    fun applyToGuild(guildId: Long, applicantUuid: UUID, message: String? = null): GuildApplication
+    fun approveApplication(applicationId: Long, approverUuid: UUID)
+    fun rejectApplication(applicationId: Long, rejectorUuid: UUID)
+    fun cancelApplication(guildId: Long, applicantUuid: UUID)
+    fun getPendingApplications(guildId: Long): List<GuildApplication>
+    fun getPlayerApplications(playerUuid: UUID): List<GuildApplication>
+    fun hasApplication(guildId: Long, playerUuid: UUID): Boolean
+    fun cleanupExpiredApplications()
 
     // === 信頼システム統合 ===
 

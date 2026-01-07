@@ -40,6 +40,13 @@ class GuildGUIManager(
     }
 
     /**
+     * 入会申請一覧を開く
+     */
+    fun openApplicationsList(player: Player, page: Int = 0) {
+        GuildApplicationsGUI(player, guildService, this, page).open()
+    }
+
+    /**
      * 色選択画面を開く
      */
     fun openColorSelect(player: Player) {

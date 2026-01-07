@@ -24,6 +24,7 @@ import com.hacklab.minecraft.notoriety.guild.cache.GuildCache
 import com.hacklab.minecraft.notoriety.guild.display.GuildTagManager
 import com.hacklab.minecraft.notoriety.guild.gui.GuildGUIManager
 import com.hacklab.minecraft.notoriety.guild.listener.GuildEventListener
+import com.hacklab.minecraft.notoriety.guild.repository.GuildApplicationRepository
 import com.hacklab.minecraft.notoriety.guild.repository.GuildInvitationRepository
 import com.hacklab.minecraft.notoriety.guild.repository.GuildMembershipRepository
 import com.hacklab.minecraft.notoriety.guild.repository.GuildRepository
@@ -39,6 +40,13 @@ import com.hacklab.minecraft.notoriety.ownership.OwnershipService
 import com.hacklab.minecraft.notoriety.reputation.TeamManager
 import com.hacklab.minecraft.notoriety.trust.TrustRepository
 import com.hacklab.minecraft.notoriety.trust.TrustService
+import com.hacklab.minecraft.notoriety.territory.beacon.BeaconManager
+import com.hacklab.minecraft.notoriety.territory.beacon.BeaconManagerImpl
+import com.hacklab.minecraft.notoriety.territory.listener.TerritoryEntryListener
+import com.hacklab.minecraft.notoriety.territory.listener.TerritoryProtectionListener
+import com.hacklab.minecraft.notoriety.territory.repository.TerritoryRepository
+import com.hacklab.minecraft.notoriety.territory.service.TerritoryService
+import com.hacklab.minecraft.notoriety.territory.service.TerritoryServiceImpl
 import com.hacklab.minecraft.notoriety.village.GolemService
 import com.hacklab.minecraft.notoriety.village.TradeListener
 import com.hacklab.minecraft.notoriety.village.VillagerListener
@@ -83,6 +91,11 @@ class Notoriety : JavaPlugin() {
         private set
     lateinit var guildGUIManager: GuildGUIManager
         private set
+
+    // 領地システム
+    lateinit var territoryService: TerritoryService
+        private set
+    private lateinit var beaconManager: BeaconManager
     private lateinit var guildCache: GuildCache
     private lateinit var whisperCommand: WhisperCommand
     private lateinit var guildTagManager: GuildTagManager
@@ -107,13 +120,14 @@ class Notoriety : JavaPlugin() {
         economyService.initialize()
 
         // 4. コアサービス初期化
-        playerManager = PlayerManager(this, PlayerRepository(databaseManager))
+        val playerRepository = PlayerRepository(databaseManager)
+        playerManager = PlayerManager(this, playerRepository)
 
         // I18nManagerにプレイヤーロケール取得関数を設定
         i18nManager.getPlayerLocale = { uuid -> playerManager.getPlayer(uuid)?.locale }
 
         ownershipRepository = OwnershipRepository(databaseManager)
-        ownershipService = OwnershipService(ownershipRepository)
+        ownershipService = OwnershipService(ownershipRepository, playerRepository, configManager)
         trustService = TrustService(TrustRepository(databaseManager))
         crimeRepository = CrimeRepository(databaseManager)
         teamManager = TeamManager(this)
@@ -122,6 +136,7 @@ class Notoriety : JavaPlugin() {
         val guildRepository = GuildRepository(databaseManager)
         val membershipRepository = GuildMembershipRepository(databaseManager)
         val invitationRepository = GuildInvitationRepository(databaseManager)
+        val applicationRepository = GuildApplicationRepository(databaseManager)
         val chatSettingsRepository = ChatSettingsRepository(databaseManager)
         guildCache = GuildCache()
         guildTagManager = GuildTagManager(teamManager)
@@ -130,11 +145,23 @@ class Notoriety : JavaPlugin() {
             guildRepository = guildRepository,
             membershipRepository = membershipRepository,
             invitationRepository = invitationRepository,
+            applicationRepository = applicationRepository,
             trustService = trustService,
             guildCache = guildCache,
             guildTagManager = guildTagManager
         )
         chatService = ChatService(chatSettingsRepository, guildService)
+
+        // 領地システム初期化
+        val territoryRepository = TerritoryRepository(databaseManager)
+        beaconManager = BeaconManagerImpl()
+        territoryService = TerritoryServiceImpl(
+            plugin = this,
+            repository = territoryRepository,
+            guildService = guildService,
+            beaconManager = beaconManager,
+            configManager = configManager
+        )
 
         // NotorietyService初期化（中央集約サービス）
         notorietyService = NotorietyService(
@@ -153,7 +180,7 @@ class Notoriety : JavaPlugin() {
         golemService = GolemService(playerManager)
         bountyService = BountyService(this, economyService)
         bountyService.initializeSignManager()
-        inspectService = InspectService(this, ownershipRepository, trustService, i18nManager)
+        inspectService = InspectService(this, ownershipRepository, trustService, i18nManager, territoryService, guildService)
         inspectionStick = InspectionStick(this, i18nManager)
 
         guildGUIManager = GuildGUIManager(this, guildService)
@@ -166,6 +193,23 @@ class Notoriety : JavaPlugin() {
 
         // 7. 定期タスク開始
         startScheduledTasks()
+
+        // 8. プラグイン起動後、全オンラインプレイヤーの表示を更新
+        // （リロード時に既存プレイヤーの表示を正しく更新するため）
+        server.scheduler.runTaskLater(this, Runnable {
+            // 古い空のチームをクリーンアップ
+            teamManager.cleanupEmptyTeams()
+
+            Bukkit.getOnlinePlayers().forEach { player ->
+                // プレイヤーデータをロード（まだロードされていない場合）
+                playerManager.loadPlayer(player.uniqueId)
+                // 表示を更新
+                notorietyService.updateDisplay(player)
+            }
+            if (Bukkit.getOnlinePlayers().isNotEmpty()) {
+                logger.info("Updated display for ${Bukkit.getOnlinePlayers().size} online player(s)")
+            }
+        }, 1L)  // 1 tick後に実行
 
         logger.info("Notoriety has been enabled!")
     }
@@ -217,9 +261,13 @@ class Notoriety : JavaPlugin() {
         pm.registerEvents(InspectListener(inspectService, inspectionStick), this)
 
         // ギルドシステムリスナー
-        pm.registerEvents(GuildEventListener(guildService, chatService, guildTagManager, notorietyService), this)
+        pm.registerEvents(GuildEventListener(guildService, chatService, guildTagManager, notorietyService, territoryService, i18nManager), this)
         pm.registerEvents(ChatListener(chatService, guildService), this)
         pm.registerEvents(guildGUIManager, this)
+
+        // 領地システムリスナー
+        pm.registerEvents(TerritoryProtectionListener(territoryService, guildService, beaconManager, i18nManager), this)
+        pm.registerEvents(TerritoryEntryListener(territoryService, guildService, i18nManager), this)
     }
 
     private fun registerCommands() {
@@ -345,5 +393,11 @@ class Notoriety : JavaPlugin() {
         server.scheduler.runTaskTimerAsynchronously(this, Runnable {
             playerManager.saveAll()
         }, 6000L, 6000L)  // 5分 = 6000 ticks
+
+        // 期限切れ招待・申請のクリーンアップ（1時間ごと）
+        server.scheduler.runTaskTimerAsynchronously(this, Runnable {
+            guildService.cleanupExpiredInvitations()
+            guildService.cleanupExpiredApplications()
+        }, 72000L, 72000L)  // 1時間 = 72000 ticks
     }
 }

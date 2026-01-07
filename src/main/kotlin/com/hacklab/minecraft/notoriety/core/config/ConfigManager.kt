@@ -17,6 +17,29 @@ class ConfigManager(private val plugin: JavaPlugin) {
     val sqliteFileName: String
         get() = config.getString("database.sqlite.file", "data.db") ?: "data.db"
 
+    /**
+     * Number of days before ownership expires when owner hasn't logged in.
+     * Set to 0 to disable expiration.
+     */
+    val ownershipExpirationDays: Int
+        get() = config.getInt("ownership.expiration-days", 30)
+
+    // === Territory Settings ===
+
+    /**
+     * Maximum number of chunks a guild can own.
+     * Default: 10
+     */
+    val territoryMaxChunks: Int
+        get() = config.getInt("territory.max-chunks", 10)
+
+    /**
+     * Number of members required per chunk.
+     * Default: 10 (10 members = 1 chunk, 20 members = 2 chunks, etc.)
+     */
+    val territoryMembersPerChunk: Int
+        get() = config.getInt("territory.members-per-chunk", 10)
+
     init {
         plugin.saveDefaultConfig()
     }

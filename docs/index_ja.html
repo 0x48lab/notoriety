@@ -27,7 +27,9 @@
             <li><a href="#bounty">懸賞金</a></li>
             <li><a href="#trust">信頼</a></li>
             <li><a href="#guild">ギルド</a></li>
+            <li><a href="#territory">領地</a></li>
             <li><a href="#chat">チャット</a></li>
+            <li><a href="#inspect">調査</a></li>
             <li><a href="#commands">コマンド</a></li>
         </ul>
     </nav>
@@ -580,6 +582,110 @@
                 <code>/guild create &lt;名前&gt; &lt;タグ&gt; [説明]</code><br>
                 例: <code>/guild create BlueCrown BC 最強のギルド</code>
             </div>
+
+            <h3>ギルド申請</h3>
+            <p>招待を待たずに、プレイヤーからギルドに加入申請を送ることができます。</p>
+            <ul>
+                <li><code>/guild apply &lt;ギルド名&gt;</code> - ギルドに加入申請</li>
+                <li><code>/guild applications</code> - 受信した申請一覧（マスター/副マスター）</li>
+                <li><code>/guild applications accept &lt;プレイヤー&gt;</code> - 申請を承認</li>
+                <li><code>/guild applications reject &lt;プレイヤー&gt;</code> - 申請を却下</li>
+            </ul>
+            <p><small>申請の有効期限: 7日間</small></p>
+
+            <h3>プレイヤー表示</h3>
+            <p>ギルドに所属すると、名前にギルドタグが表示されます。</p>
+            <div class="formula">
+                <p><strong>表示形式:</strong> <code>称号 プレイヤー名 [ギルドタグ]</code></p>
+                <p>例: <code style="color: #55FFFF;">Lord</code> <code style="color: #5555FF;">PlayerName</code> <code style="color: #FFAA00;">[BC]</code></p>
+            </div>
+        </section>
+
+        <!-- 領地 -->
+        <section id="territory">
+            <h2>領地システム</h2>
+            <p>ギルドが所有できる保護された領域です。メンバー数に応じてサイズが決まります。</p>
+
+            <h3>基本仕様</h3>
+            <table>
+                <tr>
+                    <th>項目</th>
+                    <th>内容</th>
+                </tr>
+                <tr>
+                    <td>領地要件</td>
+                    <td>ギルドメンバー5人以上</td>
+                </tr>
+                <tr>
+                    <td>領地サイズ</td>
+                    <td>5人あたり1チャンク</td>
+                </tr>
+                <tr>
+                    <td>ビーコン</td>
+                    <td>領地中心に自動設置</td>
+                </tr>
+            </table>
+
+            <h3>領地保護</h3>
+            <table>
+                <tr>
+                    <th>操作</th>
+                    <th>ギルドメンバー</th>
+                    <th>非メンバー</th>
+                </tr>
+                <tr>
+                    <td>ブロック設置</td>
+                    <td style="color: #4CAF50;">✅ 許可</td>
+                    <td style="color: #F44336;">❌ 拒否</td>
+                </tr>
+                <tr>
+                    <td>ブロック破壊</td>
+                    <td style="color: #4CAF50;">✅ 許可</td>
+                    <td style="color: #F44336;">❌ 拒否</td>
+                </tr>
+                <tr>
+                    <td>コンテナアクセス</td>
+                    <td style="color: #4CAF50;">✅ 許可</td>
+                    <td style="color: #F44336;">❌ 拒否</td>
+                </tr>
+                <tr>
+                    <td>通行</td>
+                    <td style="color: #4CAF50;">✅ 許可</td>
+                    <td style="color: #4CAF50;">✅ 許可</td>
+                </tr>
+            </table>
+
+            <h3>領地出入り通知</h3>
+            <p>プレイヤーが領地に出入りするとメッセージが表示されます。</p>
+            <ul>
+                <li><span style="color: #55FF55;">▶</span> [ギルド名]の領地に入りました</li>
+                <li><span style="color: #55FF55;">▶</span> 自分のギルドの領地に入りました</li>
+                <li><span style="color: #AAAAAA;">◀</span> [ギルド名]の領地から出ました</li>
+            </ul>
+
+            <h3>領地コマンド</h3>
+            <table>
+                <tr>
+                    <th>コマンド</th>
+                    <th>説明</th>
+                </tr>
+                <tr>
+                    <td><code>/guild territory set</code></td>
+                    <td>現在地を領地中心に設定（マスターのみ）</td>
+                </tr>
+                <tr>
+                    <td><code>/guild territory info</code></td>
+                    <td>領地情報を表示</td>
+                </tr>
+                <tr>
+                    <td><code>/guild territory remove</code></td>
+                    <td>領地を削除（マスターのみ）</td>
+                </tr>
+            </table>
+
+            <div class="info">
+                <strong>ギルドマスター通知:</strong> ギルドマスターがログインすると、領地の状態（使用中チャンク数、拡張可能数）が自動的に表示されます。
+            </div>
         </section>
 
         <!-- チャット -->
@@ -635,6 +741,70 @@
             </div>
         </section>
 
+        <!-- 調査 -->
+        <section id="inspect">
+            <h2>調査システム</h2>
+            <p>ブロックの所有者情報や領地情報を確認できます。</p>
+
+            <h3>調査方法</h3>
+            <ul>
+                <li><strong>調査モード</strong> - <code>/inspect</code>でON/OFF切り替え。ONの間、クリックしたブロックの情報が表示される</li>
+                <li><strong>調査の棒</strong> - <code>/inspect tool</code>で特別なアイテムを取得。このアイテムでクリックしたブロックを調査</li>
+            </ul>
+
+            <h3>表示される情報</h3>
+            <table>
+                <tr>
+                    <th>情報</th>
+                    <th>説明</th>
+                </tr>
+                <tr>
+                    <td>ブロック種類</td>
+                    <td>クリックしたブロックの種類</td>
+                </tr>
+                <tr>
+                    <td>位置</td>
+                    <td>ワールド名と座標</td>
+                </tr>
+                <tr>
+                    <td>所有者</td>
+                    <td>ブロックを設置したプレイヤー名</td>
+                </tr>
+                <tr>
+                    <td>設置日時</td>
+                    <td>ブロックが設置された日時</td>
+                </tr>
+                <tr>
+                    <td>信頼関係</td>
+                    <td>あなたと所有者の信頼状態</td>
+                </tr>
+                <tr>
+                    <td>領地情報</td>
+                    <td>その場所が領地内の場合、ギルド名を表示</td>
+                </tr>
+            </table>
+
+            <h3>調査コマンド</h3>
+            <table>
+                <tr>
+                    <th>コマンド</th>
+                    <th>説明</th>
+                </tr>
+                <tr>
+                    <td><code>/inspect</code></td>
+                    <td>調査モードのON/OFF切り替え</td>
+                </tr>
+                <tr>
+                    <td><code>/inspect tool</code></td>
+                    <td>調査の棒を取得</td>
+                </tr>
+            </table>
+
+            <div class="tip">
+                <strong>ヒント:</strong> 調査モード中はアクションバーに「調査モード ON」と表示されます。
+            </div>
+        </section>
+
         <!-- コマンド -->
         <section id="commands">
             <h2>コマンド</h2>
@@ -687,6 +857,23 @@
                 <tr><td><code>/guild demote &lt;プレイヤー&gt;</code></td><td>メンバーに降格</td></tr>
                 <tr><td><code>/guild transfer &lt;プレイヤー&gt;</code></td><td>マスター権限を譲渡</td></tr>
                 <tr><td><code>/guild tagcolor &lt;色&gt;</code></td><td>タグの色を変更</td></tr>
+                <tr><td><code>/guild apply &lt;ギルド名&gt;</code></td><td>ギルドに加入申請</td></tr>
+                <tr><td><code>/guild applications</code></td><td>受信した申請一覧（マスター/副マスター）</td></tr>
+                <tr><td><code>/guild applications accept &lt;プレイヤー&gt;</code></td><td>申請を承認</td></tr>
+                <tr><td><code>/guild applications reject &lt;プレイヤー&gt;</code></td><td>申請を却下</td></tr>
+                <tr><td><code>/guild territory set</code></td><td>現在地を領地中心に設定（マスターのみ）</td></tr>
+                <tr><td><code>/guild territory info</code></td><td>領地情報を表示</td></tr>
+                <tr><td><code>/guild territory remove</code></td><td>領地を削除（マスターのみ）</td></tr>
+            </table>
+
+            <h3>調査コマンド</h3>
+            <table>
+                <tr>
+                    <th>コマンド</th>
+                    <th>説明</th>
+                </tr>
+                <tr><td><code>/inspect</code></td><td>調査モードのON/OFF切り替え</td></tr>
+                <tr><td><code>/inspect tool</code></td><td>調査の棒を取得</td></tr>
             </table>
 
             <h3>チャットコマンド</h3>

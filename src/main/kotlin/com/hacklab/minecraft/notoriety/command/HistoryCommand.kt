@@ -4,6 +4,7 @@ import com.hacklab.minecraft.notoriety.Notoriety
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
@@ -56,22 +57,23 @@ class HistoryCommand(private val plugin: Notoriety) : SubCommand {
             val prevPage = if (page > 1) page - 1 else null
             val nextPage = if (page < totalPages) page + 1 else null
 
+            val legacy = LegacyComponentSerializer.legacySection()
             val nav = Component.text("  ")
                 .append(
                     if (prevPage != null) {
-                        Component.text("§a<< 前")
+                        legacy.deserialize("§a<< 前")
                             .clickEvent(ClickEvent.runCommand("/noty history $targetName $prevPage"))
                     } else {
-                        Component.text("§8<< 前")
+                        legacy.deserialize("§8<< 前")
                     }
                 )
-                .append(Component.text("  §7|  "))
+                .append(legacy.deserialize("  §7|  "))
                 .append(
                     if (nextPage != null) {
-                        Component.text("§a次 >>")
+                        legacy.deserialize("§a次 >>")
                             .clickEvent(ClickEvent.runCommand("/noty history $targetName $nextPage"))
                     } else {
-                        Component.text("§8次 >>")
+                        legacy.deserialize("§8次 >>")
                     }
                 )
             sender.sendMessage(nav)

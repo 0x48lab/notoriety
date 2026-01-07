@@ -64,16 +64,25 @@ class GuildMainMenuGUI(
             Component.text("ギルドメンバーを確認").color(NamedTextColor.GRAY)
         ))
 
-        // 招待一覧（中央）
+        // 招待一覧（中央左）
         if (role.canInvite()) {
-            _inventory.setItem(22, createItem(
+            _inventory.setItem(21, createItem(
                 Material.WRITABLE_BOOK,
                 Component.text("招待管理").color(NamedTextColor.GREEN),
                 Component.text("保留中の招待を確認").color(NamedTextColor.GRAY),
                 Component.text("オンラインプレイヤーを招待").color(NamedTextColor.GRAY)
             ))
-        } else {
+
+            // 入会申請一覧（中央）
+            val applicationCount = guildService.getPendingApplications(guild.id).size
             _inventory.setItem(22, createItem(
+                Material.PAPER,
+                Component.text("入会申請").color(NamedTextColor.AQUA),
+                Component.text("保留中の申請: ${applicationCount}件").color(NamedTextColor.GRAY),
+                Component.text("クリックで確認").color(NamedTextColor.GRAY)
+            ))
+        } else {
+            _inventory.setItem(21, createItem(
                 Material.BOOK,
                 Component.text("招待確認").color(NamedTextColor.GRAY),
                 Component.text("保留中の招待を確認").color(NamedTextColor.GRAY)
@@ -184,11 +193,18 @@ class GuildMainMenuGUI(
                 }
             }
 
-            22 -> {
+            21 -> {
                 if (guild != null) {
                     // 招待管理
                     guiManager.openInvitesList(player)
-                } else {
+                }
+            }
+
+            22 -> {
+                if (guild != null && membership?.role?.canInvite() == true) {
+                    // 入会申請一覧
+                    guiManager.openApplicationsList(player)
+                } else if (guild == null) {
                     // 招待一覧（受信）
                     guiManager.openInvitesList(player)
                 }
