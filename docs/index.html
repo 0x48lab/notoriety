@@ -27,7 +27,9 @@
             <li><a href="#bounty">Bounty</a></li>
             <li><a href="#trust">Trust</a></li>
             <li><a href="#guild">Guild</a></li>
+            <li><a href="#territory">Territory</a></li>
             <li><a href="#chat">Chat</a></li>
+            <li><a href="#inspect">Inspect</a></li>
             <li><a href="#commands">Commands</a></li>
         </ul>
     </nav>
@@ -575,6 +577,110 @@
                 <p>3. <strong>Same Guild</strong> → Access allowed (if UNSET)</p>
                 <p>4. Otherwise → Access denied</p>
             </div>
+
+            <h3>Guild Application</h3>
+            <p>Players can apply to join a guild without waiting for an invitation.</p>
+            <ul>
+                <li><code>/guild apply &lt;guild_name&gt;</code> - Apply to join a guild</li>
+                <li><code>/guild applications</code> - View pending applications (Master/Vice Master)</li>
+                <li><code>/guild applications accept &lt;player&gt;</code> - Accept an application</li>
+                <li><code>/guild applications reject &lt;player&gt;</code> - Reject an application</li>
+            </ul>
+            <p><small>Application expiry: 7 days</small></p>
+
+            <h3>Player Display</h3>
+            <p>Guild members have their guild tag displayed after their name.</p>
+            <div class="formula">
+                <p><strong>Format:</strong> <code>Title PlayerName [GuildTag]</code></p>
+                <p>Example: <code style="color: #55FFFF;">Lord</code> <code style="color: #5555FF;">PlayerName</code> <code style="color: #FFAA00;">[BC]</code></p>
+            </div>
+        </section>
+
+        <!-- Territory -->
+        <section id="territory">
+            <h2>Territory System</h2>
+            <p>Guilds can claim protected territories. Territory size scales with member count.</p>
+
+            <h3>Basic Info</h3>
+            <table>
+                <tr>
+                    <th>Item</th>
+                    <th>Details</th>
+                </tr>
+                <tr>
+                    <td>Requirement</td>
+                    <td>Minimum 3 guild members</td>
+                </tr>
+                <tr>
+                    <td>Size</td>
+                    <td>1 chunk per guild member</td>
+                </tr>
+                <tr>
+                    <td>Beacon</td>
+                    <td>Auto-placed at territory center</td>
+                </tr>
+            </table>
+
+            <h3>Territory Protection</h3>
+            <table>
+                <tr>
+                    <th>Action</th>
+                    <th>Guild Member</th>
+                    <th>Non-Member</th>
+                </tr>
+                <tr>
+                    <td>Place blocks</td>
+                    <td style="color: #4CAF50;">✅ Allowed</td>
+                    <td style="color: #F44336;">❌ Denied</td>
+                </tr>
+                <tr>
+                    <td>Break blocks</td>
+                    <td style="color: #4CAF50;">✅ Allowed</td>
+                    <td style="color: #F44336;">❌ Denied</td>
+                </tr>
+                <tr>
+                    <td>Chest access</td>
+                    <td style="color: #4CAF50;">✅ Allowed</td>
+                    <td style="color: #FFC107;">⚠ Theft is crime</td>
+                </tr>
+                <tr>
+                    <td>Movement</td>
+                    <td style="color: #4CAF50;">✅ Allowed</td>
+                    <td style="color: #4CAF50;">✅ Allowed</td>
+                </tr>
+            </table>
+
+            <h3>Entry Notifications</h3>
+            <p>Players receive messages when entering or leaving territories.</p>
+            <ul>
+                <li><span style="color: #55FF55;">▶</span> Entering [GuildName]'s territory</li>
+                <li><span style="color: #55FF55;">▶</span> Entering your guild's territory</li>
+                <li><span style="color: #AAAAAA;">◀</span> Leaving [GuildName]'s territory</li>
+            </ul>
+
+            <h3>Territory Commands</h3>
+            <table>
+                <tr>
+                    <th>Command</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>/guild territory set</code></td>
+                    <td>Set current location as territory center (Master only)</td>
+                </tr>
+                <tr>
+                    <td><code>/guild territory info</code></td>
+                    <td>View territory information</td>
+                </tr>
+                <tr>
+                    <td><code>/guild territory remove</code></td>
+                    <td>Remove territory (Master only)</td>
+                </tr>
+            </table>
+
+            <div class="info">
+                <strong>Guild Master Login:</strong> Guild masters receive territory status notifications on login (chunks used, expansion available).
+            </div>
         </section>
 
         <!-- Chat -->
@@ -633,6 +739,70 @@
             </ul>
         </section>
 
+        <!-- Inspect -->
+        <section id="inspect">
+            <h2>Inspect System</h2>
+            <p>Investigate block ownership and territory information.</p>
+
+            <h3>Inspection Methods</h3>
+            <ul>
+                <li><strong>Inspect Mode</strong> - Toggle with <code>/inspect</code>. While ON, clicking blocks shows their info</li>
+                <li><strong>Inspect Stick</strong> - Get with <code>/inspect tool</code>. Click blocks with this item to inspect</li>
+            </ul>
+
+            <h3>Displayed Information</h3>
+            <table>
+                <tr>
+                    <th>Info</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>Block Type</td>
+                    <td>Type of the clicked block</td>
+                </tr>
+                <tr>
+                    <td>Location</td>
+                    <td>World name and coordinates</td>
+                </tr>
+                <tr>
+                    <td>Owner</td>
+                    <td>Player who placed the block</td>
+                </tr>
+                <tr>
+                    <td>Placed At</td>
+                    <td>When the block was placed</td>
+                </tr>
+                <tr>
+                    <td>Trust Status</td>
+                    <td>Your trust relationship with the owner</td>
+                </tr>
+                <tr>
+                    <td>Territory</td>
+                    <td>If in territory, shows guild name</td>
+                </tr>
+            </table>
+
+            <h3>Inspect Commands</h3>
+            <table>
+                <tr>
+                    <th>Command</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>/inspect</code></td>
+                    <td>Toggle inspect mode ON/OFF</td>
+                </tr>
+                <tr>
+                    <td><code>/inspect tool</code></td>
+                    <td>Get the inspect stick</td>
+                </tr>
+            </table>
+
+            <div class="tip">
+                <strong>Tip:</strong> When inspect mode is ON, "Inspect Mode ON" appears in your action bar.
+            </div>
+        </section>
+
         <!-- Commands -->
         <section id="commands">
             <h2>Commands</h2>
@@ -681,6 +851,23 @@
                 <tr><td><code>/guild tagcolor [color]</code></td><td>Change tag color (Master only)</td></tr>
                 <tr><td><code>/guild info</code></td><td>View guild info</td></tr>
                 <tr><td><code>/guild members</code></td><td>View member list</td></tr>
+                <tr><td><code>/guild apply &lt;guild&gt;</code></td><td>Apply to join a guild</td></tr>
+                <tr><td><code>/guild applications</code></td><td>View pending applications (Master/Vice)</td></tr>
+                <tr><td><code>/guild applications accept &lt;player&gt;</code></td><td>Accept an application</td></tr>
+                <tr><td><code>/guild applications reject &lt;player&gt;</code></td><td>Reject an application</td></tr>
+                <tr><td><code>/guild territory set</code></td><td>Set territory center (Master only)</td></tr>
+                <tr><td><code>/guild territory info</code></td><td>View territory info</td></tr>
+                <tr><td><code>/guild territory remove</code></td><td>Remove territory (Master only)</td></tr>
+            </table>
+
+            <h3>Inspect Commands</h3>
+            <table>
+                <tr>
+                    <th>Command</th>
+                    <th>Description</th>
+                </tr>
+                <tr><td><code>/inspect</code></td><td>Toggle inspect mode ON/OFF</td></tr>
+                <tr><td><code>/inspect tool</code></td><td>Get the inspect stick</td></tr>
             </table>
 
             <h3>Chat Commands</h3>
