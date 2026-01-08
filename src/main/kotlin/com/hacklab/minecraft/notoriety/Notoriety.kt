@@ -353,6 +353,7 @@ class Notoriety : JavaPlugin() {
         server.scheduler.runTaskTimer(this, Runnable {
             playerManager.getOnlinePlayers().forEach { data ->
                 val oldColor = data.getNameColor()
+                val oldPkCount = data.pkCount
 
                 // Fame減少
                 data.addFame(-1)
@@ -360,6 +361,11 @@ class Notoriety : JavaPlugin() {
                 // Alignment回復（0に向かって+10/時間）
                 // 赤プレイヤーはAlignmentが0になるとPKCount -1、Alignment -1000にリセット
                 val stateChanged = data.decayAlignment(10)
+
+                // PKCount が 0 になったら懸賞金を返金
+                if (oldPkCount > 0 && data.pkCount == 0) {
+                    bountyService.refundBounty(data.uuid)
+                }
 
                 // 状態変化チェック
                 val newColor = data.getNameColor()

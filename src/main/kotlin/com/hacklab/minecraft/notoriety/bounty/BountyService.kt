@@ -65,4 +65,24 @@ class BountyService(
     fun getBounty(target: UUID): BountyEntry? = storage.getBounty(target)
 
     fun hasBounty(target: UUID): Boolean = storage.getBounty(target) != null
+
+    /**
+     * 懸賞金を返却して削除する（PKCount が 0 になったときに呼び出す）
+     * 出資者に全額返金される
+     */
+    fun refundBounty(targetUuid: UUID) {
+        val bounty = storage.getBounty(targetUuid) ?: return
+
+        // 各出資者に返金
+        bounty.contributors.forEach { (contributorUuid, amount) ->
+            economy.deposit(contributorUuid, amount)
+            // オンラインの出資者に通知
+            Bukkit.getPlayer(contributorUuid)?.sendMessage(
+                "§a${Bukkit.getOfflinePlayer(targetUuid).name} の懸賞金 ${amount.toLong()} が返金されました（対象が赤プレイヤーではなくなったため）"
+            )
+        }
+
+        // 懸賞金を削除
+        storage.removeBounty(targetUuid)
+    }
 }
