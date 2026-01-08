@@ -25,6 +25,11 @@
 - 調査モードで領地情報を表示（所有ギルド名を表示）
 
 ### Changed
+- 懸賞金コマンドを `set` から `add` に変更
+  - `/bounty add <player> <amount>` - 懸賞金をかける
+  - `/wanted add <player> <amount>` - 同上（エイリアス）
+  - `set` は後方互換性のため引き続き使用可能
+- `/wanted` コマンドにタブ補完を追加
 - プレイヤー表示形式を変更
   - 旧: `[Title] Name` → 新: `Title Name [Guild]`
   - BELOW_NAME表示を廃止し、Team prefix/suffixを使用

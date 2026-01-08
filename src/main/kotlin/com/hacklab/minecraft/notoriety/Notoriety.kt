@@ -298,6 +298,9 @@ class Notoriety : JavaPlugin() {
             it.setExecutor { sender, _, _, args ->
                 mainCommand.onCommand(sender, it, "wanted", arrayOf("bounty") + args)
             }
+            it.tabCompleter = TabCompleter { sender, _, _, args ->
+                mainCommand.onTabComplete(sender, it, "wanted", arrayOf("bounty") + args)
+            }
         }
 
         // /inspect - /noty inspect へのエイリアス

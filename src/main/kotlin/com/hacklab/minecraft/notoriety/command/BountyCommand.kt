@@ -16,7 +16,7 @@ class BountyCommand(private val plugin: Notoriety) : SubCommand {
         }
 
         return when (args[0].lowercase()) {
-            "set" -> setBounty(sender, args)
+            "add", "set" -> addBounty(sender, args)  // set は後方互換性のため残す
             "list" -> listBounties(sender)
             "check" -> checkBounty(sender, args)
             else -> {
@@ -26,14 +26,14 @@ class BountyCommand(private val plugin: Notoriety) : SubCommand {
         }
     }
 
-    private fun setBounty(sender: CommandSender, args: Array<out String>): Boolean {
+    private fun addBounty(sender: CommandSender, args: Array<out String>): Boolean {
         val player = sender as? Player ?: run {
             sender.sendMessage("This command can only be used by players")
             return true
         }
 
         if (args.size < 3) {
-            sender.sendMessage("Usage: /noty bounty set <player> <amount>")
+            sender.sendMessage("Usage: /bounty add <player> <amount>")
             return true
         }
 
@@ -96,16 +96,17 @@ class BountyCommand(private val plugin: Notoriety) : SubCommand {
 
     private fun showUsage(sender: CommandSender) {
         sender.sendMessage("=== Bounty Commands ===")
-        sender.sendMessage("/noty bounty set <player> <amount> - 懸賞金をかける")
-        sender.sendMessage("/noty bounty list - 懸賞金リスト表示")
-        sender.sendMessage("/noty bounty check <player> - 懸賞金を確認")
+        sender.sendMessage("/bounty add <player> <amount> - 懸賞金をかける")
+        sender.sendMessage("/bounty list - 懸賞金リスト表示")
+        sender.sendMessage("/bounty check <player> - 懸賞金を確認")
     }
 
     override fun tabComplete(sender: CommandSender, args: Array<out String>): List<String> {
         return when (args.size) {
-            1 -> listOf("set", "list", "check")
+            1 -> listOf("add", "list", "check")
                 .filter { it.startsWith(args[0].lowercase()) }
-            2 -> if (args[0] in listOf("set", "check")) {
+            2 -> if (args[0] in listOf("add", "set", "check")) {
+                // オフラインプレイヤーも補完対象（赤プレイヤー一覧から）
                 Bukkit.getOnlinePlayers().map { it.name }
                     .filter { it.lowercase().startsWith(args[1].lowercase()) }
             } else emptyList()
