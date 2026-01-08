@@ -180,7 +180,6 @@ class Notoriety : JavaPlugin() {
         golemService = GolemService(playerManager)
         bountyService = BountyService(this, economyService)
         bountyService.initializeSignManager()
-        bountyService.cleanupInvalidBounties()
         inspectService = InspectService(this, ownershipRepository, trustService, i18nManager, territoryService, guildService)
         inspectionStick = InspectionStick(this, i18nManager)
 

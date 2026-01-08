@@ -85,31 +85,4 @@ class BountyService(
         // 懸賞金を削除
         storage.removeBounty(targetUuid)
     }
-
-    /**
-     * サーバー起動時に不整合な懸賞金データをクリーンアップ
-     * PKCount が 0 のプレイヤーに対する懸賞金を返金して削除する
-     */
-    fun cleanupInvalidBounties() {
-        val allBounties = storage.getAllBounties()
-        var cleanedCount = 0
-
-        allBounties.forEach { bounty ->
-            val targetData = plugin.playerManager.getOrLoadPlayer(bounty.target)
-            // プレイヤーデータが存在しない、または PKCount が 0 の場合は返金
-            if (targetData == null || targetData.pkCount == 0) {
-                bounty.contributors.forEach { (contributorUuid, amount) ->
-                    economy.deposit(contributorUuid, amount)
-                }
-                storage.removeBounty(bounty.target)
-                cleanedCount++
-                val targetName = Bukkit.getOfflinePlayer(bounty.target).name ?: bounty.target.toString()
-                plugin.logger.info("Invalid bounty cleaned up: $targetName (refunded ${bounty.total.toLong()} to contributors)")
-            }
-        }
-
-        if (cleanedCount > 0) {
-            plugin.logger.info("Cleaned up $cleanedCount invalid bounties on startup")
-        }
-    }
 }
