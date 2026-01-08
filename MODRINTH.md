@@ -9,9 +9,9 @@ Players are classified into three states based on their behavior:
 
 | Status | Color | Condition |
 |--------|-------|-----------|
-| Innocent | Blue | No crimes committed |
-| Criminal | Gray | Committed a crime |
-| Murderer | Red | Killed another player |
+| Innocent | Blue | Alignment ≥ 0, PKCount = 0 |
+| Criminal | Gray | Alignment < 0, PKCount = 0 |
+| Murderer | Red | PKCount ≥ 1 |
 
 ### Ownership Protection
 - Blocks placed by innocent players are automatically protected
@@ -23,15 +23,30 @@ Players are classified into three states based on their behavior:
 - **TRUST** - Grant full access to your property
 - **UNSET** - Default state; guild members get automatic trust
 - **DISTRUST** - Block access even from guild members
-- Distrusted players can view chests but cannot take items
 
 ### Guild System
 Form groups with automatic trust relationships:
 - Guild members automatically trust each other (unless DISTRUST is set)
-- Guild tags displayed before player names (e.g., `[BC] PlayerName`)
+- Player display format: `Title PlayerName [GuildTag]`
 - 16 customizable tag colors
 - Three roles: Master, Vice Master, Member
 - Guild chat channel for private communication
+- Application system (join guilds without invitation)
+
+### Territory System
+Guilds can claim protected land:
+- Requires minimum 5 guild members
+- 1 chunk per 5 members
+- Non-members cannot place/break blocks or access containers
+- Beacon auto-placed at territory center
+- Entry/exit notifications
+- Guild master receives territory status on login
+
+### Inspect System
+Investigate block ownership and territory information:
+- `/inspect` - Toggle inspect mode
+- `/noty inspect tool` - Get inspection stick
+- Shows owner, placement time, trust status, and territory info
 
 ### Chat System
 Multiple communication channels:
@@ -45,17 +60,30 @@ Multiple communication channels:
 - Villagers shout when they witness crimes
 - Iron Golems attack criminals on sight
 - Golems teleport to criminals if too far away
+- Enhanced golem stats when attacking criminals
 
 ### Bounty System
 - Place bounties on murderers
 - Claim rewards by defeating wanted players
 - Leaderboard display via signs
 
+### 5-Tier Penalty System
+
+| Severity | Penalty | Examples |
+|----------|---------|----------|
+| Severe | -50 | Kill villager (with bed), Theft, Kill golem |
+| Moderate | -20 | Kill animal (witnessed) |
+| Minor | -10 | Destroy property, Kill villager (no bed) |
+| Petty | -5 | Destroy villager bed/workstation |
+| Trivial | -1 | Attack player/villager, Harvest crops |
+
 ## Commands
 
 **Main Commands**
 - `/noty status [player]` - View reputation status
 - `/noty history [player]` - View crime history
+- `/inspect` - Toggle inspect mode
+- `/noty inspect tool` - Get inspection stick
 
 **Trust Commands**
 - `/trust add <player>` - Trust a player (TRUST)
@@ -75,6 +103,17 @@ Multiple communication channels:
 - `/guild transfer <player>` - Transfer leadership
 - `/guild tagcolor <color>` - Change tag color
 
+**Guild Application Commands**
+- `/guild apply <guild>` - Apply to join a guild
+- `/guild applications` - View received applications (Master/Vice Master)
+- `/guild applications accept <player>` - Accept application
+- `/guild applications reject <player>` - Reject application
+
+**Territory Commands**
+- `/guild territory set` - Set territory center (Master only)
+- `/guild territory info` - View territory information
+- `/guild territory remove` - Remove territory (Master only)
+
 **Chat Commands**
 - `/w <player> <message>` - Send whisper
 - `/r <message>` - Reply to last whisper
@@ -88,7 +127,7 @@ Multiple communication channels:
 ## Requirements
 
 - Minecraft 1.21.1+
-- Paper/Spigot Server
+- Paper Server
 - Java 21+
 - Vault (optional, for economy features)
 
@@ -102,13 +141,23 @@ Provides a developer API for third-party plugin integration:
 
 ```kotlin
 val api = notoriety.api
-val color = api.getPlayerColor(player.uniqueId)
-api.commitCrime(player.uniqueId, CrimeType.THEFT, 100)
+val color = api.getNameColor(player.uniqueId)
+api.addAlignment(player.uniqueId, 50)
 ```
 
 ## Events
 
-- `PlayerColorChangeEvent` - When player status changes
-- `PlayerCrimeEvent` - When a crime is committed
-- `PlayerGoodDeedEvent` - When a good deed is performed
-- `BountyClaimedEvent` - When a bounty is claimed
+| Event | Description |
+|-------|-------------|
+| PlayerColorChangeEvent | When player status changes |
+| PlayerCrimeEvent | When a crime is committed |
+| PlayerGoodDeedEvent | When a good deed is performed |
+| BountyClaimedEvent | When a bounty is claimed |
+| GuildCreateEvent | When a guild is created |
+| GuildMemberJoinEvent | When a member joins a guild |
+| GuildMemberLeaveEvent | When a member leaves a guild |
+| GuildApplicationEvent | When a guild application is submitted |
+| TerritoryClaimEvent | When territory is claimed |
+| TerritoryReleaseEvent | When territory is released |
+| TerritoryEnterEvent | When entering a territory |
+| TerritoryLeaveEvent | When leaving a territory |
