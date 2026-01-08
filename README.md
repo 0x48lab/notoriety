@@ -120,7 +120,7 @@
 ### 懸賞金コマンド
 
 ```
-/bounty set <player> <amount>  - 懸賞金を設定
+/bounty add <player> <amount>  - 懸賞金をかける
 /bounty list                   - 懸賞金リスト
 /bounty check <player>         - 懸賞金を確認
 ```

@@ -120,7 +120,7 @@ Multiple communication channels:
 - `/romaji on/off` - Toggle romaji conversion
 
 **Bounty Commands**
-- `/bounty set <player> <amount>` - Set a bounty
+- `/bounty add <player> <amount>` - Place a bounty
 - `/bounty list` - View all bounties
 - `/bounty check <player>` - Check specific bounty
 
