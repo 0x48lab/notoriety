@@ -34,6 +34,13 @@ class PlayerManager(
         cache[uuid]?.let { repository.save(it) }
     }
 
+    /**
+     * プレイヤーデータを直接DBに保存（オフラインプレイヤー対応）
+     */
+    fun savePlayerData(data: PlayerData) {
+        repository.save(data)
+    }
+
     fun unloadPlayer(uuid: UUID) {
         savePlayer(uuid)
         cache.remove(uuid)

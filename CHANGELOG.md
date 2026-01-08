@@ -45,6 +45,8 @@
 - オフラインプレイヤーに懸賞金を設定できない問題を修正
   - `PlayerManager.getOrLoadPlayer()` メソッドを追加（キャッシュまたはDBから取得）
   - `BountyService.setBounty()` でオフラインプレイヤーのデータもDBから読み込むように変更
+- `/noty admin` コマンドでオフラインプレイヤーを操作できない問題を修正
+  - オフラインプレイヤーのデータもDBから読み込み、変更後に保存するように修正
 - SQLite接続プールのデッドロック問題を修正
   - `TerritoryRepository`でネストされたDB接続を回避
   - 同一接続を再利用する`getChunksWithConnection()`メソッドを追加

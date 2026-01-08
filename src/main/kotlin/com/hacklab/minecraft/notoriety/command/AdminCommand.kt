@@ -42,10 +42,12 @@ class AdminCommand(private val plugin: Notoriety) : SubCommand {
         }
 
         val target = Bukkit.getOfflinePlayer(args[0]).uniqueId
-        val data = plugin.playerManager.getPlayer(target) ?: run {
+        // オフラインプレイヤーにも対応
+        val data = plugin.playerManager.getOrLoadPlayer(target) ?: run {
             sender.sendMessage(i18n.get("message.player_not_found", "Player not found"))
             return true
         }
+        val isOnline = plugin.playerManager.isOnline(target)
 
         val param = args[1].lowercase()
         val operation = args[2].lowercase()
@@ -65,6 +67,11 @@ class AdminCommand(private val plugin: Notoriety) : SubCommand {
                 sender.sendMessage("Unknown parameter: $param")
                 return true
             }
+        }
+
+        // オフラインプレイヤーの場合は直接DBに保存
+        if (!isOnline) {
+            plugin.playerManager.savePlayerData(data)
         }
 
         Bukkit.getPlayer(target)?.let {
