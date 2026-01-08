@@ -15,6 +15,15 @@ class PlayerManager(
 
     fun getPlayer(player: Player): PlayerData? = cache[player.uniqueId]
 
+    /**
+     * キャッシュまたはDBからプレイヤーデータを取得（オフラインプレイヤー対応）
+     * キャッシュにあればキャッシュから、なければDBから読み込む（キャッシュには入れない）
+     */
+    fun getOrLoadPlayer(uuid: UUID): PlayerData? {
+        cache[uuid]?.let { return it }
+        return repository.load(uuid)
+    }
+
     fun loadPlayer(uuid: UUID): PlayerData {
         val data = repository.load(uuid) ?: PlayerData(uuid)
         cache[uuid] = data

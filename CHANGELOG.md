@@ -37,6 +37,9 @@
 - 自殺時にPKCountが増加するバグを修正
   - エンダードラゴン等に吹き飛ばされて落下死した際、victim.killerが自分自身を返すケースでPKCount+1されていた
   - killer == victim の場合はPK判定をスキップするように修正
+- オフラインプレイヤーに懸賞金を設定できない問題を修正
+  - `PlayerManager.getOrLoadPlayer()` メソッドを追加（キャッシュまたはDBから取得）
+  - `BountyService.setBounty()` でオフラインプレイヤーのデータもDBから読み込むように変更
 - SQLite接続プールのデッドロック問題を修正
   - `TerritoryRepository`でネストされたDB接続を回避
   - 同一接続を再利用する`getChunksWithConnection()`メソッドを追加

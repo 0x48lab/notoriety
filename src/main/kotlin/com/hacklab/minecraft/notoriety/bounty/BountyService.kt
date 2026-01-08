@@ -23,7 +23,8 @@ class BountyService(
     }
 
     fun setBounty(contributor: UUID, target: UUID, amount: Double): Boolean {
-        val targetData = plugin.playerManager.getPlayer(target) ?: return false
+        // オフラインプレイヤーにも懸賞金を設定できるようにDBからも読み込む
+        val targetData = plugin.playerManager.getOrLoadPlayer(target) ?: return false
         if (targetData.getNameColor() != NameColor.RED) return false
         if (amount < MINIMUM_BOUNTY) return false
 
