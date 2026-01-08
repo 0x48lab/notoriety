@@ -283,6 +283,9 @@ class Notoriety : JavaPlugin() {
             it.setExecutor { sender, _, _, args ->
                 mainCommand.onCommand(sender, it, "bounty", arrayOf("bounty") + args)
             }
+            it.tabCompleter = TabCompleter { sender, _, _, args ->
+                mainCommand.onTabComplete(sender, it, "bounty", arrayOf("bounty") + args)
+            }
         }
 
         getCommand("trust")?.let {
