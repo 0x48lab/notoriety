@@ -108,8 +108,9 @@ class CombatListener(
         }
 
         // プレイヤーに殺された場合のみPK判定・懸賞金処理
+        // 自殺（killer == victim）の場合はPK判定しない
         val killer = victim.killer
-        if (killer != null) {
+        if (killer != null && killer.uniqueId != victim.uniqueId) {
             // 被害者が加害者を信頼していれば犯罪・PKにならない
             val isTrusted = trustService.isTrusted(victim.uniqueId, killer.uniqueId)
 

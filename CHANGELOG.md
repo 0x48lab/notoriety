@@ -34,6 +34,9 @@
   - 対象: TerritoryEntryListener, HistoryCommand
 
 ### Fixed
+- 自殺時にPKCountが増加するバグを修正
+  - エンダードラゴン等に吹き飛ばされて落下死した際、victim.killerが自分自身を返すケースでPKCount+1されていた
+  - killer == victim の場合はPK判定をスキップするように修正
 - SQLite接続プールのデッドロック問題を修正
   - `TerritoryRepository`でネストされたDB接続を回避
   - 同一接続を再利用する`getChunksWithConnection()`メソッドを追加
