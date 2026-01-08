@@ -106,8 +106,9 @@ class BountyCommand(private val plugin: Notoriety) : SubCommand {
             1 -> listOf("add", "list", "check")
                 .filter { it.startsWith(args[0].lowercase()) }
             2 -> if (args[0] in listOf("add", "set", "check")) {
-                // オフラインプレイヤーも補完対象（赤プレイヤー一覧から）
-                Bukkit.getOnlinePlayers().map { it.name }
+                // 赤プレイヤー（Murderer）のみ補完対象
+                plugin.playerManager.findAllRedPlayers()
+                    .mapNotNull { Bukkit.getOfflinePlayer(it.uuid).name }
                     .filter { it.lowercase().startsWith(args[1].lowercase()) }
             } else emptyList()
             else -> emptyList()
