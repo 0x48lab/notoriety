@@ -1,0 +1,22 @@
+{
+  "parent": "notoriety:root",
+  "display": {
+    "icon": {
+      "id": "minecraft:crossbow"
+    },
+    "title": {
+      "translate": "advancement.notoriety.cmb001.title"
+    },
+    "description": {
+      "translate": "advancement.notoriety.cmb001.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "trigger": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "parent": "notoriety:village/master_trader",
+  "display": {
+    "icon": {
+      "id": "minecraft:villager_spawn_egg"
+    },
+    "title": {
+      "translate": "advancement.notoriety.vlg003.title"
+    },
+    "description": {
+      "translate": "advancement.notoriety.vlg003.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "trigger": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

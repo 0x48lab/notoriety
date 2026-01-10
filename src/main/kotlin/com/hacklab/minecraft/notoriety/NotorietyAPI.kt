@@ -24,7 +24,10 @@ interface NotorietyAPI {
 
     // === 状態取得 ===
     fun getNameColor(player: UUID): NameColor
+    /** 英語の称号を取得（API互換性用） */
     fun getTitle(player: UUID): String?
+    /** ローカライズ済み称号を取得 */
+    fun getLocalizedTitle(player: UUID): String?
 
     // === 所有権操作 ===
     fun getBlockOwner(location: Location): UUID?

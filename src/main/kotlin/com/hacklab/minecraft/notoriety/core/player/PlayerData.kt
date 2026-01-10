@@ -11,7 +11,12 @@ data class PlayerData(
     var fame: Int = 0,           // 名声
     var playTimeMinutes: Long = 0,
     var lastSeen: Instant = Instant.now(),
-    var locale: String? = null   // プレイヤーの言語設定（null=サーバーデフォルト）
+    var locale: String? = null,  // プレイヤーの言語設定（null=サーバーデフォルト）
+    // アチーブメント用統計カウンター
+    var redKills: Int = 0,           // 赤プレイヤー討伐回数
+    var tradeCount: Int = 0,         // 村人取引回数
+    var golemKills: Int = 0,         // ゴーレム討伐回数
+    var totalBountyEarned: Long = 0  // 懸賞金累計獲得額
 ) {
     fun getNameColor(): NameColor = when {
         pkCount >= 1 -> NameColor.RED
@@ -66,4 +71,10 @@ data class PlayerData(
     fun resetAlignment() {
         alignment = 0
     }
+
+    // アチーブメント統計カウンター操作メソッド
+    fun incrementRedKills(): Int = ++redKills
+    fun incrementTradeCount(): Int = ++tradeCount
+    fun incrementGolemKills(): Int = ++golemKills
+    fun addBountyEarned(amount: Long) { totalBountyEarned += amount }
 }

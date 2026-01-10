@@ -302,6 +302,49 @@ class DatabaseManager(
                     CREATE INDEX IF NOT EXISTS idx_chunk_coords
                     ON territory_chunks (world_name, center_x, center_z)
                 """.trimIndent())
+
+                // ===== Achievement System Tables =====
+
+                // Player achievements table
+                stmt.executeUpdate("""
+                    CREATE TABLE IF NOT EXISTS player_achievements (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        player_uuid VARCHAR(36) NOT NULL,
+                        achievement_id VARCHAR(32) NOT NULL,
+                        unlocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE(player_uuid, achievement_id)
+                    )
+                """.trimIndent())
+
+                stmt.executeUpdate("""
+                    CREATE INDEX IF NOT EXISTS idx_player_achievements_player
+                    ON player_achievements (player_uuid)
+                """.trimIndent())
+
+                // Migration: Add statistics columns to player_data
+                try {
+                    stmt.executeUpdate("ALTER TABLE player_data ADD COLUMN red_kills INT DEFAULT 0")
+                } catch (e: Exception) {
+                    // Column already exists, ignore
+                }
+
+                try {
+                    stmt.executeUpdate("ALTER TABLE player_data ADD COLUMN trade_count INT DEFAULT 0")
+                } catch (e: Exception) {
+                    // Column already exists, ignore
+                }
+
+                try {
+                    stmt.executeUpdate("ALTER TABLE player_data ADD COLUMN golem_kills INT DEFAULT 0")
+                } catch (e: Exception) {
+                    // Column already exists, ignore
+                }
+
+                try {
+                    stmt.executeUpdate("ALTER TABLE player_data ADD COLUMN total_bounty_earned BIGINT DEFAULT 0")
+                } catch (e: Exception) {
+                    // Column already exists, ignore
+                }
             }
         }
         plugin.logger.info("Database tables initialized successfully")

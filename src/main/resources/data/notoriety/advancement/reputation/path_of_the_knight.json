@@ -1,0 +1,22 @@
+{
+  "parent": "notoriety:reputation/path_of_the_squire",
+  "display": {
+    "icon": {
+      "id": "minecraft:iron_chestplate"
+    },
+    "title": {
+      "translate": "advancement.notoriety.rep002.title"
+    },
+    "description": {
+      "translate": "advancement.notoriety.rep002.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "trigger": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

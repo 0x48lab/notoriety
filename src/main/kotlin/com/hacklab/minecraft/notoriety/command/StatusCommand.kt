@@ -1,7 +1,6 @@
 package com.hacklab.minecraft.notoriety.command
 
 import com.hacklab.minecraft.notoriety.Notoriety
-import com.hacklab.minecraft.notoriety.reputation.TitleResolver
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
@@ -24,7 +23,8 @@ class StatusCommand(private val plugin: Notoriety) : SubCommand {
             return true
         }
 
-        val title = TitleResolver.getTitle(data)
+        // 称号はNotorietyServiceから一元取得
+        val title = plugin.notorietyService.getLocalizedTitle(target)
         val color = data.getNameColor()
         val playerName = Bukkit.getOfflinePlayer(target).name ?: "Unknown"
 

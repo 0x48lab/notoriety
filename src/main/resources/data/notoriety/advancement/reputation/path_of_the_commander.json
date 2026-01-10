@@ -1,0 +1,22 @@
+{
+  "parent": "notoriety:reputation/path_of_the_knight",
+  "display": {
+    "icon": {
+      "id": "minecraft:diamond_chestplate"
+    },
+    "title": {
+      "translate": "advancement.notoriety.rep003.title"
+    },
+    "description": {
+      "translate": "advancement.notoriety.rep003.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "trigger": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

@@ -1,6 +1,7 @@
 package com.hacklab.minecraft.notoriety.command
 
 import com.hacklab.minecraft.notoriety.Notoriety
+import com.hacklab.minecraft.notoriety.achievement.command.AchievementCommand
 import com.hacklab.minecraft.notoriety.inspect.InspectCommand
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
@@ -10,6 +11,7 @@ import org.bukkit.command.TabCompleter
 class NotorietyCommand(private val plugin: Notoriety) : CommandExecutor, TabCompleter {
 
     private val subCommands: Map<String, SubCommand> by lazy {
+        val achievementCommand = AchievementCommand(plugin.achievementService, plugin.i18nManager)
         mapOf(
             "status" to StatusCommand(plugin),
             "history" to HistoryCommand(plugin),
@@ -20,7 +22,9 @@ class NotorietyCommand(private val plugin: Notoriety) : CommandExecutor, TabComp
             "inspect" to InspectCommand(plugin.inspectService, plugin.inspectionStick, plugin.i18nManager),
             "locale" to LocaleCommand(plugin),
             "guild" to GuildCommandWrapper(plugin),
-            "chat" to ChatCommandWrapper(plugin.chatService)
+            "chat" to ChatCommandWrapper(plugin.chatService),
+            "achievements" to achievementCommand,
+            "ach" to achievementCommand
         )
     }
 
@@ -68,6 +72,7 @@ class NotorietyCommand(private val plugin: Notoriety) : CommandExecutor, TabComp
         sender.sendMessage("/noty abandon - Abandon ownership of target block")
         sender.sendMessage("/noty guild <subcommand> - Guild system")
         sender.sendMessage("/noty chat <mode> - Chat settings")
+        sender.sendMessage("/noty achievements [player] [category] - Achievement list")
         sender.sendMessage("/noty inspect [tool] - Inspect mode / Get inspection stick")
         sender.sendMessage("/noty locale [ja|en|reset] - Change language")
         sender.sendMessage("/noty admin ... - Admin commands")

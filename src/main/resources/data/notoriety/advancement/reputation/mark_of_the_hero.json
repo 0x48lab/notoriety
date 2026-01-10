@@ -1,0 +1,22 @@
+{
+  "parent": "notoriety:reputation/path_of_the_commander",
+  "display": {
+    "icon": {
+      "id": "minecraft:golden_helmet"
+    },
+    "title": {
+      "translate": "advancement.notoriety.rep004.title"
+    },
+    "description": {
+      "translate": "advancement.notoriety.rep004.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "trigger": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

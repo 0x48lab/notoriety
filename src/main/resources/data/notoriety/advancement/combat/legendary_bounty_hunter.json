@@ -1,0 +1,22 @@
+{
+  "parent": "notoriety:combat/bounty_hunter",
+  "display": {
+    "icon": {
+      "id": "minecraft:netherite_sword"
+    },
+    "title": {
+      "translate": "advancement.notoriety.cmb002.title"
+    },
+    "description": {
+      "translate": "advancement.notoriety.cmb002.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "trigger": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

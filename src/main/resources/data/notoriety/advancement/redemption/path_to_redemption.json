@@ -1,0 +1,22 @@
+{
+  "parent": "notoriety:root",
+  "display": {
+    "icon": {
+      "id": "minecraft:totem_of_undying"
+    },
+    "title": {
+      "translate": "advancement.notoriety.rdm001.title"
+    },
+    "description": {
+      "translate": "advancement.notoriety.rdm001.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "trigger": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

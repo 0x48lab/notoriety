@@ -1,0 +1,22 @@
+{
+  "parent": "notoriety:root",
+  "display": {
+    "icon": {
+      "id": "minecraft:shield"
+    },
+    "title": {
+      "translate": "advancement.notoriety.gld001.title"
+    },
+    "description": {
+      "translate": "advancement.notoriety.gld001.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "trigger": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

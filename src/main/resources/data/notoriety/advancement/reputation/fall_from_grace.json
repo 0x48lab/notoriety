@@ -1,0 +1,22 @@
+{
+  "parent": "notoriety:root",
+  "display": {
+    "icon": {
+      "id": "minecraft:wither_skeleton_skull"
+    },
+    "title": {
+      "translate": "advancement.notoriety.rep006.title"
+    },
+    "description": {
+      "translate": "advancement.notoriety.rep006.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "trigger": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

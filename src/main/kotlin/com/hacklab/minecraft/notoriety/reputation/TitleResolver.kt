@@ -2,80 +2,61 @@ package com.hacklab.minecraft.notoriety.reputation
 
 import com.hacklab.minecraft.notoriety.core.player.PlayerData
 
+/**
+ * 称号判定ロジック
+ * 称号キーを返し、実際の翻訳はI18nManagerで行う
+ */
 object TitleResolver {
-    fun getTitle(data: PlayerData): String? {
+
+    /**
+     * プレイヤーの称号キーを取得
+     * @return 称号キー（例: "title.notable"）、称号なしの場合はnull
+     */
+    fun getTitleKey(data: PlayerData): String? {
         return when (data.getNameColor()) {
-            NameColor.BLUE -> getBlueTitle(data.fame)
-            NameColor.RED -> getRedTitle(data.pkCount)
-            NameColor.GRAY -> getGrayTitle(data.fame)
+            NameColor.BLUE -> getBlueTitleKey(data.fame)
+            NameColor.RED -> getRedTitleKey(data.pkCount)
+            NameColor.GRAY -> getGrayTitleKey(data.fame)
         }
     }
 
-    private fun getBlueTitle(fame: Int): String? {
-        // 青プレイヤーの称号はFameのみで決定
+    /**
+     * 青プレイヤーの称号キー（Fame基準）
+     */
+    private fun getBlueTitleKey(fame: Int): String? {
         return when {
-            fame >= 750 -> "Glorious Lord"
-            fame >= 500 -> "Great Lord"
-            fame >= 250 -> "Lord"
-            fame >= 100 -> "Notable"
+            fame >= 750 -> "title.glorious_lord"
+            fame >= 500 -> "title.great_lord"
+            fame >= 250 -> "title.lord"
+            fame >= 100 -> "title.notable"
             else -> null
         }
     }
 
-    private fun getRedTitle(pkCount: Int): String {
-        // 赤プレイヤーはPKCountで称号が決まる
+    /**
+     * 赤プレイヤーの称号キー（PKCount基準）
+     */
+    private fun getRedTitleKey(pkCount: Int): String {
         return when {
-            pkCount >= 200 -> "Dread Lord"    // 殺戮者
-            pkCount >= 100 -> "Dark Lord"     // 殺人鬼
-            pkCount >= 50 -> "Infamous"       // 悪鬼
-            pkCount >= 30 -> "Notorious"      // 凶漢
-            pkCount >= 10 -> "Wicked"         // 外道
-            else -> "Outcast"                 // 罪人
+            pkCount >= 200 -> "title.dread_lord"
+            pkCount >= 100 -> "title.dark_lord"
+            pkCount >= 50 -> "title.infamous"
+            pkCount >= 30 -> "title.notorious"
+            pkCount >= 10 -> "title.wicked"
+            else -> "title.outcast"
         }
     }
 
-    private fun getGrayTitle(fame: Int): String? {
-        // 灰色はFameのみで称号が決まる（Karmaは使わない）
+    /**
+     * 灰プレイヤーの称号キー（Fame基準）
+     */
+    private fun getGrayTitleKey(fame: Int): String? {
         return when {
-            fame >= 750 -> "Renegade"      // 反逆者
-            fame >= 500 -> "Outlaw"        // 無法者
-            fame >= 250 -> "Rogue"         // ならず者
-            fame >= 100 -> "Scoundrel"     // 悪党
+            fame >= 750 -> "title.renegade"
+            fame >= 500 -> "title.outlaw"
+            fame >= 250 -> "title.rogue"
+            fame >= 100 -> "title.scoundrel"
             else -> null
-        }
-    }
-
-    fun getLocalizedTitle(data: PlayerData, locale: String): String? {
-        val title = getTitle(data) ?: return null
-        return if (locale == "ja") {
-            getJapaneseTitle(title)
-        } else {
-            title
-        }
-    }
-
-    private fun getJapaneseTitle(title: String): String {
-        return when (title) {
-            // 青
-            "Trustworthy" -> "義人"
-            "Notable" -> "功士"
-            "Famous" -> "豪傑"
-            "Lord" -> "聖騎士"
-            "Great Lord" -> "聖将"
-            "Glorious Lord" -> "勇者"
-            // 赤
-            "Outcast" -> "罪人"
-            "Notorious" -> "凶漢"
-            "Infamous" -> "悪鬼"
-            "Wicked" -> "外道"
-            "Dark Lord" -> "殺人鬼"
-            "Dread Lord" -> "殺戮者"
-            // 灰
-            "Scoundrel" -> "悪党"
-            "Rogue" -> "ならず者"
-            "Outlaw" -> "無法者"
-            "Renegade" -> "反逆者"
-            else -> title
         }
     }
 }

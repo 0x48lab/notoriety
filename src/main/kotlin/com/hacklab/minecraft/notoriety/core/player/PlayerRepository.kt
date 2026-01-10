@@ -23,7 +23,11 @@ class PlayerRepository(private val databaseManager: DatabaseManager) {
                     fame = rs.getInt("fame"),
                     playTimeMinutes = rs.getLong("play_time_minutes"),
                     lastSeen = rs.getTimestamp("last_seen")?.toInstant() ?: Instant.now(),
-                    locale = rs.getString("locale")
+                    locale = rs.getString("locale"),
+                    redKills = rs.getInt("red_kills"),
+                    tradeCount = rs.getInt("trade_count"),
+                    golemKills = rs.getInt("golem_kills"),
+                    totalBountyEarned = rs.getLong("total_bounty_earned")
                 )
             } else {
                 null
@@ -34,15 +38,19 @@ class PlayerRepository(private val databaseManager: DatabaseManager) {
     fun save(data: PlayerData) {
         databaseManager.provider.useConnection { conn ->
             val stmt = conn.prepareStatement("""
-                INSERT INTO player_data (uuid, alignment, pk_count, fame, play_time_minutes, last_seen, locale)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO player_data (uuid, alignment, pk_count, fame, play_time_minutes, last_seen, locale, red_kills, trade_count, golem_kills, total_bounty_earned)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(uuid) DO UPDATE SET
                     alignment = excluded.alignment,
                     pk_count = excluded.pk_count,
                     fame = excluded.fame,
                     play_time_minutes = excluded.play_time_minutes,
                     last_seen = excluded.last_seen,
-                    locale = excluded.locale
+                    locale = excluded.locale,
+                    red_kills = excluded.red_kills,
+                    trade_count = excluded.trade_count,
+                    golem_kills = excluded.golem_kills,
+                    total_bounty_earned = excluded.total_bounty_earned
             """.trimIndent())
 
             stmt.setString(1, data.uuid.toString())
@@ -52,6 +60,10 @@ class PlayerRepository(private val databaseManager: DatabaseManager) {
             stmt.setLong(5, data.playTimeMinutes)
             stmt.setTimestamp(6, Timestamp.from(data.lastSeen))
             stmt.setString(7, data.locale)
+            stmt.setInt(8, data.redKills)
+            stmt.setInt(9, data.tradeCount)
+            stmt.setInt(10, data.golemKills)
+            stmt.setLong(11, data.totalBountyEarned)
             stmt.executeUpdate()
         }
     }
@@ -75,15 +87,7 @@ class PlayerRepository(private val databaseManager: DatabaseManager) {
             val rs = stmt.executeQuery()
             val players = mutableListOf<PlayerData>()
             while (rs.next()) {
-                players.add(PlayerData(
-                    uuid = UUID.fromString(rs.getString("uuid")),
-                    alignment = rs.getInt("alignment"),
-                    pkCount = rs.getInt("pk_count"),
-                    fame = rs.getInt("fame"),
-                    playTimeMinutes = rs.getLong("play_time_minutes"),
-                    lastSeen = rs.getTimestamp("last_seen")?.toInstant() ?: Instant.now(),
-                    locale = rs.getString("locale")
-                ))
+                players.add(resultSetToPlayerData(rs))
             }
             players
         }
@@ -100,18 +104,26 @@ class PlayerRepository(private val databaseManager: DatabaseManager) {
             val rs = stmt.executeQuery()
             val players = mutableListOf<PlayerData>()
             while (rs.next()) {
-                players.add(PlayerData(
-                    uuid = UUID.fromString(rs.getString("uuid")),
-                    alignment = rs.getInt("alignment"),
-                    pkCount = rs.getInt("pk_count"),
-                    fame = rs.getInt("fame"),
-                    playTimeMinutes = rs.getLong("play_time_minutes"),
-                    lastSeen = rs.getTimestamp("last_seen")?.toInstant() ?: Instant.now(),
-                    locale = rs.getString("locale")
-                ))
+                players.add(resultSetToPlayerData(rs))
             }
             players
         }
+    }
+
+    private fun resultSetToPlayerData(rs: java.sql.ResultSet): PlayerData {
+        return PlayerData(
+            uuid = UUID.fromString(rs.getString("uuid")),
+            alignment = rs.getInt("alignment"),
+            pkCount = rs.getInt("pk_count"),
+            fame = rs.getInt("fame"),
+            playTimeMinutes = rs.getLong("play_time_minutes"),
+            lastSeen = rs.getTimestamp("last_seen")?.toInstant() ?: Instant.now(),
+            locale = rs.getString("locale"),
+            redKills = rs.getInt("red_kills"),
+            tradeCount = rs.getInt("trade_count"),
+            golemKills = rs.getInt("golem_kills"),
+            totalBountyEarned = rs.getLong("total_bounty_earned")
+        )
     }
 
     /**
