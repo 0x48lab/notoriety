@@ -30,17 +30,23 @@ object Messages {
     const val TRUST_REMOVED = "trust.removed"
     const val TRUST_LIST_EMPTY = "trust.list_empty"
 
-    // Title names
-    const val TITLE_TRUSTWORTHY = "title.trustworthy"
+    // Title names - Blue (Innocent)
     const val TITLE_NOTABLE = "title.notable"
-    const val TITLE_FAMOUS = "title.famous"
     const val TITLE_LORD = "title.lord"
     const val TITLE_GREAT_LORD = "title.great_lord"
     const val TITLE_GLORIOUS_LORD = "title.glorious_lord"
+
+    // Title names - Gray (Criminal)
+    const val TITLE_SCOUNDREL = "title.scoundrel"
+    const val TITLE_ROGUE = "title.rogue"
+    const val TITLE_OUTLAW = "title.outlaw"
+    const val TITLE_RENEGADE = "title.renegade"
+
+    // Title names - Red (Murderer)
     const val TITLE_OUTCAST = "title.outcast"
+    const val TITLE_WICKED = "title.wicked"
     const val TITLE_NOTORIOUS = "title.notorious"
     const val TITLE_INFAMOUS = "title.infamous"
-    const val TITLE_WICKED = "title.wicked"
     const val TITLE_DARK_LORD = "title.dark_lord"
     const val TITLE_DREAD_LORD = "title.dread_lord"
 

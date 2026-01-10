@@ -1,5 +1,9 @@
 package com.hacklab.minecraft.notoriety
 
+import com.hacklab.minecraft.notoriety.achievement.listener.AchievementListener
+import com.hacklab.minecraft.notoriety.achievement.repository.AchievementRepository
+import com.hacklab.minecraft.notoriety.achievement.service.AchievementService
+import com.hacklab.minecraft.notoriety.achievement.service.AchievementServiceImpl
 import com.hacklab.minecraft.notoriety.bounty.BountyService
 import com.hacklab.minecraft.notoriety.bounty.BountySignListener
 import com.hacklab.minecraft.notoriety.chat.ChatListener
@@ -84,6 +88,10 @@ class Notoriety : JavaPlugin() {
     lateinit var inspectionStick: InspectionStick
         private set
 
+    // アチーブメントシステム
+    lateinit var achievementService: AchievementService
+        private set
+
     // ギルドシステム
     lateinit var guildService: GuildService
         private set
@@ -150,7 +158,13 @@ class Notoriety : JavaPlugin() {
             guildCache = guildCache,
             guildTagManager = guildTagManager
         )
-        chatService = ChatService(chatSettingsRepository, guildService)
+        // ChatService初期化（titleProviderは後で設定）
+        chatService = ChatService(
+            chatSettingsRepository = chatSettingsRepository,
+            guildService = guildService,
+            playerManager = playerManager,
+            titleProvider = { uuid -> notorietyService.getLocalizedTitle(uuid) }
+        )
 
         // 領地システム初期化
         val territoryRepository = TerritoryRepository(databaseManager)
@@ -184,6 +198,15 @@ class Notoriety : JavaPlugin() {
         inspectionStick = InspectionStick(this, i18nManager)
 
         guildGUIManager = GuildGUIManager(this, guildService)
+
+        // アチーブメントシステム初期化
+        val achievementRepository = AchievementRepository(databaseManager)
+        achievementService = AchievementServiceImpl(
+            plugin = this,
+            repository = achievementRepository,
+            playerManager = playerManager,
+            i18nManager = i18nManager
+        )
 
         // 5. イベントリスナー登録
         registerListeners()
@@ -268,6 +291,9 @@ class Notoriety : JavaPlugin() {
         // 領地システムリスナー
         pm.registerEvents(TerritoryProtectionListener(territoryService, guildService, beaconManager, i18nManager), this)
         pm.registerEvents(TerritoryEntryListener(territoryService, guildService, i18nManager), this)
+
+        // アチーブメントシステムリスナー
+        pm.registerEvents(AchievementListener(achievementService, playerManager), this)
     }
 
     private fun registerCommands() {
@@ -353,7 +379,6 @@ class Notoriety : JavaPlugin() {
         server.scheduler.runTaskTimer(this, Runnable {
             playerManager.getOnlinePlayers().forEach { data ->
                 val oldColor = data.getNameColor()
-                val oldPkCount = data.pkCount
 
                 // Fame減少
                 data.addFame(-1)
@@ -361,11 +386,6 @@ class Notoriety : JavaPlugin() {
                 // Alignment回復（0に向かって+10/時間）
                 // 赤プレイヤーはAlignmentが0になるとPKCount -1、Alignment -1000にリセット
                 val stateChanged = data.decayAlignment(10)
-
-                // PKCount が 0 になったら懸賞金を返金
-                if (oldPkCount > 0 && data.pkCount == 0) {
-                    bountyService.refundBounty(data.uuid)
-                }
 
                 // 状態変化チェック
                 val newColor = data.getNameColor()

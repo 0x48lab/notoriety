@@ -55,20 +55,23 @@ trust:
   removed: "%s を信頼リストから削除しました"
   list_empty: "信頼しているプレイヤーはいません"
 
-# Title names (blue)
+# Title names
 title:
-  trustworthy: "義人"
+  # Blue (Innocent) - Fame based
   notable: "功士"
-  famous: "豪傑"
   lord: "聖騎士"
   great_lord: "聖将"
   glorious_lord: "勇者"
-
-# Title names (red)
+  # Gray (Criminal) - Fame based
+  scoundrel: "悪党"
+  rogue: "ならず者"
+  outlaw: "無法者"
+  renegade: "反逆者"
+  # Red (Murderer) - PKCount based
   outcast: "罪人"
+  wicked: "外道"
   notorious: "凶漢"
   infamous: "悪鬼"
-  wicked: "外道"
   dark_lord: "殺人鬼"
   dread_lord: "殺戮者"
 
@@ -234,6 +237,96 @@ territory:
   # Shrink notifications
   shrink_warning: "§c警告: メンバー不足により領地が %d チャンクに縮小されました"
   shrink_member_left: "メンバー脱退により領地が縮小される可能性があります"
+
+# Achievement messages
+achievement:
+  unlocked: "アチーブメント達成！"
+  hint:
+    category: "詳細を見るには /noty achievements <カテゴリ名> を使用"
+
+  # Category names
+  category:
+    reputation: "名声"
+    combat: "戦闘"
+    guild: "ギルド"
+    redemption: "贖罪"
+    village: "村"
+
+  # REPUTATION achievements
+  fledgling_knight:
+    name: "従騎士への道"
+    description: "Fameを100に到達させる"
+  rising_knight:
+    name: "昇り竜"
+    description: "Fameを250に到達させる"
+  crusader:
+    name: "聖戦士"
+    description: "Fameを500に到達させる"
+  champion:
+    name: "勇者の称号"
+    description: "Fameを750に到達させる"
+  legend_of_legends:
+    name: "伝説の勇者"
+    description: "Fameを1000（最大値）に到達させる"
+
+  # COMBAT achievements
+  first_blood:
+    name: "初陣"
+    description: "初めて赤プレイヤーを討伐する"
+  bounty_hunter:
+    name: "賞金稼ぎ"
+    description: "赤プレイヤーを10人討伐する"
+  predator:
+    name: "狩人"
+    description: "赤プレイヤーを50人討伐する"
+  nightmare:
+    name: "悪夢の狩人"
+    description: "赤プレイヤーを100人討伐する"
+  demon_lord:
+    name: "魔王の覚醒"
+    description: "PKCount 200に到達する（殺戮者の称号）"
+
+  # GUILD achievements
+  guild_initiate:
+    name: "ギルドへの第一歩"
+    description: "ギルドに加入する"
+  guild_founder:
+    name: "創設者"
+    description: "自分のギルドを作成する"
+  social_butterfly:
+    name: "社交の達人"
+    description: "村人と100回取引する"
+
+  # REDEMPTION achievements
+  path_of_sin:
+    name: "罪の道"
+    description: "初めて灰プレイヤーになる"
+  descent_into_darkness:
+    name: "闇への転落"
+    description: "初めて赤プレイヤーになる"
+  second_chance:
+    name: "再起"
+    description: "灰から青プレイヤーに戻る"
+  from_ashes:
+    name: "灰塵からの復活"
+    description: "赤から灰を経て青プレイヤーに戻る"
+  true_hero:
+    name: "真の勇者"
+    description: "PKCount 100以上の赤から青に戻る"
+
+  # VILLAGE achievements
+  friend_of_village:
+    name: "村の友"
+    description: "村人と10回取引する"
+  village_champion:
+    name: "村の守護者"
+    description: "村人と50回取引し、ゴーレムを10体討伐する"
+  ironclad:
+    name: "鉄の破壊者"
+    description: "アイアンゴーレムを50体討伐する"
+
+  # Announcement messages
+  server_announce: "★ %s が『%s』を達成しました！ ★"
 
 # Admin messages
 admin:

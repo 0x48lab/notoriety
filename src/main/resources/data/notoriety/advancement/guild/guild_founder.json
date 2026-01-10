@@ -1,0 +1,22 @@
+{
+  "parent": "notoriety:guild/guild_member",
+  "display": {
+    "icon": {
+      "id": "minecraft:banner_pattern"
+    },
+    "title": {
+      "translate": "advancement.notoriety.gld002.title"
+    },
+    "description": {
+      "translate": "advancement.notoriety.gld002.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "trigger": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

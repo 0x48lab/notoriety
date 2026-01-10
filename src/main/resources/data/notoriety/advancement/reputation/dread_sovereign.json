@@ -1,0 +1,22 @@
+{
+  "parent": "notoriety:reputation/fall_from_grace",
+  "display": {
+    "icon": {
+      "id": "minecraft:dragon_head"
+    },
+    "title": {
+      "translate": "advancement.notoriety.rep007.title"
+    },
+    "description": {
+      "translate": "advancement.notoriety.rep007.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "trigger": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

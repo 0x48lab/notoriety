@@ -1,0 +1,22 @@
+{
+  "parent": "notoriety:village/trusted_merchant",
+  "display": {
+    "icon": {
+      "id": "minecraft:bell"
+    },
+    "title": {
+      "translate": "advancement.notoriety.vlg004.title"
+    },
+    "description": {
+      "translate": "advancement.notoriety.vlg004.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "trigger": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

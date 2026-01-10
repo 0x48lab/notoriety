@@ -3,7 +3,6 @@ package com.hacklab.minecraft.notoriety
 import com.hacklab.minecraft.notoriety.crime.CrimeRecord
 import com.hacklab.minecraft.notoriety.crime.CrimeType
 import com.hacklab.minecraft.notoriety.reputation.NameColor
-import com.hacklab.minecraft.notoriety.reputation.TitleResolver
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import java.util.*
@@ -69,7 +68,13 @@ class NotorietyAPIImpl(private val plugin: Notoriety) : NotorietyAPI {
         plugin.playerManager.getPlayer(player)?.getNameColor() ?: NameColor.BLUE
 
     override fun getTitle(player: UUID): String? =
-        plugin.playerManager.getPlayer(player)?.let { TitleResolver.getTitle(it) }
+        plugin.notorietyService.getTitleKey(player)?.let { key ->
+            // 英語版を返す（API互換性用）
+            plugin.i18nManager.getForLocale("en", key, key)
+        }
+
+    override fun getLocalizedTitle(player: UUID): String? =
+        plugin.notorietyService.getLocalizedTitle(player)
 
     // === 所有権操作 ===
     override fun getBlockOwner(location: Location): UUID? =

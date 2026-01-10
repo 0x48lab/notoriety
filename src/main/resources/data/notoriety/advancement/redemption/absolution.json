@@ -1,0 +1,22 @@
+{
+  "parent": "notoriety:redemption/path_to_redemption",
+  "display": {
+    "icon": {
+      "id": "minecraft:white_banner"
+    },
+    "title": {
+      "translate": "advancement.notoriety.rdm002.title"
+    },
+    "description": {
+      "translate": "advancement.notoriety.rdm002.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "trigger": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

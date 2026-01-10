@@ -1,0 +1,22 @@
+{
+  "parent": "notoriety:redemption/absolution",
+  "display": {
+    "icon": {
+      "id": "minecraft:elytra"
+    },
+    "title": {
+      "translate": "advancement.notoriety.rdm003.title"
+    },
+    "description": {
+      "translate": "advancement.notoriety.rdm003.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "trigger": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

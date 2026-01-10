@@ -47,6 +47,26 @@ class NotorietyService(
     private val warningCooldowns = ConcurrentHashMap<WarningKey, Instant>()
     private val WARNING_COOLDOWN_SECONDS = 10L
 
+    // ========== 称号取得（一元化） ==========
+
+    /**
+     * プレイヤーのローカライズ済み称号を取得（一元化されたAPI）
+     * 全てのコンポーネントはこのメソッドを使用すること
+     */
+    fun getLocalizedTitle(playerUuid: UUID): String? {
+        val data = playerManager.getPlayer(playerUuid) ?: return null
+        val titleKey = TitleResolver.getTitleKey(data) ?: return null
+        return i18nManager.get(playerUuid, titleKey, titleKey)
+    }
+
+    /**
+     * プレイヤーの称号キーを取得
+     */
+    fun getTitleKey(playerUuid: UUID): String? {
+        val data = playerManager.getPlayer(playerUuid) ?: return null
+        return TitleResolver.getTitleKey(data)
+    }
+
     // ========== 表示更新 ==========
 
     /**
@@ -55,7 +75,7 @@ class NotorietyService(
     fun updateDisplay(player: Player) {
         val data = playerManager.getPlayer(player) ?: return
         val color = data.getNameColor()
-        val title = TitleResolver.getTitle(data)
+        val title = getLocalizedTitle(player.uniqueId)
         teamManager.updatePlayerTeam(player, color, title)
     }
 

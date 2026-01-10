@@ -1,0 +1,22 @@
+{
+  "parent": "notoriety:reputation/mark_of_the_hero",
+  "display": {
+    "icon": {
+      "id": "minecraft:nether_star"
+    },
+    "title": {
+      "translate": "advancement.notoriety.rep005.title"
+    },
+    "description": {
+      "translate": "advancement.notoriety.rep005.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "trigger": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

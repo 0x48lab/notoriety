@@ -55,20 +55,23 @@ trust:
   removed: "Removed %s from your trust list"
   list_empty: "You are not trusting anyone"
 
-# Title names (blue)
+# Title names
 title:
-  trustworthy: "Trustworthy"
+  # Blue (Innocent) - Fame based
   notable: "Notable"
-  famous: "Famous"
   lord: "Lord"
   great_lord: "Great Lord"
   glorious_lord: "Glorious Lord"
-
-# Title names (red)
+  # Gray (Criminal) - Fame based
+  scoundrel: "Scoundrel"
+  rogue: "Rogue"
+  outlaw: "Outlaw"
+  renegade: "Renegade"
+  # Red (Murderer) - PKCount based
   outcast: "Outcast"
+  wicked: "Wicked"
   notorious: "Notorious"
   infamous: "Infamous"
-  wicked: "Wicked"
   dark_lord: "Dark Lord"
   dread_lord: "Dread Lord"
 
@@ -234,6 +237,96 @@ territory:
   # Shrink notifications
   shrink_warning: "§cWarning: Territory shrunk to %d chunks due to insufficient members"
   shrink_member_left: "Territory may shrink due to member leaving"
+
+# Achievement messages
+achievement:
+  unlocked: "Achievement Unlocked!"
+  hint:
+    category: "Use /noty achievements <category> for details"
+
+  # Category names
+  category:
+    reputation: "Reputation"
+    combat: "Combat"
+    guild: "Guild"
+    redemption: "Redemption"
+    village: "Village"
+
+  # REPUTATION achievements
+  fledgling_knight:
+    name: "Path to Knighthood"
+    description: "Reach Fame 100"
+  rising_knight:
+    name: "Rising Star"
+    description: "Reach Fame 250"
+  crusader:
+    name: "Crusader"
+    description: "Reach Fame 500"
+  champion:
+    name: "Champion's Honor"
+    description: "Reach Fame 750"
+  legend_of_legends:
+    name: "Legend of Legends"
+    description: "Reach Fame 1000 (maximum)"
+
+  # COMBAT achievements
+  first_blood:
+    name: "First Blood"
+    description: "Defeat your first red player"
+  bounty_hunter:
+    name: "Bounty Hunter"
+    description: "Defeat 10 red players"
+  predator:
+    name: "Predator"
+    description: "Defeat 50 red players"
+  nightmare:
+    name: "Nightmare Hunter"
+    description: "Defeat 100 red players"
+  demon_lord:
+    name: "Demon Lord's Awakening"
+    description: "Reach PKCount 200 (Dread Lord title)"
+
+  # GUILD achievements
+  guild_initiate:
+    name: "Guild Initiate"
+    description: "Join a guild"
+  guild_founder:
+    name: "Guild Founder"
+    description: "Create your own guild"
+  social_butterfly:
+    name: "Social Butterfly"
+    description: "Trade with villagers 100 times"
+
+  # REDEMPTION achievements
+  path_of_sin:
+    name: "Path of Sin"
+    description: "Become a gray player for the first time"
+  descent_into_darkness:
+    name: "Descent into Darkness"
+    description: "Become a red player for the first time"
+  second_chance:
+    name: "Second Chance"
+    description: "Return to blue from gray"
+  from_ashes:
+    name: "From the Ashes"
+    description: "Return to blue from red (through gray)"
+  true_hero:
+    name: "True Hero"
+    description: "Return to blue from red with 100+ PKCount"
+
+  # VILLAGE achievements
+  friend_of_village:
+    name: "Friend of the Village"
+    description: "Trade with villagers 10 times"
+  village_champion:
+    name: "Village Champion"
+    description: "Trade with villagers 50 times and defeat 10 golems"
+  ironclad:
+    name: "Ironclad Destroyer"
+    description: "Defeat 50 Iron Golems"
+
+  # Announcement messages
+  server_announce: "★ %s unlocked '%s'! ★"
 
 # Admin messages
 admin:

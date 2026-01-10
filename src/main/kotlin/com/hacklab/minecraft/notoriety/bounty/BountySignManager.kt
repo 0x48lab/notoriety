@@ -57,7 +57,8 @@ class BountySignManager(
         val block = location.block
         val sign = block.state as? Sign ?: return
 
-        val bounty = bountyService.storage.getBountyByRank(rank)
+        // 赤プレイヤー（アクティブなPK）のみを表示
+        val bounty = bountyService.getActiveBountyByRank(rank)
 
         val frontSide = sign.getSide(Side.FRONT)
 

@@ -59,30 +59,34 @@ class BountyService(
         )
     }
 
+    /**
+     * 赤プレイヤー（アクティブなPK）の懸賞金リストを取得
+     * PKCountが0になった灰プレイヤーは除外される
+     */
     fun getBountyList(): List<BountyEntry> = storage.getAllBounties()
+        .filter { isActiveRedPlayer(it.target) }
         .sortedByDescending { it.total }
+
+    /**
+     * 指定したランクの赤プレイヤーの懸賞金を取得（看板表示用）
+     * PKCountが0の灰プレイヤーは除外される
+     */
+    fun getActiveBountyByRank(rank: Int): BountyEntry? {
+        val activeBounties = storage.getAllBounties()
+            .filter { isActiveRedPlayer(it.target) }
+            .sortedByDescending { it.total }
+        return if (rank > 0 && rank <= activeBounties.size) activeBounties[rank - 1] else null
+    }
 
     fun getBounty(target: UUID): BountyEntry? = storage.getBounty(target)
 
     fun hasBounty(target: UUID): Boolean = storage.getBounty(target) != null
 
     /**
-     * 懸賞金を返却して削除する（PKCount が 0 になったときに呼び出す）
-     * 出資者に全額返金される
+     * 対象が赤プレイヤー（PKCount >= 1）かどうかを判定
      */
-    fun refundBounty(targetUuid: UUID) {
-        val bounty = storage.getBounty(targetUuid) ?: return
-
-        // 各出資者に返金
-        bounty.contributors.forEach { (contributorUuid, amount) ->
-            economy.deposit(contributorUuid, amount)
-            // オンラインの出資者に通知
-            Bukkit.getPlayer(contributorUuid)?.sendMessage(
-                "§a${Bukkit.getOfflinePlayer(targetUuid).name} の懸賞金 ${amount.toLong()} が返金されました（対象が赤プレイヤーではなくなったため）"
-            )
-        }
-
-        // 懸賞金を削除
-        storage.removeBounty(targetUuid)
+    private fun isActiveRedPlayer(targetUuid: UUID): Boolean {
+        val data = plugin.playerManager.getOrLoadPlayer(targetUuid) ?: return false
+        return data.getNameColor() == NameColor.RED
     }
 }

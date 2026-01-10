@@ -56,8 +56,6 @@ class AdminCommand(private val plugin: Notoriety) : SubCommand {
             return true
         }
 
-        val oldPkCount = data.pkCount
-
         when (param) {
             "alignment" -> if (operation == "set") data.alignment = value.coerceIn(-1000, 1000)
                            else data.addAlignment(value)
@@ -69,11 +67,6 @@ class AdminCommand(private val plugin: Notoriety) : SubCommand {
                 sender.sendMessage("Unknown parameter: $param")
                 return true
             }
-        }
-
-        // PKCount が 0 になったら懸賞金を返金
-        if (oldPkCount > 0 && data.pkCount == 0) {
-            plugin.bountyService.refundBounty(target)
         }
 
         // オフラインプレイヤーの場合は直接DBに保存

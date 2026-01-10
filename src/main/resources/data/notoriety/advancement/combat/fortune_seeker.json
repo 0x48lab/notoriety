@@ -1,0 +1,22 @@
+{
+  "parent": "notoriety:combat/bounty_hunter",
+  "display": {
+    "icon": {
+      "id": "minecraft:gold_ingot"
+    },
+    "title": {
+      "translate": "advancement.notoriety.cmb003.title"
+    },
+    "description": {
+      "translate": "advancement.notoriety.cmb003.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "trigger": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}
