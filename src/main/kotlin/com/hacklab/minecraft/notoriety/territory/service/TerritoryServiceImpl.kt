@@ -52,13 +52,16 @@ class TerritoryServiceImpl(
     init {
         // 起動時にキャッシュを読み込み
         reloadCache()
-        // 既存領地のシギルマイグレーション実行
-        runMigration()
+        // マイグレーションは無効化 - 新規作成のみサポート
+        // runMigration()
     }
 
     /**
      * 既存領地のシギルマイグレーションを実行
+     *
+     * @deprecated マイグレーション機能は無効化されています。新規作成のみサポートします。
      */
+    @Suppress("unused")
     private fun runMigration() {
         val result = migrationService.migrateExistingTerritories()
         if (result.territories > 0) {
