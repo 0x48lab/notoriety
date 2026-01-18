@@ -20,7 +20,7 @@ class GolemService(private val playerManager: PlayerManager) {
         const val ESCORT_VILLAGER_RANGE = 32.0
 
         // 強化ゴーレムの設定
-        const val ENHANCED_GOLEM_ATTACK_DAMAGE = 45.0  // 通常7-21 → 45（40-50）
+        const val ENHANCED_GOLEM_ATTACK_DAMAGE = 150.0 // 通常7-21 → 150（フル装備でも1-2発で死亡）
         const val ENHANCED_GOLEM_MAX_HEALTH = 200.0    // 通常100 → 200
         // 強化ゴーレムは通常速度 + Speed IIポーション効果で約1.4倍速
     }
