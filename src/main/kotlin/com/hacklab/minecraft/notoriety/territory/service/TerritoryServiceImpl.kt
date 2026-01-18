@@ -27,6 +27,15 @@ class TerritoryServiceImpl(
 ) : TerritoryService {
 
     private val cache = TerritoryCache()
+    private val migrationService by lazy {
+        TerritoryMigrationService(
+            repository = repository,
+            sigilRepository = sigilRepository,
+            beaconManager = beaconManager,
+            cache = cache,
+            logger = plugin.logger
+        )
+    }
 
     companion object {
         /** 領地確保に必要な最小メンバー数（新方式: 不要、1人でも可能） */
@@ -43,6 +52,18 @@ class TerritoryServiceImpl(
     init {
         // 起動時にキャッシュを読み込み
         reloadCache()
+        // 既存領地のシギルマイグレーション実行
+        runMigration()
+    }
+
+    /**
+     * 既存領地のシギルマイグレーションを実行
+     */
+    private fun runMigration() {
+        val result = migrationService.migrateExistingTerritories()
+        if (result.territories > 0) {
+            plugin.logger.info("Migrated ${result.territories} territories with ${result.sigils} sigils and ${result.chunks} chunks")
+        }
     }
 
     /**
