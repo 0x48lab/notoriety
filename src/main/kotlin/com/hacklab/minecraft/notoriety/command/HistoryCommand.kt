@@ -1,10 +1,10 @@
 package com.hacklab.minecraft.notoriety.command
 
 import com.hacklab.minecraft.notoriety.Notoriety
+import com.hacklab.minecraft.notoriety.core.i18n.I18nManager
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
@@ -16,6 +16,8 @@ class HistoryCommand(private val plugin: Notoriety) : SubCommand {
         .ofPattern("MM/dd HH:mm")
         .withZone(ZoneId.systemDefault())
 
+    private val i18n: I18nManager get() = plugin.i18nManager
+
     companion object {
         const val PAGE_SIZE = 10
     }
@@ -23,7 +25,7 @@ class HistoryCommand(private val plugin: Notoriety) : SubCommand {
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {
         val target = if (args.isEmpty()) {
             (sender as? Player)?.uniqueId ?: run {
-                sender.sendMessage("Player name required")
+                i18n.sendError(sender, "history.player_required", "Player name required")
                 return true
             }
         } else {
@@ -37,19 +39,34 @@ class HistoryCommand(private val plugin: Notoriety) : SubCommand {
         val totalPages = (totalCount + PAGE_SIZE - 1) / PAGE_SIZE
 
         if (totalCount == 0) {
-            sender.sendMessage("犯罪履歴はありません")
+            i18n.sendInfo(sender, "history.no_records", "No crime history")
             return true
         }
 
         val history = plugin.notorietyService.getHistory(target, page, PAGE_SIZE)
 
-        sender.sendMessage("§7=== §c$targetName §7の犯罪履歴 [$page/$totalPages] ===")
+        // ヘッダー
+        sender.sendMessage(
+            Component.text("=== ").color(NamedTextColor.GRAY)
+                .append(Component.text(targetName).color(NamedTextColor.RED))
+                .append(Component.text(" ").color(NamedTextColor.GRAY))
+                .append(Component.text(i18n.get("history.header_suffix", "Crime History")).color(NamedTextColor.GRAY))
+                .append(Component.text(" [$page/$totalPages] ===").color(NamedTextColor.GRAY))
+        )
 
         history.forEach { record ->
             val time = dateFormatter.format(record.committedAt)
-            val crimeType = plugin.i18nManager.get("crime.${record.crimeType.name.lowercase()}", record.crimeType.name)
-            val detail = record.detail?.let { " §7[$it]" } ?: ""
-            sender.sendMessage("§8$time §f$crimeType$detail")
+            val crimeType = i18n.get("crime.${record.crimeType.name.lowercase()}", record.crimeType.name)
+            val detailComponent = record.detail?.let {
+                Component.text(" [$it]").color(NamedTextColor.GRAY)
+            } ?: Component.empty()
+
+            sender.sendMessage(
+                Component.text(time).color(NamedTextColor.DARK_GRAY)
+                    .append(Component.text(" ").color(NamedTextColor.WHITE))
+                    .append(Component.text(crimeType).color(NamedTextColor.WHITE))
+                    .append(detailComponent)
+            )
         }
 
         // ページナビゲーション
@@ -57,23 +74,25 @@ class HistoryCommand(private val plugin: Notoriety) : SubCommand {
             val prevPage = if (page > 1) page - 1 else null
             val nextPage = if (page < totalPages) page + 1 else null
 
-            val legacy = LegacyComponentSerializer.legacySection()
+            val prevText = i18n.get("history.nav_prev", "<< Prev")
+            val nextText = i18n.get("history.nav_next", "Next >>")
+
             val nav = Component.text("  ")
                 .append(
                     if (prevPage != null) {
-                        legacy.deserialize("§a<< 前")
+                        Component.text(prevText).color(NamedTextColor.GREEN)
                             .clickEvent(ClickEvent.runCommand("/noty history $targetName $prevPage"))
                     } else {
-                        legacy.deserialize("§8<< 前")
+                        Component.text(prevText).color(NamedTextColor.DARK_GRAY)
                     }
                 )
-                .append(legacy.deserialize("  §7|  "))
+                .append(Component.text("  |  ").color(NamedTextColor.GRAY))
                 .append(
                     if (nextPage != null) {
-                        legacy.deserialize("§a次 >>")
+                        Component.text(nextText).color(NamedTextColor.GREEN)
                             .clickEvent(ClickEvent.runCommand("/noty history $targetName $nextPage"))
                     } else {
-                        legacy.deserialize("§8次 >>")
+                        Component.text(nextText).color(NamedTextColor.DARK_GRAY)
                     }
                 )
             sender.sendMessage(nav)

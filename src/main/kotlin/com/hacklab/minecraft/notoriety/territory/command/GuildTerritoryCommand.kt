@@ -63,7 +63,7 @@ class GuildTerritoryCommand(
         val sigilName = if (args.isNotEmpty()) args.joinToString(" ") else null
 
         val guildId = getPlayerGuildId(player) ?: run {
-            player.sendError(i18n.get(uuid, "territory.claim_no_guild", "You must be in a guild to claim territory"))
+            i18n.sendError(player, "territory.claim_no_guild", "You must be in a guild to claim territory")
             return true
         }
 
@@ -81,18 +81,14 @@ class GuildTerritoryCommand(
                 val totalChunks = territory?.chunkCount ?: 1
 
                 // 基本メッセージ
-                player.sendSuccess(i18n.get(
-                    uuid,
-                    "territory.claim_success",
-                    "Territory claimed! (%d/%d chunks)",
+                i18n.sendSuccess(player, "territory.claim_success", "Territory claimed! (%d/%d chunks)",
                     totalChunks,
-                    territoryService.calculateAllowedChunks(guildService.getMemberCount(guild?.id ?: 0))
-                ))
+                    territoryService.calculateAllowedChunks(guildService.getMemberCount(guild?.id ?: 0)))
 
                 // シギル関連メッセージ
                 if (result.isNewSigil && result.sigil != null) {
-                    player.sendMessage(Component.text("新しいシギル「${result.sigil.name}」を作成しました")
-                        .color(NamedTextColor.GREEN))
+                    i18n.sendSuccess(player, "territory.sigil_created",
+                        "Created new sigil \"%s\"", result.sigil.name)
 
                     // シギル作成イベント発火
                     Bukkit.getPluginManager().callEvent(
@@ -105,14 +101,14 @@ class GuildTerritoryCommand(
                         )
                     )
                 } else if (result.sigil != null) {
-                    player.sendMessage(Component.text("シギル「${result.sigil.name}」の領地に追加しました")
-                        .color(NamedTextColor.GRAY))
+                    i18n.sendInfo(player, "territory.sigil_chunk_added",
+                        "Added to sigil \"%s\"", result.sigil.name)
                 }
 
                 // グループマージがあった場合
                 if (result.mergedSigilIds.isNotEmpty()) {
-                    player.sendMessage(Component.text("${result.mergedSigilIds.size}個のシギルが統合されました")
-                        .color(NamedTextColor.YELLOW))
+                    i18n.sendWarning(player, "territory.sigils_merged",
+                        "%d sigils have been merged", result.mergedSigilIds.size)
                 }
 
                 // 領地確保イベント発火
@@ -127,64 +123,50 @@ class GuildTerritoryCommand(
                 )
             }
             is ClaimResult.GuildNotFound -> {
-                player.sendError(i18n.get(uuid, "territory.claim_no_guild", "You must be in a guild to claim territory"))
+                i18n.sendError(player, "territory.claim_no_guild", "You must be in a guild to claim territory")
             }
             is ClaimResult.NotGuildMaster -> {
-                player.sendError(i18n.get(uuid, "territory.claim_not_master", "Only the guild master can claim territory"))
+                i18n.sendError(player, "territory.claim_not_master", "Only the guild master can claim territory")
             }
             is ClaimResult.NotEnoughMembers -> {
                 val guild = guildService.getPlayerGuild(uuid)
                 val memberCount = guildService.getMemberCount(guild?.id ?: 0)
-                player.sendError(i18n.get(
-                    uuid,
-                    "territory.claim_not_enough_members",
+                i18n.sendError(player, "territory.claim_not_enough_members",
                     "You need at least %d members to claim territory (current: %d)",
-                    TerritoryService.MIN_MEMBERS_FOR_TERRITORY,
-                    memberCount
-                ))
+                    TerritoryService.MIN_MEMBERS_FOR_TERRITORY, memberCount)
             }
             is ClaimResult.MaxChunksReached -> {
                 val maxChunks = territoryService.calculateAllowedChunks(
                     guildService.getMemberCount(getPlayerGuildId(player) ?: 0)
                 )
-                player.sendError(i18n.get(
-                    uuid,
-                    "territory.claim_max_chunks",
-                    "Your guild has reached the maximum territory limit (%d chunks)",
-                    maxChunks
-                ))
+                i18n.sendError(player, "territory.claim_max_chunks",
+                    "Your guild has reached the maximum territory limit (%d chunks)", maxChunks)
             }
             is ClaimResult.MemberChunkLimitReached -> {
                 val guild = guildService.getPlayerGuild(uuid)
                 val memberCount = guildService.getMemberCount(guild?.id ?: 0)
                 val maxChunks = territoryService.calculateAllowedChunks(memberCount)
-                player.sendError(i18n.get(
-                    uuid,
-                    "territory.claim_member_limit",
-                    "Your current member count (%d) only allows %d chunks",
-                    memberCount,
-                    maxChunks
-                ))
+                i18n.sendError(player, "territory.claim_member_limit",
+                    "Your current member count (%d) only allows %d chunks", memberCount, maxChunks)
             }
             is ClaimResult.OverlapOtherGuild -> {
-                player.sendError(i18n.get(
-                    uuid,
-                    "territory.claim_overlap",
-                    "This location overlaps with %s's territory",
-                    result.guildName
-                ))
+                i18n.sendError(player, "territory.claim_overlap",
+                    "This location overlaps with %s's territory", result.guildName)
             }
             is ClaimResult.NotInGuild -> {
-                player.sendError(i18n.get(uuid, "territory.claim_no_guild", "You must be in a guild to claim territory"))
+                i18n.sendError(player, "territory.claim_no_guild", "You must be in a guild to claim territory")
             }
             is ClaimResult.AlreadyClaimed -> {
-                player.sendError("このチャンクは既にあなたのギルドの領地です")
+                i18n.sendError(player, "territory.claim_already_claimed",
+                    "This chunk is already part of your guild's territory")
             }
             is ClaimResult.InvalidSigilName -> {
-                player.sendError("無効なシギル名: ${result.reason}")
+                i18n.sendError(player, "territory.claim_invalid_sigil_name",
+                    "Invalid sigil name: %s", result.reason)
             }
             is ClaimResult.SigilNameAlreadyExists -> {
-                player.sendError("シギル名「${result.name}」は既に使用されています")
+                i18n.sendError(player, "territory.claim_sigil_name_exists",
+                    "Sigil name \"%s\" is already in use", result.name)
             }
         }
 
@@ -196,59 +178,66 @@ class GuildTerritoryCommand(
         val guild = guildService.getPlayerGuild(uuid)
 
         if (guild == null) {
-            player.sendError(i18n.get(uuid, "territory.info_not_in_guild", "You are not in a guild"))
+            i18n.sendError(player, "territory.info_not_in_guild", "You are not in a guild")
             return true
         }
 
         val territory = territoryService.getTerritory(guild.id)
         val memberCount = guildService.getMemberCount(guild.id)
-        val maxChunks = if (guild.isGovernment) "無制限" else territoryService.calculateAllowedChunks(memberCount).toString()
+        val maxChunks = if (guild.isGovernment) {
+            i18n.get(uuid, "territory.unlimited", "Unlimited")
+        } else {
+            territoryService.calculateAllowedChunks(memberCount).toString()
+        }
 
-        player.sendMessage(Component.text(i18n.get(uuid, "territory.info_header", "=== %s Territory Info ===", guild.name))
-            .color(NamedTextColor.GOLD))
+        i18n.sendHeader(player, "territory.info_header", "=== %s Territory Info ===", guild.name)
 
         if (guild.isGovernment) {
-            player.sendMessage(Component.text("  [政府ギルド - 領地制限なし]").color(NamedTextColor.LIGHT_PURPLE))
+            i18n.send(player, "territory.info_government_guild", "  [Government Guild - No territory limit]",
+                net.kyori.adventure.text.format.NamedTextColor.LIGHT_PURPLE)
         }
 
         if (territory == null || territory.chunkCount == 0) {
-            player.sendInfo(i18n.get(uuid, "territory.info_no_territory", "Your guild has no territory"))
+            i18n.sendInfo(player, "territory.info_no_territory", "Your guild has no territory")
         } else {
-            player.sendInfo("チャンク数: ${territory.chunkCount} / $maxChunks")
+            i18n.sendInfo(player, "territory.info_chunk_count", "Chunks: %s / %s",
+                territory.chunkCount.toString(), maxChunks)
 
             // シギル一覧を表示
             if (territory.sigilCount > 0) {
-                player.sendMessage(Component.text("--- シギル一覧 ---").color(NamedTextColor.AQUA))
+                i18n.send(player, "territory.info_sigil_header", "--- Sigil List ---", NamedTextColor.AQUA)
                 territory.sigils.forEach { sigil ->
                     val chunkCount = territory.getChunksForSigil(sigil.id).size
+                    val chunkLabel = i18n.get(uuid, "territory.chunks_label", "%d chunks", chunkCount)
                     player.sendMessage(Component.text(
-                        "  ● ${sigil.name} (${chunkCount}チャンク) - ${sigil.worldName}"
+                        "  ● ${sigil.name} ($chunkLabel) - ${sigil.worldName}"
                     ).color(NamedTextColor.AQUA))
                 }
             }
 
             // チャンク一覧を番号順で表示
-            player.sendMessage(Component.text("--- チャンク一覧 ---").color(NamedTextColor.GRAY))
+            i18n.send(player, "territory.info_chunk_header", "--- Chunk List ---", NamedTextColor.GRAY)
             territory.chunks.sortedBy { it.addOrder }.forEach { chunk ->
                 val isCurrentChunk = chunk.containsLocation(player.location)
-                val marker = if (isCurrentChunk) " §a← 現在地" else ""
                 val sigilName = chunk.sigilId?.let { sigilId ->
                     territory.getSigilById(sigilId)?.name
                 } ?: "?"
-                player.sendMessage(Component.text(
-                    "  #${chunk.addOrder}: (${chunk.chunkX}, ${chunk.chunkZ}) [${sigilName}]$marker"
-                ).color(if (isCurrentChunk) NamedTextColor.GREEN else NamedTextColor.YELLOW))
+                val chunkInfo = Component.text(
+                    "  #${chunk.addOrder}: (${chunk.chunkX}, ${chunk.chunkZ}) [${sigilName}]"
+                ).color(if (isCurrentChunk) NamedTextColor.GREEN else NamedTextColor.YELLOW)
+                if (isCurrentChunk) {
+                    player.sendMessage(chunkInfo.append(
+                        i18n.component(player, "territory.info_current_location", " ← Current", NamedTextColor.GREEN)
+                    ))
+                } else {
+                    player.sendMessage(chunkInfo)
+                }
             }
         }
 
         if (!guild.isGovernment) {
-            player.sendInfo(i18n.get(
-                uuid,
-                "territory.info_allowed_chunks",
-                "Allowed chunks: %d (members: %d)",
-                territoryService.calculateAllowedChunks(memberCount),
-                memberCount
-            ))
+            i18n.sendInfo(player, "territory.info_allowed_chunks", "Allowed chunks: %d (members: %d)",
+                territoryService.calculateAllowedChunks(memberCount), memberCount)
         }
 
         return true
@@ -259,14 +248,14 @@ class GuildTerritoryCommand(
 
         // 引数なしの場合は使用方法を表示
         if (args.isEmpty()) {
-            player.sendMessage(Component.text("使用法: /guild territory release <番号|all>").color(NamedTextColor.YELLOW))
-            player.sendMessage(Component.text("  番号: 特定のチャンクを解放（/guild territory info で確認）").color(NamedTextColor.GRAY))
-            player.sendMessage(Component.text("  all: 全てのチャンクを解放").color(NamedTextColor.GRAY))
+            i18n.sendWarning(player, "territory.release_usage", "Usage: /guild territory release <number|all>")
+            i18n.sendInfo(player, "territory.release_usage_number", "  number: Release a specific chunk (check with /guild territory info)")
+            i18n.sendInfo(player, "territory.release_usage_all", "  all: Release all chunks")
             return true
         }
 
         val guildId = getPlayerGuildId(player) ?: run {
-            player.sendError(i18n.get(uuid, "territory.release_no_guild", "You are not in a guild"))
+            i18n.sendError(player, "territory.release_no_guild", "You are not in a guild")
             return true
         }
 
@@ -278,7 +267,7 @@ class GuildTerritoryCommand(
         // 番号指定の場合
         val chunkNumber = args[0].toIntOrNull()
         if (chunkNumber == null) {
-            player.sendError("無効な番号です: ${args[0]}")
+            i18n.sendError(player, "territory.release_invalid_number", "Invalid number: %s", args[0])
             return true
         }
 
@@ -294,11 +283,14 @@ class GuildTerritoryCommand(
         if (lastConfirm == null || now - lastConfirm > CONFIRM_TIMEOUT_MS) {
             // 初回または期限切れ - 確認を求める
             releaseConfirmations[uuid] = now
-            player.sendMessage(Component.text(i18n.get(
-                uuid,
-                "territory.release_confirm",
-                "§cWarning: §eRelease all territory? §7(Run again within 5 seconds to confirm)"
-            )))
+            player.sendMessage(
+                Component.text(i18n.get(uuid, "territory.release_confirm_warning", "Warning: "))
+                    .color(NamedTextColor.RED)
+                    .append(Component.text(i18n.get(uuid, "territory.release_confirm_question", "Release all territory? "))
+                        .color(NamedTextColor.YELLOW))
+                    .append(Component.text(i18n.get(uuid, "territory.release_confirm_hint", "(Run again within 5 seconds to confirm)"))
+                        .color(NamedTextColor.GRAY))
+            )
             return true
         }
 
@@ -309,21 +301,17 @@ class GuildTerritoryCommand(
 
         when (result) {
             is ReleaseResult.Success -> {
-                player.sendSuccess(i18n.get(
-                    uuid,
-                    "territory.release_success",
-                    "Released all territory (%d chunks)",
-                    result.releasedChunkCount
-                ))
+                i18n.sendSuccess(player, "territory.release_success",
+                    "Released all territory (%d chunks)", result.releasedChunkCount)
             }
             is ReleaseResult.GuildNotFound -> {
-                player.sendError(i18n.get(uuid, "territory.release_no_guild", "You are not in a guild"))
+                i18n.sendError(player, "territory.release_no_guild", "You are not in a guild")
             }
             is ReleaseResult.NotGuildMaster -> {
-                player.sendError(i18n.get(uuid, "territory.release_not_master", "Only the guild master can release territory"))
+                i18n.sendError(player, "territory.release_not_master", "Only the guild master can release territory")
             }
             is ReleaseResult.NoTerritory -> {
-                player.sendError(i18n.get(uuid, "territory.release_no_territory", "Your guild has no territory"))
+                i18n.sendError(player, "territory.release_no_territory", "Your guild has no territory")
             }
             is ReleaseResult.ChunkNotFound -> {
                 // all では発生しない
@@ -340,19 +328,21 @@ class GuildTerritoryCommand(
 
         when (result) {
             is ReleaseResult.Success -> {
-                player.sendSuccess("チャンク #$chunkNumber を解放しました")
+                i18n.sendSuccess(player, "territory.release_chunk_success",
+                    "Released chunk #%d", chunkNumber)
             }
             is ReleaseResult.GuildNotFound -> {
-                player.sendError(i18n.get(uuid, "territory.release_no_guild", "You are not in a guild"))
+                i18n.sendError(player, "territory.release_no_guild", "You are not in a guild")
             }
             is ReleaseResult.NotGuildMaster -> {
-                player.sendError(i18n.get(uuid, "territory.release_not_master", "Only the guild master can release territory"))
+                i18n.sendError(player, "territory.release_not_master", "Only the guild master can release territory")
             }
             is ReleaseResult.NoTerritory -> {
-                player.sendError(i18n.get(uuid, "territory.release_no_territory", "Your guild has no territory"))
+                i18n.sendError(player, "territory.release_no_territory", "Your guild has no territory")
             }
             is ReleaseResult.ChunkNotFound -> {
-                player.sendError("チャンク #${result.chunkNumber} が見つかりません")
+                i18n.sendError(player, "territory.release_chunk_not_found",
+                    "Chunk #%d not found", result.chunkNumber)
             }
         }
 
@@ -364,13 +354,14 @@ class GuildTerritoryCommand(
     }
 
     private fun showUsage(player: Player) {
-        player.sendMessage(Component.text("=== Territory Commands ===").color(NamedTextColor.GOLD))
+        val uuid = player.uniqueId
+        i18n.sendHeader(player, "territory.usage_header", "=== Territory Commands ===")
         player.sendMessage(Component.text("/guild territory set").color(NamedTextColor.YELLOW)
-            .append(Component.text(" - Claim territory at current location").color(NamedTextColor.GRAY)))
+            .append(i18n.component(player, "territory.usage_set_desc", " - Claim territory at current location", NamedTextColor.GRAY)))
         player.sendMessage(Component.text("/guild territory info").color(NamedTextColor.YELLOW)
-            .append(Component.text(" - Show territory information").color(NamedTextColor.GRAY)))
-        player.sendMessage(Component.text("/guild territory release <番号|all>").color(NamedTextColor.YELLOW)
-            .append(Component.text(" - Release territory").color(NamedTextColor.GRAY)))
+            .append(i18n.component(player, "territory.usage_info_desc", " - Show territory information", NamedTextColor.GRAY)))
+        player.sendMessage(Component.text(i18n.get(uuid, "territory.usage_release_cmd", "/guild territory release <number|all>")).color(NamedTextColor.YELLOW)
+            .append(i18n.component(player, "territory.usage_release_desc", " - Release territory", NamedTextColor.GRAY)))
     }
 
     override fun tabComplete(sender: CommandSender, args: Array<out String>): List<String> {

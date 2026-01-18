@@ -5,9 +5,7 @@ import com.hacklab.minecraft.notoriety.guild.service.GuildService
 import com.hacklab.minecraft.notoriety.territory.event.TerritoryEnterEvent
 import com.hacklab.minecraft.notoriety.territory.event.TerritoryLeaveEvent
 import com.hacklab.minecraft.notoriety.territory.service.TerritoryService
-import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -66,9 +64,8 @@ class TerritoryEntryListener(
                 )
 
                 // 通知
-                player.sendMessage(LegacyComponentSerializer.legacySection().deserialize(
-                    i18n.get(playerUuid, "territory.leave_territory", "§7◀ Leaving %s's territory", previousGuild.name)
-                ))
+                i18n.sendInfo(player, "territory.leave_territory",
+                    "◀ Leaving %s's territory", previousGuild.name)
             }
         }
 
@@ -87,13 +84,11 @@ class TerritoryEntryListener(
                 val isOwnTerritory = playerGuild?.id == currentGuildId
 
                 if (isOwnTerritory) {
-                    player.sendMessage(LegacyComponentSerializer.legacySection().deserialize(
-                        i18n.get(playerUuid, "territory.enter_own_territory", "§a▶ Entering your guild's territory")
-                    ))
+                    i18n.sendSuccess(player, "territory.enter_own_territory",
+                        "▶ Entering your guild's territory")
                 } else {
-                    player.sendMessage(LegacyComponentSerializer.legacySection().deserialize(
-                        i18n.get(playerUuid, "territory.enter_territory", "§a▶ Entering %s's territory", currentGuild.name)
-                    ))
+                    i18n.sendSuccess(player, "territory.enter_territory",
+                        "▶ Entering %s's territory", currentGuild.name)
                 }
             }
         }
@@ -137,49 +132,36 @@ class TerritoryEntryListener(
             val allowedChunks = territoryService.calculateAllowedChunks(memberCount)
 
             // 領地状態ヘッダー
-            player.sendMessage(Component.text(
-                i18n.get(playerUuid, "territory.gm_territory_status", "=== Guild Territory Status ===")
-            ).color(NamedTextColor.GOLD))
+            i18n.sendHeader(player, "territory.gm_territory_status", "=== Guild Territory Status ===")
 
             if (territory == null || territory.chunkCount == 0) {
                 // 領地なし
                 if (memberCount >= TerritoryService.MIN_MEMBERS_FOR_TERRITORY) {
-                    player.sendMessage(LegacyComponentSerializer.legacySection().deserialize(
-                        i18n.get(playerUuid, "territory.gm_no_territory_can_claim",
-                            "§eYou have no territory. You can claim up to %d chunks! (/guild territory set)",
-                            allowedChunks)
-                    ))
+                    i18n.sendWarning(player, "territory.gm_no_territory_can_claim",
+                        "You have no territory. You can claim up to %d chunks! (/guild territory set)",
+                        allowedChunks)
                 } else {
                     val needed = TerritoryService.MIN_MEMBERS_FOR_TERRITORY - memberCount
-                    player.sendMessage(LegacyComponentSerializer.legacySection().deserialize(
-                        i18n.get(playerUuid, "territory.gm_no_territory_need_members",
-                            "§eYou have no territory. Need %d more members to claim territory.",
-                            needed)
-                    ))
+                    i18n.sendWarning(player, "territory.gm_no_territory_need_members",
+                        "You have no territory. Need %d more members to claim territory.",
+                        needed)
                 }
             } else {
                 // 領地情報
-                player.sendMessage(Component.text(
-                    i18n.get(playerUuid, "territory.gm_chunks_info",
-                        "Territory: %d / %d chunks",
-                        territory.chunkCount, allowedChunks)
-                ).color(NamedTextColor.WHITE))
+                i18n.send(player, "territory.gm_chunks_info",
+                    "Territory: %d / %d chunks",
+                    territory.chunkCount, allowedChunks)
 
                 // 追加可能なチャンク
                 val canClaim = allowedChunks - territory.chunkCount
                 if (canClaim > 0) {
-                    player.sendMessage(LegacyComponentSerializer.legacySection().deserialize(
-                        i18n.get(playerUuid, "territory.gm_can_expand",
-                            "§aYou can expand by %d more chunks",
-                            canClaim)
-                    ))
+                    i18n.sendSuccess(player, "territory.gm_can_expand",
+                        "You can expand by %d more chunks", canClaim)
                 } else if (memberCount < TerritoryService.MIN_MEMBERS_FOR_TERRITORY) {
                     // メンバー不足で領地が縮小される可能性
-                    player.sendMessage(LegacyComponentSerializer.legacySection().deserialize(
-                        i18n.get(playerUuid, "territory.gm_member_warning",
-                            "§c⚠ Warning: With only %d members, you may lose territory if members leave",
-                            memberCount)
-                    ))
+                    i18n.sendError(player, "territory.gm_member_warning",
+                        "⚠ Warning: With only %d members, you may lose territory if members leave",
+                        memberCount)
                 }
             }
         }, 20L)  // 1秒後

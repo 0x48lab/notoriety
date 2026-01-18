@@ -4,8 +4,6 @@ import com.hacklab.minecraft.notoriety.core.i18n.I18nManager
 import com.hacklab.minecraft.notoriety.guild.service.GuildService
 import com.hacklab.minecraft.notoriety.territory.beacon.BeaconManager
 import com.hacklab.minecraft.notoriety.territory.service.TerritoryService
-import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -17,7 +15,6 @@ import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.entity.EntityExplodeEvent
 import org.bukkit.event.inventory.InventoryOpenEvent
 import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.inventory.InventoryHolder
 
 /**
  * 領地保護リスナー
@@ -43,12 +40,8 @@ class TerritoryProtectionListener(
             val territory = territoryService.getTerritoryAt(location)
             if (territory != null) {
                 val guildName = guildService.getGuild(territory.guildId)?.name ?: "Unknown"
-                player.sendMessage(Component.text(i18n.get(
-                    player.uniqueId,
-                    "territory.protected_beacon",
-                    "Territory beacon cannot be destroyed (%s)",
-                    guildName
-                )).color(NamedTextColor.RED))
+                i18n.sendError(player, "territory.protected_beacon",
+                    "Territory beacon cannot be destroyed (%s)", guildName)
                 event.isCancelled = true
                 return
             }
@@ -63,7 +56,8 @@ class TerritoryProtectionListener(
         // アクセス権チェック
         if (!territoryService.canAccessAt(location, player.uniqueId)) {
             val guildName = guildService.getGuild(territory.guildId)?.name ?: "Unknown"
-            sendProtectedMessage(player, guildName)
+            i18n.sendError(player, "territory.protected_break",
+                "This block is protected by %s's territory", guildName)
             event.isCancelled = true
         }
     }
@@ -85,12 +79,8 @@ class TerritoryProtectionListener(
         // アクセス権チェック
         if (!territoryService.canAccessAt(location, player.uniqueId)) {
             val guildName = guildService.getGuild(territory.guildId)?.name ?: "Unknown"
-            player.sendMessage(Component.text(i18n.get(
-                player.uniqueId,
-                "territory.protected_place",
-                "You cannot place blocks in %s's territory",
-                guildName
-            )).color(NamedTextColor.RED))
+            i18n.sendError(player, "territory.protected_place",
+                "You cannot place blocks in %s's territory", guildName)
             event.isCancelled = true
         }
     }
@@ -119,12 +109,8 @@ class TerritoryProtectionListener(
         // アクセス権チェック
         if (!territoryService.canAccessAt(location, player.uniqueId)) {
             val guildName = guildService.getGuild(territory.guildId)?.name ?: "Unknown"
-            player.sendMessage(Component.text(i18n.get(
-                player.uniqueId,
-                "territory.protected_interact",
-                "You cannot interact with this in %s's territory",
-                guildName
-            )).color(NamedTextColor.RED))
+            i18n.sendError(player, "territory.protected_interact",
+                "You cannot interact with this in %s's territory", guildName)
             event.isCancelled = true
         }
     }
@@ -151,12 +137,8 @@ class TerritoryProtectionListener(
         // アクセス権チェック
         if (!territoryService.canAccessAt(location, player.uniqueId)) {
             val guildName = guildService.getGuild(territory.guildId)?.name ?: "Unknown"
-            player.sendMessage(Component.text(i18n.get(
-                player.uniqueId,
-                "territory.protected_interact",
-                "You cannot interact with this in %s's territory",
-                guildName
-            )).color(NamedTextColor.RED))
+            i18n.sendError(player, "territory.protected_interact",
+                "You cannot interact with this in %s's territory", guildName)
             event.isCancelled = true
         }
     }
@@ -177,15 +159,6 @@ class TerritoryProtectionListener(
             val territory = territoryService.getTerritoryAt(location)
             territory != null
         }
-    }
-
-    private fun sendProtectedMessage(player: Player, guildName: String) {
-        player.sendMessage(Component.text(i18n.get(
-            player.uniqueId,
-            "territory.protected_break",
-            "This block is protected by %s's territory",
-            guildName
-        )).color(NamedTextColor.RED))
     }
 
     /**

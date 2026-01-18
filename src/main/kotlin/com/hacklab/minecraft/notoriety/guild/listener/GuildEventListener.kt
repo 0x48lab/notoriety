@@ -155,26 +155,20 @@ class GuildEventListener(
      */
     private fun notifyTerritoryChange(guildId: Long, newChunkCount: Int, oldChunkCount: Int) {
         val members = guildService.getMembers(guildId, 0, 1000)
-        val message = if (newChunkCount == 0) {
-            i18n?.let { i ->
-                members.firstOrNull()?.let { member ->
-                    i.get(member.playerUuid, "territory.shrink_warning",
-                        "§cWarning: Territory shrunk to %d chunks due to insufficient members",
-                        newChunkCount)
-                }
-            } ?: "§cWarning: All territory has been released due to insufficient members"
-        } else {
-            i18n?.let { i ->
-                members.firstOrNull()?.let { member ->
-                    i.get(member.playerUuid, "territory.shrink_warning",
-                        "§cWarning: Territory shrunk to %d chunks due to insufficient members",
-                        newChunkCount)
-                }
-            } ?: "§cWarning: Territory shrunk to $newChunkCount chunks due to insufficient members"
-        }
 
         members.forEach { member ->
-            Bukkit.getPlayer(member.playerUuid)?.sendMessage(Component.text(message))
+            Bukkit.getPlayer(member.playerUuid)?.let { player ->
+                if (newChunkCount == 0) {
+                    i18n?.sendError(player, "territory.shrink_all_released",
+                        "Warning: All territory has been released due to insufficient members")
+                        ?: player.sendMessage(Component.text("Warning: All territory has been released due to insufficient members").color(NamedTextColor.RED))
+                } else {
+                    i18n?.sendError(player, "territory.shrink_warning",
+                        "Warning: Territory shrunk to %d chunks due to insufficient members",
+                        newChunkCount)
+                        ?: player.sendMessage(Component.text("Warning: Territory shrunk to $newChunkCount chunks due to insufficient members").color(NamedTextColor.RED))
+                }
+            }
         }
     }
 

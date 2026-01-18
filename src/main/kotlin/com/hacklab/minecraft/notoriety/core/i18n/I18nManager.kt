@@ -1,11 +1,31 @@
 package com.hacklab.minecraft.notoriety.core.i18n
 
+import net.kyori.adventure.audience.Audience
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextColor
+import org.bukkit.command.CommandSender
 import org.bukkit.configuration.file.YamlConfiguration
+import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
 import java.io.InputStreamReader
 import java.util.UUID
 
+/**
+ * 国際化メッセージ管理
+ *
+ * 使用例:
+ * ```
+ * // メッセージ送信（推奨）
+ * i18n.send(player, "key", "default", args...)
+ * i18n.sendError(player, "key", "default", args...)
+ * i18n.sendSuccess(player, "key", "default", args...)
+ *
+ * // 色指定
+ * i18n.send(player, "key", "default", NamedTextColor.GOLD, args...)
+ * ```
+ */
 class I18nManager(private val plugin: JavaPlugin, val defaultLocale: String) {
     private val messages = mutableMapOf<String, MutableMap<String, String>>()
     private val supportedLocales = listOf("ja", "en")
@@ -115,4 +135,146 @@ class I18nManager(private val plugin: JavaPlugin, val defaultLocale: String) {
     }
 
     fun getSupportedLocales(): List<String> = supportedLocales
+
+    // ========================================
+    // 統一メッセージ送信API
+    // ========================================
+
+    /**
+     * プレイヤーにメッセージを送信（デフォルト色: 白）
+     */
+    fun send(player: Player, key: String, default: String, vararg args: Any) {
+        send(player, key, default, NamedTextColor.WHITE, *args)
+    }
+
+    /**
+     * プレイヤーにメッセージを送信（色指定）
+     */
+    fun send(player: Player, key: String, default: String, color: TextColor, vararg args: Any) {
+        val message = get(player.uniqueId, key, default, *args)
+        player.sendMessage(Component.text(message).color(color))
+    }
+
+    /**
+     * CommandSenderにメッセージを送信（デフォルト色: 白）
+     */
+    fun send(sender: CommandSender, key: String, default: String, vararg args: Any) {
+        send(sender, key, default, NamedTextColor.WHITE, *args)
+    }
+
+    /**
+     * CommandSenderにメッセージを送信（色指定）
+     */
+    fun send(sender: CommandSender, key: String, default: String, color: TextColor, vararg args: Any) {
+        val playerUuid = (sender as? Player)?.uniqueId
+        val message = if (playerUuid != null) {
+            get(playerUuid, key, default, *args)
+        } else {
+            get(key, default, *args)
+        }
+        sender.sendMessage(Component.text(message).color(color))
+    }
+
+    /**
+     * Audienceにメッセージを送信（色指定）
+     */
+    fun send(audience: Audience, playerUuid: UUID?, key: String, default: String, color: TextColor, vararg args: Any) {
+        val message = if (playerUuid != null) {
+            get(playerUuid, key, default, *args)
+        } else {
+            get(key, default, *args)
+        }
+        audience.sendMessage(Component.text(message).color(color))
+    }
+
+    // ========================================
+    // 便利メソッド（色付き）
+    // ========================================
+
+    /** エラーメッセージ（赤） */
+    fun sendError(player: Player, key: String, default: String, vararg args: Any) {
+        send(player, key, default, NamedTextColor.RED, *args)
+    }
+
+    /** エラーメッセージ（赤） */
+    fun sendError(sender: CommandSender, key: String, default: String, vararg args: Any) {
+        send(sender, key, default, NamedTextColor.RED, *args)
+    }
+
+    /** 成功メッセージ（緑） */
+    fun sendSuccess(player: Player, key: String, default: String, vararg args: Any) {
+        send(player, key, default, NamedTextColor.GREEN, *args)
+    }
+
+    /** 成功メッセージ（緑） */
+    fun sendSuccess(sender: CommandSender, key: String, default: String, vararg args: Any) {
+        send(sender, key, default, NamedTextColor.GREEN, *args)
+    }
+
+    /** 警告メッセージ（黄） */
+    fun sendWarning(player: Player, key: String, default: String, vararg args: Any) {
+        send(player, key, default, NamedTextColor.YELLOW, *args)
+    }
+
+    /** 警告メッセージ（黄） */
+    fun sendWarning(sender: CommandSender, key: String, default: String, vararg args: Any) {
+        send(sender, key, default, NamedTextColor.YELLOW, *args)
+    }
+
+    /** 情報メッセージ（灰） */
+    fun sendInfo(player: Player, key: String, default: String, vararg args: Any) {
+        send(player, key, default, NamedTextColor.GRAY, *args)
+    }
+
+    /** 情報メッセージ（灰） */
+    fun sendInfo(sender: CommandSender, key: String, default: String, vararg args: Any) {
+        send(sender, key, default, NamedTextColor.GRAY, *args)
+    }
+
+    /** ヘッダーメッセージ（金） */
+    fun sendHeader(player: Player, key: String, default: String, vararg args: Any) {
+        send(player, key, default, NamedTextColor.GOLD, *args)
+    }
+
+    /** ヘッダーメッセージ（金） */
+    fun sendHeader(sender: CommandSender, key: String, default: String, vararg args: Any) {
+        send(sender, key, default, NamedTextColor.GOLD, *args)
+    }
+
+    // ========================================
+    // Component生成API（複雑なメッセージ用）
+    // ========================================
+
+    /**
+     * メッセージをComponentとして取得
+     */
+    fun component(player: Player, key: String, default: String, color: TextColor, vararg args: Any): Component {
+        val message = get(player.uniqueId, key, default, *args)
+        return Component.text(message).color(color)
+    }
+
+    /**
+     * メッセージをComponentとして取得（CommandSender用）
+     */
+    fun component(sender: CommandSender, key: String, default: String, color: TextColor, vararg args: Any): Component {
+        val playerUuid = (sender as? Player)?.uniqueId
+        val message = if (playerUuid != null) {
+            get(playerUuid, key, default, *args)
+        } else {
+            get(key, default, *args)
+        }
+        return Component.text(message).color(color)
+    }
+
+    /**
+     * メッセージをComponentとして取得（UUID指定）
+     */
+    fun component(playerUuid: UUID?, key: String, default: String, color: TextColor, vararg args: Any): Component {
+        val message = if (playerUuid != null) {
+            get(playerUuid, key, default, *args)
+        } else {
+            get(key, default, *args)
+        }
+        return Component.text(message).color(color)
+    }
 }
