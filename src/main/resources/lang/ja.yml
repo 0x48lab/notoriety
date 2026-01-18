@@ -122,15 +122,15 @@ inspect:
 
 # Warning messages (before crime)
 warning:
-  chest_open: "§c⚠ 警告: §eこのチェストは §f%s §eの所有物です。アイテムを取ると窃盗になります！ §7(Alignment -50)"
-  block_break: "§c⚠ 警告: §eこのブロックは §f%s §eの所有物です。破壊すると犯罪になります！ §7(Alignment -10)"
-  container_break: "§c⚠ 警告: §eこのコンテナは §f%s §eの所有物です。破壊すると即座に犯罪になります！ §7(Alignment -10)"
-  attack_player: "§c⚠ 警告: §f%s §eを攻撃すると犯罪になります！ §7(Alignment -1)"
-  attack_pet: "§c⚠ 警告: §f%s §eのペットを攻撃すると犯罪になります！ §7(Alignment -1)"
-  villager_bed: "§c⚠ 警告: §eこのベッドは村人が使用しています。破壊すると犯罪になります！ §7(Alignment -1)"
-  villager_workstation: "§c⚠ 警告: §eこの仕事場は村人が使用しています。破壊すると犯罪になります！ §7(Alignment -1)"
-  attack_villager: "§c⚠ 警告: §e村人を攻撃すると犯罪になります！ §7(Alignment -1)"
-  attack_golem: "§c⚠ 警告: §eアイアンゴーレムを攻撃すると犯罪になります！ §7(Alignment -50)"
+  chest_open: "⚠ 警告: このチェストは %s の所有物です。アイテムを取ると窃盗になります！ (Alignment -50)"
+  block_break: "⚠ 警告: このブロックは %s の所有物です。破壊すると犯罪になります！ (Alignment -10)"
+  container_break: "⚠ 警告: このコンテナは %s の所有物です。破壊すると即座に犯罪になります！ (Alignment -10)"
+  attack_player: "⚠ 警告: %s を攻撃すると犯罪になります！ (Alignment -1)"
+  attack_pet: "⚠ 警告: %s のペットを攻撃すると犯罪になります！ (Alignment -1)"
+  villager_bed: "⚠ 警告: このベッドは村人が使用しています。破壊すると犯罪になります！ (Alignment -1)"
+  villager_workstation: "⚠ 警告: この仕事場は村人が使用しています。破壊すると犯罪になります！ (Alignment -1)"
+  attack_villager: "⚠ 警告: 村人を攻撃すると犯罪になります！ (Alignment -1)"
+  attack_golem: "⚠ 警告: アイアンゴーレムを攻撃すると犯罪になります！ (Alignment -50)"
 
 # Locale messages
 locale:
@@ -190,7 +190,7 @@ territory:
   release_no_guild: "ギルドに所属していません"
   release_not_master: "領地を解放できるのはギルドマスターのみです"
   release_no_territory: "ギルドには領地がありません"
-  release_confirm: "§c警告: §eすべての領地を解放しますか？§7（5秒以内にもう一度実行で確定）"
+  release_confirm: "警告: すべての領地を解放しますか？（5秒以内にもう一度実行で確定）"
 
   info_header: "=== %s の領地情報 ==="
   info_chunks: "チャンク数: %d / %d"
@@ -207,35 +207,35 @@ territory:
 
   # Inspect integration
   inspect_territory: "領地: %s"
-  inspect_protected: "§a[保護されています]"
+  inspect_protected: "[保護されています]"
   inspect_not_territory: "領地外"
 
   # Enter/Leave notifications
-  enter_territory: "§a▶ %s の領地に入りました"
-  leave_territory: "§7◀ %s の領地を出ました"
-  enter_own_territory: "§a▶ ギルドの領地に入りました"
-  leave_own_territory: "§7◀ ギルドの領地を出ました"
+  enter_territory: "▶ %s の領地に入りました"
+  leave_territory: "◀ %s の領地を出ました"
+  enter_own_territory: "▶ ギルドの領地に入りました"
+  leave_own_territory: "◀ ギルドの領地を出ました"
 
   # Protection messages
-  protected_break: "§cこのブロックは %s の領地内にあり、保護されています"
-  protected_beacon: "§c領地ビーコンは破壊できません（%s）"
-  protected_place: "§cこの場所は %s の領地内で、ブロックを設置できません"
-  protected_interact: "§cこの場所は %s の領地内で、操作できません"
+  protected_break: "このブロックは %s の領地内にあり、保護されています"
+  protected_beacon: "領地ビーコンは破壊できません（%s）"
+  protected_place: "この場所は %s の領地内で、ブロックを設置できません"
+  protected_interact: "この場所は %s の領地内で、操作できません"
 
   # GM login notifications
   gm_territory_status: "=== ギルド領地状況 ==="
   gm_chunks_info: "領地: %d / %d チャンク"
-  gm_can_expand: "§a追加で %d チャンク確保可能です"
-  gm_no_territory_can_claim: "§e領地を確保していません。最大 %d チャンクまで確保できます！(/guild territory set)"
-  gm_no_territory_need_members: "§e領地を確保していません。あと %d 人のメンバーが必要です。"
-  gm_member_warning: "§c⚠ 警告: メンバーが %d 人しかいません。脱退すると領地が縮小される可能性があります"
-  gm_can_claim_more: "§a追加の領地を確保できます！"
-  gm_at_limit: "§7領地は上限に達しています"
-  gm_shrink_warning: "§c警告: メンバー減少により領地が縮小される可能性があります"
+  gm_can_expand: "追加で %d チャンク確保可能です"
+  gm_no_territory_can_claim: "領地を確保していません。最大 %d チャンクまで確保できます！(/guild territory set)"
+  gm_no_territory_need_members: "領地を確保していません。あと %d 人のメンバーが必要です。"
+  gm_member_warning: "⚠ 警告: メンバーが %d 人しかいません。脱退すると領地が縮小される可能性があります"
+  gm_can_claim_more: "追加の領地を確保できます！"
+  gm_at_limit: "領地は上限に達しています"
+  gm_shrink_warning: "警告: メンバー減少により領地が縮小される可能性があります"
   gm_no_territory: "領地を確保していません"
 
   # Shrink notifications
-  shrink_warning: "§c警告: メンバー不足により領地が %d チャンクに縮小されました"
+  shrink_warning: "警告: メンバー不足により領地が %d チャンクに縮小されました"
   shrink_member_left: "メンバー脱退により領地が縮小される可能性があります"
 
 # Achievement messages

@@ -122,15 +122,15 @@ inspect:
 
 # Warning messages (before crime)
 warning:
-  chest_open: "§c⚠ Warning: §eThis chest belongs to §f%s§e. Taking items will be THEFT! §7(Alignment -50)"
-  block_break: "§c⚠ Warning: §eThis block belongs to §f%s§e. Breaking it will be a CRIME! §7(Alignment -10)"
-  container_break: "§c⚠ Warning: §eThis container belongs to §f%s§e. Breaking it will be an INSTANT CRIME! §7(Alignment -10)"
-  attack_player: "§c⚠ Warning: §eAttacking §f%s §ewill be a CRIME! §7(Alignment -1)"
-  attack_pet: "§c⚠ Warning: §eAttacking §f%s§e's pet will be a CRIME! §7(Alignment -1)"
-  villager_bed: "§c⚠ Warning: §eThis bed belongs to a villager. Breaking it will be a CRIME! §7(Alignment -1)"
-  villager_workstation: "§c⚠ Warning: §eThis workstation belongs to a villager. Breaking it will be a CRIME! §7(Alignment -1)"
-  attack_villager: "§c⚠ Warning: §eAttacking villagers is a CRIME! §7(Alignment -1)"
-  attack_golem: "§c⚠ Warning: §eAttacking Iron Golems is a CRIME! §7(Alignment -50)"
+  chest_open: "⚠ Warning: This chest belongs to %s. Taking items will be THEFT! (Alignment -50)"
+  block_break: "⚠ Warning: This block belongs to %s. Breaking it will be a CRIME! (Alignment -10)"
+  container_break: "⚠ Warning: This container belongs to %s. Breaking it will be an INSTANT CRIME! (Alignment -10)"
+  attack_player: "⚠ Warning: Attacking %s will be a CRIME! (Alignment -1)"
+  attack_pet: "⚠ Warning: Attacking %s's pet will be a CRIME! (Alignment -1)"
+  villager_bed: "⚠ Warning: This bed belongs to a villager. Breaking it will be a CRIME! (Alignment -1)"
+  villager_workstation: "⚠ Warning: This workstation belongs to a villager. Breaking it will be a CRIME! (Alignment -1)"
+  attack_villager: "⚠ Warning: Attacking villagers is a CRIME! (Alignment -1)"
+  attack_golem: "⚠ Warning: Attacking Iron Golems is a CRIME! (Alignment -50)"
 
 # Locale messages
 locale:
@@ -190,7 +190,7 @@ territory:
   release_no_guild: "You are not in a guild"
   release_not_master: "Only the guild master can release territory"
   release_no_territory: "Your guild has no territory"
-  release_confirm: "§cWarning: §eRelease all territory? §7(Run again within 5 seconds to confirm)"
+  release_confirm: "Warning: Release all territory? (Run again within 5 seconds to confirm)"
 
   info_header: "=== %s Territory Info ==="
   info_chunks: "Chunks: %d / %d"
@@ -207,35 +207,35 @@ territory:
 
   # Inspect integration
   inspect_territory: "Territory: %s"
-  inspect_protected: "§a[Protected]"
+  inspect_protected: "[Protected]"
   inspect_not_territory: "Not in territory"
 
   # Enter/Leave notifications
-  enter_territory: "§a▶ Entered %s's territory"
-  leave_territory: "§7◀ Left %s's territory"
-  enter_own_territory: "§a▶ Entered your guild's territory"
-  leave_own_territory: "§7◀ Left your guild's territory"
+  enter_territory: "▶ Entered %s's territory"
+  leave_territory: "◀ Left %s's territory"
+  enter_own_territory: "▶ Entered your guild's territory"
+  leave_own_territory: "◀ Left your guild's territory"
 
   # Protection messages
-  protected_break: "§cThis block is protected by %s's territory"
-  protected_beacon: "§cTerritory beacon cannot be destroyed (%s)"
-  protected_place: "§cYou cannot place blocks in %s's territory"
-  protected_interact: "§cYou cannot interact with this in %s's territory"
+  protected_break: "This block is protected by %s's territory"
+  protected_beacon: "Territory beacon cannot be destroyed (%s)"
+  protected_place: "You cannot place blocks in %s's territory"
+  protected_interact: "You cannot interact with this in %s's territory"
 
   # GM login notifications
   gm_territory_status: "=== Guild Territory Status ==="
   gm_chunks_info: "Territory: %d / %d chunks"
-  gm_can_expand: "§aYou can expand by %d more chunks"
-  gm_no_territory_can_claim: "§eYou have no territory. You can claim up to %d chunks! (/guild territory set)"
-  gm_no_territory_need_members: "§eYou have no territory. Need %d more members to claim territory."
-  gm_member_warning: "§c⚠ Warning: With only %d members, you may lose territory if members leave"
-  gm_can_claim_more: "§aYou can claim more territory!"
-  gm_at_limit: "§7Territory is at maximum"
-  gm_shrink_warning: "§cWarning: Territory may shrink due to member decrease"
+  gm_can_expand: "You can expand by %d more chunks"
+  gm_no_territory_can_claim: "You have no territory. You can claim up to %d chunks! (/guild territory set)"
+  gm_no_territory_need_members: "You have no territory. Need %d more members to claim territory."
+  gm_member_warning: "⚠ Warning: With only %d members, you may lose territory if members leave"
+  gm_can_claim_more: "You can claim more territory!"
+  gm_at_limit: "Territory is at maximum"
+  gm_shrink_warning: "Warning: Territory may shrink due to member decrease"
   gm_no_territory: "No territory claimed"
 
   # Shrink notifications
-  shrink_warning: "§cWarning: Territory shrunk to %d chunks due to insufficient members"
+  shrink_warning: "Warning: Territory shrunk to %d chunks due to insufficient members"
   shrink_member_left: "Territory may shrink due to member leaving"
 
 # Achievement messages
