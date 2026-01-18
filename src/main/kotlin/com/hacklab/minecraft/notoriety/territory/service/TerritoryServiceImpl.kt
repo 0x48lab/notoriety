@@ -261,19 +261,23 @@ class TerritoryServiceImpl(
         val territory = getTerritory(guildId) ?: return ReleaseResult.NoTerritory
 
         val chunkCount = territory.chunkCount
+        val sigilCount = territory.sigilCount
 
-        // ビーコン削除
-        territory.chunks.forEach { chunk ->
-            chunk.beaconLocation?.let { beaconManager.removeBeacon(it) }
+        // シギルのビーコンを削除
+        territory.sigils.forEach { sigil ->
+            sigil.location?.let { beaconManager.removeBeacon(it) }
         }
 
-        // DB削除
+        // シギルをDBから削除
+        sigilRepository.deleteByTerritory(territory.id)
+
+        // 領地（チャンク含む）をDB削除
         repository.deleteTerritory(guildId)
 
         // キャッシュ更新
         cache.removeTerritory(guildId)
 
-        plugin.logger.info("Territory released: Guild ${guild.name} (ID: $guildId) released all territory ($chunkCount chunks)")
+        plugin.logger.info("Territory released: Guild ${guild.name} (ID: $guildId) released all territory ($chunkCount chunks, $sigilCount sigils)")
 
         return ReleaseResult.Success(chunkCount)
     }
@@ -290,10 +294,24 @@ class TerritoryServiceImpl(
         val chunk = territory.chunks.find { it.addOrder == chunkNumber }
             ?: return ReleaseResult.ChunkNotFound(chunkNumber)
 
-        // ビーコン削除
-        chunk.beaconLocation?.let { beaconManager.removeBeacon(it) }
+        // チャンクに紐づいたシギルを確認
+        val sigilId = chunk.sigilId
+        val sigil = sigilId?.let { territory.getSigilById(it) }
 
-        // DB削除
+        // このシギルに属するチャンクが1つ（削除するチャンクのみ）ならシギルも削除
+        val shouldDeleteSigil = sigil != null &&
+            territory.chunks.count { it.sigilId == sigilId } <= 1
+
+        if (shouldDeleteSigil && sigil != null) {
+            // シギルのビーコンを削除
+            sigil.location?.let { beaconManager.removeBeacon(it) }
+            // シギルをDB削除
+            sigilRepository.delete(sigil.id)
+            // キャッシュからシギル削除
+            cache.removeSigil(sigil.id, guildId)
+        }
+
+        // チャンクをDB削除
         repository.deleteChunk(chunk.id)
 
         // キャッシュ更新
@@ -301,6 +319,8 @@ class TerritoryServiceImpl(
 
         // 全チャンク削除なら領地自体を削除
         if (territory.chunkCount <= 1) {
+            // 残りのシギルも削除（通常は上記で削除済みだが念のため）
+            sigilRepository.deleteByTerritory(territory.id)
             repository.deleteTerritory(guildId)
             cache.removeTerritory(guildId)
         }
