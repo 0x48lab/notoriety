@@ -230,11 +230,21 @@ class GolemService(private val playerManager: PlayerManager) {
         // 既に強化済みの場合はスキップ（Speed効果があるかで判定）
         if (golem.hasPotionEffect(PotionEffectType.SPEED)) return
 
-        // 攻撃力強化
-        golem.getAttribute(Attribute.ATTACK_DAMAGE)?.baseValue = ENHANCED_GOLEM_ATTACK_DAMAGE
+        // 攻撃力強化（属性が存在しない場合は登録してから設定）
+        val attackAttr = golem.getAttribute(Attribute.ATTACK_DAMAGE)
+        if (attackAttr != null) {
+            attackAttr.baseValue = ENHANCED_GOLEM_ATTACK_DAMAGE
+        }
 
         // ノックバック耐性を最大に
         golem.getAttribute(Attribute.KNOCKBACK_RESISTANCE)?.baseValue = 1.0
+
+        // HP強化
+        val healthAttr = golem.getAttribute(Attribute.MAX_HEALTH)
+        if (healthAttr != null) {
+            healthAttr.baseValue = ENHANCED_GOLEM_MAX_HEALTH
+            golem.health = ENHANCED_GOLEM_MAX_HEALTH
+        }
 
         // 速度アップのポーション効果（通常の約1.4倍速）
         golem.addPotionEffect(PotionEffect(

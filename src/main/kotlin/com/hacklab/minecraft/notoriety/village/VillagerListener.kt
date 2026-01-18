@@ -23,6 +23,7 @@ import org.bukkit.event.Listener
 import org.bukkit.block.Container
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.block.BlockDamageEvent
+import org.bukkit.Bukkit
 import org.bukkit.event.entity.CreatureSpawnEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDeathEvent
@@ -614,8 +615,13 @@ class VillagerListener(
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onGolemSpawn(event: CreatureSpawnEvent) {
         val golem = event.entity as? IronGolem ?: return
-        // プレイヤーが作成したゴーレムも含め、すべてのゴーレムを強化
-        golemService.enhanceGolem(golem)
+        // 1tick遅らせて強化（スポーン直後は属性が正しく設定されないことがあるため）
+        val plugin = Bukkit.getPluginManager().getPlugin("Notoriety") ?: return
+        Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+            if (golem.isValid) {
+                golemService.enhanceGolem(golem)
+            }
+        }, 1L)
     }
 
     private fun hasBlockChanged(event: PlayerMoveEvent): Boolean {
