@@ -200,6 +200,9 @@ class Notoriety : JavaPlugin() {
             configManager = configManager
         )
 
+        // ビーコン検証タスク開始（欠損ビーコンを自動修復）
+        territoryServiceImpl.startBeaconVerifyTask()
+
         // NotorietyService初期化（中央集約サービス）
         notorietyService = NotorietyService(
             playerManager = playerManager,
@@ -261,6 +264,9 @@ class Notoriety : JavaPlugin() {
     }
 
     override fun onDisable() {
+        // ビーコン検証タスク停止
+        (territoryService as? TerritoryServiceImpl)?.stopBeaconVerifyTask()
+
         playerManager.saveAll()
         databaseManager.shutdown()
         logger.info("Notoriety has been disabled!")

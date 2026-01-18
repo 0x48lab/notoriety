@@ -32,4 +32,18 @@ interface BeaconManager {
      * @return ビーコン本体ならtrue
      */
     fun isBeaconBlock(location: Location): Boolean
+
+    /**
+     * 指定位置にビーコンが正しく設置されているか確認
+     * @param location チェックする位置
+     * @return ビーコンが存在すればtrue
+     */
+    fun existsBeacon(location: Location): Boolean
+
+    /**
+     * ビーコンが存在しない場合に再設置
+     * @param location ビーコンの位置
+     * @return 再設置した場合true、既に存在していた場合false
+     */
+    fun repairBeaconIfMissing(location: Location): Boolean
 }

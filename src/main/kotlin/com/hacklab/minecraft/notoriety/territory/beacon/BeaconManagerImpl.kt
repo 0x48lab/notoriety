@@ -88,4 +88,18 @@ class BeaconManagerImpl : BeaconManager {
         val world = location.world ?: return false
         return world.getBlockAt(location).type == Material.BEACON
     }
+
+    override fun existsBeacon(location: Location): Boolean {
+        val world = location.world ?: return false
+        val block = world.getBlockAt(location)
+        return block.type == Material.BEACON
+    }
+
+    override fun repairBeaconIfMissing(location: Location): Boolean {
+        if (existsBeacon(location)) {
+            return false
+        }
+        placeBeacon(location)
+        return true
+    }
 }
