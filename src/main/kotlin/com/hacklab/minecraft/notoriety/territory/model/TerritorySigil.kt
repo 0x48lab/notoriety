@@ -45,7 +45,7 @@ data class TerritorySigil(
             if (name.length > MAX_NAME_LENGTH) return false
             // 英数字・ひらがな・カタカナ・漢字・スペース・アンダースコア・ハイフンのみ
             return name.matches(
-                Regex("^[a-zA-Z0-9\\p{IsHiragana}\\p{IsKatakana}\\p{IsCJKUnifiedIdeographs}\\s_\\-]+$")
+                Regex("^[a-zA-Z0-9\\p{IsHiragana}\\p{IsKatakana}\\p{IsHan}\\s_\\-]+$")
             )
         }
     }
