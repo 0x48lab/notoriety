@@ -16,7 +16,6 @@ class GolemService(private val playerManager: PlayerManager) {
     companion object {
         const val GOLEM_SEARCH_RANGE = 128.0
         const val GOLEM_DETECTION_RANGE = 32.0        // ゴーレムの視認範囲
-        const val GOLEM_MELEE_RANGE = 2.5             // ゴーレムの通常攻撃リーチ
         const val ESCORT_ALIGNMENT_THRESHOLD = 500
         const val ESCORT_VILLAGER_RANGE = 32.0
 
@@ -252,20 +251,17 @@ class GolemService(private val playerManager: PlayerManager) {
 
     /**
      * 強化ゴーレムがダメージを受けた時の処理
-     * 攻撃者がゴーレムのリーチ外から攻撃している場合、攻撃者の位置にテレポート
+     * ダメージを受けたら攻撃者の位置にテレポートして反撃
+     * （スタックや障害物による回避を防ぐため、常にテレポート）
      */
     fun onGolemDamaged(golem: IronGolem, attacker: Player) {
         if (!isEnhancedGolem(golem)) return
 
-        val distance = golem.location.distance(attacker.location)
-
-        // ゴーレムの攻撃が届かない距離から攻撃されたらテレポート
-        if (distance > GOLEM_MELEE_RANGE) {
-            val teleportLoc = findSafeTeleportLocation(attacker.location)
-            golem.teleport(teleportLoc)
-            // ターゲットを攻撃者に設定
-            golem.target = attacker
-        }
+        // ダメージを受けたら常に攻撃者の位置にテレポート
+        val teleportLoc = findSafeTeleportLocation(attacker.location)
+        golem.teleport(teleportLoc)
+        // ターゲットを攻撃者に設定
+        golem.target = attacker
     }
 
     /**
