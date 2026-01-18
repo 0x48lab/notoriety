@@ -29,11 +29,11 @@ interface TerritoryService {
      * 指定位置に領地チャンクを設定する
      * @param guildId ギルドID
      * @param location プレイヤーの現在位置
-     * @param requester 実行者UUID
+     * @param requester 実行者UUID（nullの場合は権限チェックをスキップ=管理者モード）
      * @param sigilName シギル名（飛び地の場合、nullなら自動生成）
      * @return 設定結果
      */
-    fun claimTerritory(guildId: Long, location: Location, requester: UUID, sigilName: String? = null): ClaimResult
+    fun claimTerritory(guildId: Long, location: Location, requester: UUID?, sigilName: String? = null): ClaimResult
 
     // === 隣接・飛び地判定 ===
 
@@ -68,19 +68,19 @@ interface TerritoryService {
     /**
      * ギルドの全領地を解放する
      * @param guildId ギルドID
-     * @param requester 実行者UUID
+     * @param requester 実行者UUID（nullの場合は権限チェックをスキップ=管理者モード）
      * @return 解放結果
      */
-    fun releaseAllTerritory(guildId: Long, requester: UUID): ReleaseResult
+    fun releaseAllTerritory(guildId: Long, requester: UUID?): ReleaseResult
 
     /**
      * 指定番号のチャンクを解放する
      * @param guildId ギルドID
      * @param chunkNumber チャンク番号（addOrder）
-     * @param requester 実行者UUID
+     * @param requester 実行者UUID（nullの場合は権限チェックをスキップ=管理者モード）
      * @return 解放結果
      */
-    fun releaseChunk(guildId: Long, chunkNumber: Int, requester: UUID): ReleaseResult
+    fun releaseChunk(guildId: Long, chunkNumber: Int, requester: UUID?): ReleaseResult
 
     /**
      * 指定チャンク数まで領地を縮小する（LIFO順）

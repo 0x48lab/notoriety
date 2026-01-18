@@ -76,12 +76,12 @@ class TerritoryServiceImpl(
 
     // === 領地管理 ===
 
-    override fun claimTerritory(guildId: Long, location: Location, requester: UUID, sigilName: String?): ClaimResult {
+    override fun claimTerritory(guildId: Long, location: Location, requester: UUID?, sigilName: String?): ClaimResult {
         // ギルド存在チェック
         val guild = guildService.getGuild(guildId) ?: return ClaimResult.GuildNotFound
 
-        // 権限チェック（ギルドマスターのみ）
-        if (guild.masterUuid != requester) return ClaimResult.NotGuildMaster
+        // 権限チェック（ギルドマスターのみ、requesterがnullの場合はスキップ=管理者モード）
+        if (requester != null && guild.masterUuid != requester) return ClaimResult.NotGuildMaster
 
         // メンバー数チェック
         val memberCount = guildService.getMemberCount(guildId)
@@ -255,11 +255,11 @@ class TerritoryServiceImpl(
         return targetSigilId
     }
 
-    override fun releaseAllTerritory(guildId: Long, requester: UUID): ReleaseResult {
+    override fun releaseAllTerritory(guildId: Long, requester: UUID?): ReleaseResult {
         val guild = guildService.getGuild(guildId) ?: return ReleaseResult.GuildNotFound
 
-        // 権限チェック
-        if (guild.masterUuid != requester) return ReleaseResult.NotGuildMaster
+        // 権限チェック（requesterがnullの場合はスキップ=管理者モード）
+        if (requester != null && guild.masterUuid != requester) return ReleaseResult.NotGuildMaster
 
         val territory = getTerritory(guildId) ?: return ReleaseResult.NoTerritory
 
@@ -285,11 +285,11 @@ class TerritoryServiceImpl(
         return ReleaseResult.Success(chunkCount)
     }
 
-    override fun releaseChunk(guildId: Long, chunkNumber: Int, requester: UUID): ReleaseResult {
+    override fun releaseChunk(guildId: Long, chunkNumber: Int, requester: UUID?): ReleaseResult {
         val guild = guildService.getGuild(guildId) ?: return ReleaseResult.GuildNotFound
 
-        // 権限チェック
-        if (guild.masterUuid != requester) return ReleaseResult.NotGuildMaster
+        // 権限チェック（requesterがnullの場合はスキップ=管理者モード）
+        if (requester != null && guild.masterUuid != requester) return ReleaseResult.NotGuildMaster
 
         val territory = getTerritory(guildId) ?: return ReleaseResult.NoTerritory
 

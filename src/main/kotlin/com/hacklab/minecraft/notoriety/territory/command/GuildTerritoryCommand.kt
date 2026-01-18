@@ -58,19 +58,40 @@ class GuildTerritoryCommand(
     private fun handleSet(player: Player, args: Array<out String>): Boolean {
         val uuid = player.uniqueId
         val location = player.location
+        val isOp = player.isOp
 
-        // オプションでシギル名を指定可能（飛び地の場合）
-        val sigilName = if (args.isNotEmpty()) args.joinToString(" ") else null
-
-        val guildId = getPlayerGuildId(player) ?: run {
-            i18n.sendError(player, "territory.claim_no_guild", "You must be in a guild to claim territory")
-            return true
+        // OPの場合、最初の引数でギルド名を指定可能
+        // 使用法: /guild territory set [ギルド名] [シギル名]
+        val (guildId, sigilName, requester) = if (isOp && args.isNotEmpty()) {
+            // OPの場合、最初の引数がギルド名かシギル名かを判定
+            val firstArgGuild = guildService.getGuildByName(args[0])
+            if (firstArgGuild != null) {
+                // ギルド名として解釈
+                val sigil = if (args.size > 1) args.drop(1).joinToString(" ") else null
+                Triple(firstArgGuild.id, sigil, null as UUID?)
+            } else {
+                // シギル名として解釈（自分のギルド）
+                val myGuildId = getPlayerGuildId(player)
+                if (myGuildId == null) {
+                    i18n.sendError(player, "territory.claim_no_guild", "You must be in a guild to claim territory")
+                    return true
+                }
+                Triple(myGuildId, args.joinToString(" ").takeIf { it.isNotEmpty() }, uuid)
+            }
+        } else {
+            // 通常プレイヤー
+            val myGuildId = getPlayerGuildId(player) ?: run {
+                i18n.sendError(player, "territory.claim_no_guild", "You must be in a guild to claim territory")
+                return true
+            }
+            val sigil = if (args.isNotEmpty()) args.joinToString(" ") else null
+            Triple(myGuildId, sigil, uuid)
         }
 
         val result = territoryService.claimTerritory(
             guildId = guildId,
             location = location,
-            requester = uuid,
+            requester = requester,
             sigilName = sigilName
         )
 
@@ -175,7 +196,18 @@ class GuildTerritoryCommand(
 
     private fun handleInfo(player: Player): Boolean {
         val uuid = player.uniqueId
-        val guild = guildService.getPlayerGuild(uuid)
+        val isOp = player.isOp
+
+        // ギルドを取得（OPの場合は現在地の領地からも取得可能）
+        var guild = guildService.getPlayerGuild(uuid)
+
+        if (guild == null && isOp) {
+            // OPで自分のギルドがない場合、現在地の領地のギルドを取得
+            val territoryAtLocation = territoryService.getTerritoryAt(player.location)
+            if (territoryAtLocation != null) {
+                guild = guildService.getGuild(territoryAtLocation.guildId)
+            }
+        }
 
         if (guild == null) {
             i18n.sendError(player, "territory.info_not_in_guild", "You are not in a guild")
@@ -245,6 +277,7 @@ class GuildTerritoryCommand(
 
     private fun handleRelease(player: Player, args: Array<out String>): Boolean {
         val uuid = player.uniqueId
+        val isOp = player.isOp
 
         // 引数なしの場合は使用方法を表示
         if (args.isEmpty()) {
@@ -254,14 +287,28 @@ class GuildTerritoryCommand(
             return true
         }
 
-        val guildId = getPlayerGuildId(player) ?: run {
+        // ギルドIDを取得（OPの場合は現在地の領地からも取得可能）
+        var guildId = getPlayerGuildId(player)
+
+        if (guildId == null && isOp) {
+            // OPで自分のギルドがない場合、現在地の領地のギルドを取得
+            val territoryAtLocation = territoryService.getTerritoryAt(player.location)
+            if (territoryAtLocation != null) {
+                guildId = territoryAtLocation.guildId
+            }
+        }
+
+        if (guildId == null) {
             i18n.sendError(player, "territory.release_no_guild", "You are not in a guild")
             return true
         }
 
+        // OPの場合はrequesterをnullにして権限チェックをスキップ
+        val requester = if (isOp) null else uuid
+
         // "all" の場合は全解放
         if (args[0].lowercase() == "all") {
-            return handleReleaseAll(player, guildId)
+            return handleReleaseAll(player, guildId, requester)
         }
 
         // 番号指定の場合
@@ -271,10 +318,10 @@ class GuildTerritoryCommand(
             return true
         }
 
-        return handleReleaseChunk(player, guildId, chunkNumber)
+        return handleReleaseChunk(player, guildId, chunkNumber, requester)
     }
 
-    private fun handleReleaseAll(player: Player, guildId: Long): Boolean {
+    private fun handleReleaseAll(player: Player, guildId: Long, requester: UUID? = player.uniqueId): Boolean {
         val uuid = player.uniqueId
         val now = System.currentTimeMillis()
 
@@ -297,7 +344,7 @@ class GuildTerritoryCommand(
         // 確認済み - 実行
         releaseConfirmations.remove(uuid)
 
-        val result = territoryService.releaseAllTerritory(guildId, uuid)
+        val result = territoryService.releaseAllTerritory(guildId, requester)
 
         when (result) {
             is ReleaseResult.Success -> {
@@ -321,10 +368,8 @@ class GuildTerritoryCommand(
         return true
     }
 
-    private fun handleReleaseChunk(player: Player, guildId: Long, chunkNumber: Int): Boolean {
-        val uuid = player.uniqueId
-
-        val result = territoryService.releaseChunk(guildId, chunkNumber, uuid)
+    private fun handleReleaseChunk(player: Player, guildId: Long, chunkNumber: Int, requester: UUID? = player.uniqueId): Boolean {
+        val result = territoryService.releaseChunk(guildId, chunkNumber, requester)
 
         when (result) {
             is ReleaseResult.Success -> {
