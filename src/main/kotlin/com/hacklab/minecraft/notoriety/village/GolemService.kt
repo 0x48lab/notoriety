@@ -58,11 +58,53 @@ class GolemService(private val playerManager: PlayerManager) {
     }
 
     private fun findSafeTeleportLocation(targetLocation: Location): Location {
-        // プレイヤーの後ろ側（向いている方向の反対）にテレポート
-        val direction = targetLocation.direction.normalize().multiply(-3.0)
-        val teleportLoc = targetLocation.clone().add(direction)
-        teleportLoc.y = targetLocation.world.getHighestBlockYAt(teleportLoc).toDouble() + 1.0
-        return teleportLoc
+        val world = targetLocation.world
+
+        // 試行する方向のリスト（背後、前、左、右、上）
+        val directions = listOf(
+            targetLocation.direction.normalize().multiply(-2.0),  // 背後
+            targetLocation.direction.normalize().multiply(2.0),   // 前
+            targetLocation.direction.rotateAroundY(Math.PI / 2).normalize().multiply(2.0),  // 右
+            targetLocation.direction.rotateAroundY(-Math.PI / 2).normalize().multiply(2.0), // 左
+        )
+
+        for (dir in directions) {
+            val candidate = targetLocation.clone().add(dir)
+            candidate.y = world.getHighestBlockYAt(candidate).toDouble() + 1.0
+
+            // ゴーレムが立てるスペースがあるか確認（2x2x3の空間）
+            if (hasSpaceForGolem(candidate)) {
+                return candidate
+            }
+        }
+
+        // どこにもスペースがなければプレイヤーの真上にテレポート
+        val fallback = targetLocation.clone()
+        fallback.y = targetLocation.y + 1.0
+        return fallback
+    }
+
+    /**
+     * ゴーレムが立てるスペースがあるか確認
+     * アイアンゴーレムは1.4x2.7ブロックのサイズ
+     */
+    private fun hasSpaceForGolem(location: Location): Boolean {
+        val world = location.world
+        val baseX = location.blockX
+        val baseY = location.blockY
+        val baseZ = location.blockZ
+
+        // 足元が固体ブロックか確認
+        val ground = world.getBlockAt(baseX, baseY - 1, baseZ)
+        if (!ground.type.isSolid) return false
+
+        // 3ブロック分の高さが空いているか確認
+        for (y in 0..2) {
+            val block = world.getBlockAt(baseX, baseY + y, baseZ)
+            if (block.type.isSolid) return false
+        }
+
+        return true
     }
 
     fun orderGolemToProtect(protectedPlayer: Player, monster: Monster) {
