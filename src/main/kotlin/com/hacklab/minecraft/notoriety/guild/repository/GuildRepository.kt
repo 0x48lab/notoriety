@@ -12,8 +12,8 @@ class GuildRepository(private val databaseManager: DatabaseManager) {
     fun insert(guild: Guild): Long {
         return databaseManager.provider.useConnection { conn ->
             val sql = """
-                INSERT INTO guilds (name, tag, tag_color, description, master_uuid, max_members)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO guilds (name, tag, tag_color, description, master_uuid, max_members, is_government)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """.trimIndent()
             conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS).use { stmt ->
                 stmt.setString(1, guild.name)
@@ -22,6 +22,7 @@ class GuildRepository(private val databaseManager: DatabaseManager) {
                 stmt.setString(4, guild.description)
                 stmt.setString(5, guild.masterUuid.toString())
                 stmt.setInt(6, guild.maxMembers)
+                stmt.setBoolean(7, guild.isGovernment)
                 stmt.executeUpdate()
                 stmt.generatedKeys.use { rs ->
                     if (rs.next()) rs.getLong(1) else -1L
@@ -143,6 +144,13 @@ class GuildRepository(private val databaseManager: DatabaseManager) {
     fun existsByTag(tag: String): Boolean = findByTag(tag) != null
 
     private fun mapToGuild(rs: ResultSet): Guild {
+        // Read is_government with fallback for legacy data
+        val isGovernment = try {
+            rs.getBoolean("is_government")
+        } catch (e: Exception) {
+            false
+        }
+
         return Guild(
             id = rs.getLong("id"),
             name = rs.getString("name"),
@@ -151,7 +159,8 @@ class GuildRepository(private val databaseManager: DatabaseManager) {
             description = rs.getString("description"),
             masterUuid = UUID.fromString(rs.getString("master_uuid")),
             createdAt = rs.getTimestamp("created_at").toInstant(),
-            maxMembers = rs.getInt("max_members")
+            maxMembers = rs.getInt("max_members"),
+            isGovernment = isGovernment
         )
     }
 }

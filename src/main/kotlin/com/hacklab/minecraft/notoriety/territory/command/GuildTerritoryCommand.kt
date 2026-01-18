@@ -3,6 +3,7 @@ package com.hacklab.minecraft.notoriety.territory.command
 import com.hacklab.minecraft.notoriety.core.i18n.I18nManager
 import com.hacklab.minecraft.notoriety.guild.command.GuildSubCommand
 import com.hacklab.minecraft.notoriety.guild.service.GuildService
+import com.hacklab.minecraft.notoriety.territory.event.SigilCreateEvent
 import com.hacklab.minecraft.notoriety.territory.event.TerritoryClaimEvent
 import com.hacklab.minecraft.notoriety.territory.service.ClaimResult
 import com.hacklab.minecraft.notoriety.territory.service.ReleaseResult
@@ -44,7 +45,7 @@ class GuildTerritoryCommand(
         }
 
         return when (args[0].lowercase()) {
-            "set", "claim" -> handleSet(player)
+            "set", "claim" -> handleSet(player, args.drop(1).toTypedArray())
             "info", "status" -> handleInfo(player)
             "release", "abandon" -> handleRelease(player, args.drop(1).toTypedArray())
             else -> {
@@ -54,17 +55,23 @@ class GuildTerritoryCommand(
         }
     }
 
-    private fun handleSet(player: Player): Boolean {
+    private fun handleSet(player: Player, args: Array<out String>): Boolean {
         val uuid = player.uniqueId
         val location = player.location
 
+        // オプションでシギル名を指定可能（飛び地の場合）
+        val sigilName = if (args.isNotEmpty()) args.joinToString(" ") else null
+
+        val guildId = getPlayerGuildId(player) ?: run {
+            player.sendError(i18n.get(uuid, "territory.claim_no_guild", "You must be in a guild to claim territory"))
+            return true
+        }
+
         val result = territoryService.claimTerritory(
-            guildId = getPlayerGuildId(player) ?: run {
-                player.sendError(i18n.get(uuid, "territory.claim_no_guild", "You must be in a guild to claim territory"))
-                return true
-            },
+            guildId = guildId,
             location = location,
-            requester = uuid
+            requester = uuid,
+            sigilName = sigilName
         )
 
         when (result) {
@@ -73,6 +80,7 @@ class GuildTerritoryCommand(
                 val territory = territoryService.getTerritory(guild?.id ?: 0)
                 val totalChunks = territory?.chunkCount ?: 1
 
+                // 基本メッセージ
                 player.sendSuccess(i18n.get(
                     uuid,
                     "territory.claim_success",
@@ -81,7 +89,33 @@ class GuildTerritoryCommand(
                     territoryService.calculateAllowedChunks(guildService.getMemberCount(guild?.id ?: 0))
                 ))
 
-                // イベント発火
+                // シギル関連メッセージ
+                if (result.isNewSigil && result.sigil != null) {
+                    player.sendMessage(Component.text("新しいシギル「${result.sigil.name}」を作成しました")
+                        .color(NamedTextColor.GREEN))
+
+                    // シギル作成イベント発火
+                    Bukkit.getPluginManager().callEvent(
+                        SigilCreateEvent(
+                            guildId = guild?.id ?: 0,
+                            guildName = guild?.name ?: "",
+                            sigil = result.sigil,
+                            createdBy = uuid,
+                            isEnclave = totalChunks > 1  // 2個目以降で新規シギル = 飛び地
+                        )
+                    )
+                } else if (result.sigil != null) {
+                    player.sendMessage(Component.text("シギル「${result.sigil.name}」の領地に追加しました")
+                        .color(NamedTextColor.GRAY))
+                }
+
+                // グループマージがあった場合
+                if (result.mergedSigilIds.isNotEmpty()) {
+                    player.sendMessage(Component.text("${result.mergedSigilIds.size}個のシギルが統合されました")
+                        .color(NamedTextColor.YELLOW))
+                }
+
+                // 領地確保イベント発火
                 Bukkit.getPluginManager().callEvent(
                     TerritoryClaimEvent(
                         guildId = guild?.id ?: 0,
@@ -143,6 +177,15 @@ class GuildTerritoryCommand(
             is ClaimResult.NotInGuild -> {
                 player.sendError(i18n.get(uuid, "territory.claim_no_guild", "You must be in a guild to claim territory"))
             }
+            is ClaimResult.AlreadyClaimed -> {
+                player.sendError("このチャンクは既にあなたのギルドの領地です")
+            }
+            is ClaimResult.InvalidSigilName -> {
+                player.sendError("無効なシギル名: ${result.reason}")
+            }
+            is ClaimResult.SigilNameAlreadyExists -> {
+                player.sendError("シギル名「${result.name}」は既に使用されています")
+            }
         }
 
         return true
@@ -159,40 +202,54 @@ class GuildTerritoryCommand(
 
         val territory = territoryService.getTerritory(guild.id)
         val memberCount = guildService.getMemberCount(guild.id)
-        val maxChunks = territoryService.calculateAllowedChunks(memberCount)
+        val maxChunks = if (guild.isGovernment) "無制限" else territoryService.calculateAllowedChunks(memberCount).toString()
 
         player.sendMessage(Component.text(i18n.get(uuid, "territory.info_header", "=== %s Territory Info ===", guild.name))
             .color(NamedTextColor.GOLD))
 
+        if (guild.isGovernment) {
+            player.sendMessage(Component.text("  [政府ギルド - 領地制限なし]").color(NamedTextColor.LIGHT_PURPLE))
+        }
+
         if (territory == null || territory.chunkCount == 0) {
             player.sendInfo(i18n.get(uuid, "territory.info_no_territory", "Your guild has no territory"))
         } else {
-            player.sendInfo(i18n.get(
-                uuid,
-                "territory.info_chunks",
-                "Chunks: %d / %d",
-                territory.chunkCount,
-                maxChunks
-            ))
+            player.sendInfo("チャンク数: ${territory.chunkCount} / $maxChunks")
+
+            // シギル一覧を表示
+            if (territory.sigilCount > 0) {
+                player.sendMessage(Component.text("--- シギル一覧 ---").color(NamedTextColor.AQUA))
+                territory.sigils.forEach { sigil ->
+                    val chunkCount = territory.getChunksForSigil(sigil.id).size
+                    player.sendMessage(Component.text(
+                        "  ● ${sigil.name} (${chunkCount}チャンク) - ${sigil.worldName}"
+                    ).color(NamedTextColor.AQUA))
+                }
+            }
 
             // チャンク一覧を番号順で表示
             player.sendMessage(Component.text("--- チャンク一覧 ---").color(NamedTextColor.GRAY))
             territory.chunks.sortedBy { it.addOrder }.forEach { chunk ->
                 val isCurrentChunk = chunk.containsLocation(player.location)
                 val marker = if (isCurrentChunk) " §a← 現在地" else ""
+                val sigilName = chunk.sigilId?.let { sigilId ->
+                    territory.getSigilById(sigilId)?.name
+                } ?: "?"
                 player.sendMessage(Component.text(
-                    "  #${chunk.addOrder}: (${chunk.centerX}, ${chunk.centerZ}) ${chunk.worldName}$marker"
+                    "  #${chunk.addOrder}: (${chunk.chunkX}, ${chunk.chunkZ}) [${sigilName}]$marker"
                 ).color(if (isCurrentChunk) NamedTextColor.GREEN else NamedTextColor.YELLOW))
             }
         }
 
-        player.sendInfo(i18n.get(
-            uuid,
-            "territory.info_allowed_chunks",
-            "Allowed chunks: %d (members: %d)",
-            maxChunks,
-            memberCount
-        ))
+        if (!guild.isGovernment) {
+            player.sendInfo(i18n.get(
+                uuid,
+                "territory.info_allowed_chunks",
+                "Allowed chunks: %d (members: %d)",
+                territoryService.calculateAllowedChunks(memberCount),
+                memberCount
+            ))
+        }
 
         return true
     }

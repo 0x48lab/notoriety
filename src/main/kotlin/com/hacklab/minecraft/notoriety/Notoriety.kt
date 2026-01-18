@@ -46,9 +46,13 @@ import com.hacklab.minecraft.notoriety.trust.TrustRepository
 import com.hacklab.minecraft.notoriety.trust.TrustService
 import com.hacklab.minecraft.notoriety.territory.beacon.BeaconManager
 import com.hacklab.minecraft.notoriety.territory.beacon.BeaconManagerImpl
+import com.hacklab.minecraft.notoriety.territory.cache.TerritoryCache
 import com.hacklab.minecraft.notoriety.territory.listener.TerritoryEntryListener
 import com.hacklab.minecraft.notoriety.territory.listener.TerritoryProtectionListener
+import com.hacklab.minecraft.notoriety.territory.repository.SigilRepository
 import com.hacklab.minecraft.notoriety.territory.repository.TerritoryRepository
+import com.hacklab.minecraft.notoriety.territory.service.SigilService
+import com.hacklab.minecraft.notoriety.territory.service.SigilServiceImpl
 import com.hacklab.minecraft.notoriety.territory.service.TerritoryService
 import com.hacklab.minecraft.notoriety.territory.service.TerritoryServiceImpl
 import com.hacklab.minecraft.notoriety.village.GolemService
@@ -103,7 +107,10 @@ class Notoriety : JavaPlugin() {
     // 領地システム
     lateinit var territoryService: TerritoryService
         private set
+    lateinit var sigilService: SigilService
+        private set
     private lateinit var beaconManager: BeaconManager
+    private lateinit var territoryCache: TerritoryCache
     private lateinit var guildCache: GuildCache
     private lateinit var whisperCommand: WhisperCommand
     private lateinit var guildTagManager: GuildTagManager
@@ -168,12 +175,28 @@ class Notoriety : JavaPlugin() {
 
         // 領地システム初期化
         val territoryRepository = TerritoryRepository(databaseManager)
+        val sigilRepository = SigilRepository(databaseManager)
+        territoryCache = TerritoryCache()
         beaconManager = BeaconManagerImpl()
+
+        // TerritoryService初期化（内部でキャッシュを持つ）
         territoryService = TerritoryServiceImpl(
             plugin = this,
             repository = territoryRepository,
+            sigilRepository = sigilRepository,
             guildService = guildService,
             beaconManager = beaconManager,
+            configManager = configManager
+        )
+
+        // SigilService初期化（TerritoryServiceImplのキャッシュを取得）
+        val territoryServiceImpl = territoryService as TerritoryServiceImpl
+        sigilService = SigilServiceImpl(
+            plugin = this,
+            sigilRepository = sigilRepository,
+            beaconManager = beaconManager,
+            guildService = guildService,
+            cache = territoryServiceImpl.getCache(),
             configManager = configManager
         )
 

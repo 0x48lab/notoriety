@@ -42,12 +42,19 @@ class GuildListCommand(
 
         guilds.forEach { guild ->
             val memberCount = guildService.getMemberCount(guild.id)
-            sender.sendMessage(Component.text()
+            val guildLine = Component.text()
                 .append(Component.text("[${guild.tag}] ").color(guild.tagColor.namedTextColor))
                 .append(Component.text(guild.name).color(NamedTextColor.WHITE))
-                .append(Component.text(" - $memberCount members").color(NamedTextColor.GRAY))
+
+            // 政府ギルドマーカー
+            if (guild.isGovernment) {
+                guildLine.append(Component.text(" [政府]").color(NamedTextColor.GOLD))
+            }
+
+            guildLine.append(Component.text(" - $memberCount members").color(NamedTextColor.GRAY))
                 .clickEvent(ClickEvent.runCommand("/guild info ${guild.name}"))
-                .build())
+
+            sender.sendMessage(guildLine.build())
         }
 
         // ページナビゲーション

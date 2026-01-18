@@ -12,6 +12,17 @@ interface GuildService {
     // === ギルド管理 ===
 
     fun createGuild(creator: UUID, name: String, tag: String, description: String? = null): Guild
+
+    /**
+     * 政府ギルドを作成する（OP専用）
+     * 政府ギルドは領地上限がなく、特別な権限を持つ
+     * @param creator 作成者UUID
+     * @param name ギルド名
+     * @param tag ギルドタグ
+     * @param description 説明
+     * @return 作成された政府ギルド
+     */
+    fun createGovernmentGuild(creator: UUID, name: String, tag: String, description: String? = null): Guild
     fun setTagColor(guildId: Long, color: TagColor, requester: UUID)
     fun dissolveGuild(guildId: Long, requester: UUID)
     fun getGuild(guildId: Long): Guild?

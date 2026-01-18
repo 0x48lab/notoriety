@@ -91,6 +91,65 @@ class GuildServiceImpl(
         return createdGuild
     }
 
+    override fun createGovernmentGuild(creator: UUID, name: String, tag: String, description: String?): Guild {
+        // バリデーション
+        if (!NAME_PATTERN.matches(name)) {
+            throw GuildException.InvalidName(name)
+        }
+        if (!TAG_PATTERN.matches(tag)) {
+            throw GuildException.InvalidTag(tag)
+        }
+        if (guildRepository.existsByName(name)) {
+            throw GuildException.NameTaken(name)
+        }
+        if (guildRepository.existsByTag(tag)) {
+            throw GuildException.TagTaken(tag)
+        }
+        if (membershipRepository.findByPlayerUuid(creator) != null) {
+            throw GuildException.AlreadyInGuild(creator)
+        }
+
+        // 政府ギルド作成（isGovernment=true）
+        val guild = Guild(
+            id = 0,
+            name = name,
+            tag = tag.uppercase(),
+            tagColor = TagColor.GOLD, // 政府ギルドはデフォルトで金色
+            description = description,
+            masterUuid = creator,
+            createdAt = Instant.now(),
+            maxMembers = 50,
+            isGovernment = true
+        )
+        val guildId = guildRepository.insert(guild)
+        val createdGuild = guild.copy(id = guildId)
+
+        // マスターをメンバーとして追加
+        val membership = GuildMembership(
+            id = 0,
+            guildId = guildId,
+            playerUuid = creator,
+            role = GuildRole.MASTER,
+            joinedAt = Instant.now()
+        )
+        membershipRepository.insert(membership)
+
+        // キャッシュに追加
+        guildCache.put(createdGuild)
+
+        // ギルドタグを表示
+        Bukkit.getPlayer(creator)?.let { player ->
+            guildTagManager.setGuildTag(player, createdGuild)
+        }
+
+        // イベント発火
+        Bukkit.getPluginManager().callEvent(GuildCreateEvent(createdGuild, creator))
+
+        plugin.logger.info("Government guild created: ${createdGuild.name} [${createdGuild.tag}] by ${Bukkit.getOfflinePlayer(creator).name}")
+
+        return createdGuild
+    }
+
     override fun setTagColor(guildId: Long, color: TagColor, requester: UUID) {
         val guild = getGuildOrThrow(guildId)
         val membership = membershipRepository.findByPlayerUuid(requester)

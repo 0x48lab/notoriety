@@ -6,15 +6,35 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-01-18
+
 ### Added
-- 領地システム（Territory System）
-  - `/guild territory set` - 現在地を領地の中心として設定
-  - `/guild territory info` - 領地情報を表示
-  - `/guild territory remove` - 領地を削除
-  - 領地出入り通知（プレイヤーが領地に出入りするとメッセージ表示）
-  - 領地保護（非ギルドメンバーのブロック破壊/設置を防止）
-  - ビーコン自動設置（領地の中心にビーコンが設置される）
-  - ギルドメンバー数に応じた領地サイズ制限
+- **チャンクベース領地システム（Territory Chunk System）**
+  - Minecraftネイティブのチャンク座標（16×16ブロック）を使用
+  - 領地上限計算: `1 + floor(memberCount / 3)` チャンク
+  - `/guild territory set [シギル名]` - 現在のチャンクを領地として設定
+  - `/guild territory info` - 領地情報（シギル一覧、チャンク一覧）を表示
+  - `/guild territory release all` - 全領地を解放（確認付き）
+  - `/guild territory release <番号>` - 特定チャンクを解放
+- **シギルシステム（Sigil System）**
+  - 連続した領地グループごとに1つのシギル（ビーコン）を自動配置
+  - 飛び地（非隣接チャンク）は新しいシギルを自動作成
+  - 複数グループを接続するチャンクを追加すると自動マージ
+  - `/guild sigil list` - シギル一覧を表示
+  - `/guild sigil rename <旧名> <新名>` - シギル名を変更
+- **シギルテレポート**
+  - `/guild home [シギル名]` - シギルへテレポート
+  - シギルが1つの場合は名前省略可能
+  - 複数シギルがある場合はリストを表示
+  - クールダウン設定可能（デフォルト30秒）
+- **政府ギルド（Government Guild）**
+  - `/guild create <名前> <タグ> --government` - 政府ギルドを作成（OP専用）
+  - 領地上限なし（無制限にチャンクを確保可能）
+  - 作成費用無料
+  - ギルド一覧に`[政府]`マーカーを表示
+- **領地縮小システム**
+  - メンバー減少時に自動で領地を縮小（LIFO順）
+  - 空になったシギルグループは自動削除
 - ギルド申請システム（Guild Application System）
   - `/guild apply <guild>` - ギルドに加入申請
   - `/guild applications` - 受信した申請一覧（マスター/副マスター用）
@@ -23,37 +43,23 @@
   - 申請有効期限: 7日間
 - ギルドマスターログイン通知（領地状態をログイン時に表示）
 - 調査モードで領地情報を表示（所有ギルド名を表示）
+- 設定オプション追加
+  - `territory.sigil-teleport-cooldown` - テレポートクールダウン（秒）
+  - `territory.notifications-enabled` - 領地出入り通知の有効/無効
 
 ### Changed
+- 領地システムをプレイヤー中心の16×16エリアからMinecraftネイティブチャンク座標に変更
+- 領地上限計算を `10人=1チャンク` から `1 + floor(memberCount / 3)` に変更
+- ビーコンの位置をチャンク単位ではなくシギル単位で管理するように変更
 - PKCount が 0 になったとき懸賞金を出資者に返金するように変更
-  - 管理者コマンドで PKCount を 0 にした場合
-  - 時間経過で PKCount が減少して 0 になった場合
-  - 出資者がオンラインの場合は返金通知を表示
 - 懸賞金コマンドを `set` から `add` に変更
-  - `/bounty add <player> <amount>` - 懸賞金をかける
-  - `/wanted add <player> <amount>` - 同上（エイリアス）
-  - `set` は後方互換性のため引き続き使用可能
-- `/wanted` コマンドにタブ補完を追加
-- プレイヤー表示形式を変更
-  - 旧: `[Title] Name` → 新: `Title Name [Guild]`
-  - BELOW_NAME表示を廃止し、Team prefix/suffixを使用
-  - 称号をprefix、ギルドタグをsuffixに表示
-- レガシーカラーコード(§)の処理を修正
-  - `Component.text()`から`LegacyComponentSerializer`に変更
-  - 対象: TerritoryEntryListener, HistoryCommand
+- プレイヤー表示形式を変更（称号をprefix、ギルドタグをsuffixに表示）
 
 ### Fixed
 - 自殺時にPKCountが増加するバグを修正
-  - エンダードラゴン等に吹き飛ばされて落下死した際、victim.killerが自分自身を返すケースでPKCount+1されていた
-  - killer == victim の場合はPK判定をスキップするように修正
 - オフラインプレイヤーに懸賞金を設定できない問題を修正
-  - `PlayerManager.getOrLoadPlayer()` メソッドを追加（キャッシュまたはDBから取得）
-  - `BountyService.setBounty()` でオフラインプレイヤーのデータもDBから読み込むように変更
 - `/noty admin` コマンドでオフラインプレイヤーを操作できない問題を修正
-  - オフラインプレイヤーのデータもDBから読み込み、変更後に保存するように修正
 - SQLite接続プールのデッドロック問題を修正
-  - `TerritoryRepository`でネストされたDB接続を回避
-  - 同一接続を再利用する`getChunksWithConnection()`メソッドを追加
 - プレイヤー名の下に「0」が表示される問題を修正
 - Adventure APIでのレガシーカラーコード警告を修正
 

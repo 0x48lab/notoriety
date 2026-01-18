@@ -345,6 +345,68 @@ class DatabaseManager(
                 } catch (e: Exception) {
                     // Column already exists, ignore
                 }
+
+                // ===== Feature 006: Territory Chunk Sigil System =====
+
+                // Territory sigils table (1 territory : N sigils)
+                stmt.executeUpdate("""
+                    CREATE TABLE IF NOT EXISTS territory_sigils (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        territory_id INTEGER NOT NULL,
+                        name VARCHAR(32) NOT NULL,
+                        world_name VARCHAR(64) NOT NULL,
+                        x DOUBLE NOT NULL,
+                        y DOUBLE NOT NULL,
+                        z DOUBLE NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (territory_id) REFERENCES guild_territories(id) ON DELETE CASCADE,
+                        UNIQUE (territory_id, name)
+                    )
+                """.trimIndent())
+
+                stmt.executeUpdate("""
+                    CREATE INDEX IF NOT EXISTS idx_sigils_territory
+                    ON territory_sigils (territory_id)
+                """.trimIndent())
+
+                // Migration: Add sigil_id column to territory_chunks
+                try {
+                    stmt.executeUpdate("ALTER TABLE territory_chunks ADD COLUMN sigil_id INTEGER")
+                } catch (e: Exception) {
+                    // Column already exists, ignore
+                }
+
+                // Migration: Add chunk_x and chunk_z columns (native Minecraft chunk coords)
+                try {
+                    stmt.executeUpdate("ALTER TABLE territory_chunks ADD COLUMN chunk_x INTEGER")
+                } catch (e: Exception) {
+                    // Column already exists, ignore
+                }
+
+                try {
+                    stmt.executeUpdate("ALTER TABLE territory_chunks ADD COLUMN chunk_z INTEGER")
+                } catch (e: Exception) {
+                    // Column already exists, ignore
+                }
+
+                // Create index for chunk location using native coords
+                stmt.executeUpdate("""
+                    CREATE INDEX IF NOT EXISTS idx_chunk_native_coords
+                    ON territory_chunks (world_name, chunk_x, chunk_z)
+                """.trimIndent())
+
+                // Create index for sigil lookup
+                stmt.executeUpdate("""
+                    CREATE INDEX IF NOT EXISTS idx_chunk_sigil
+                    ON territory_chunks (sigil_id)
+                """.trimIndent())
+
+                // Migration: Add is_government column to guilds for government guilds
+                try {
+                    stmt.executeUpdate("ALTER TABLE guilds ADD COLUMN is_government BOOLEAN DEFAULT FALSE")
+                } catch (e: Exception) {
+                    // Column already exists, ignore
+                }
             }
         }
         plugin.logger.info("Database tables initialized successfully")

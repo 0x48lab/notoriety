@@ -40,6 +40,20 @@ class ConfigManager(private val plugin: JavaPlugin) {
     val territoryMembersPerChunk: Int
         get() = config.getInt("territory.members-per-chunk", 10)
 
+    /**
+     * Cooldown between sigil teleports in seconds.
+     * Default: 30 seconds
+     */
+    val sigilTeleportCooldown: Int
+        get() = config.getInt("territory.sigil-teleport-cooldown", 30)
+
+    /**
+     * Whether to show territory entry/exit notifications.
+     * Default: true
+     */
+    val territoryNotificationsEnabled: Boolean
+        get() = config.getBoolean("territory.notifications-enabled", true)
+
     init {
         plugin.saveDefaultConfig()
     }

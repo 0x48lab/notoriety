@@ -11,7 +11,8 @@ data class Guild(
     val description: String?,
     val masterUuid: UUID,
     val createdAt: Instant,
-    val maxMembers: Int = 50
+    val maxMembers: Int = 50,
+    val isGovernment: Boolean = false
 ) {
     companion object {
         private val NAME_REGEX = Regex("^[a-zA-Z0-9_\\p{IsHan}\\p{IsHiragana}\\p{IsKatakana}ー]+$")

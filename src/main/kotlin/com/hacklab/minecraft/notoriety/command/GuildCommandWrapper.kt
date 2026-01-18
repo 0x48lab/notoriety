@@ -2,6 +2,8 @@ package com.hacklab.minecraft.notoriety.command
 
 import com.hacklab.minecraft.notoriety.Notoriety
 import com.hacklab.minecraft.notoriety.guild.command.GuildCommand
+import com.hacklab.minecraft.notoriety.territory.command.GuildHomeCommand
+import com.hacklab.minecraft.notoriety.territory.command.GuildSigilCommand
 import com.hacklab.minecraft.notoriety.territory.command.GuildTerritoryCommand
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -17,6 +19,19 @@ class GuildCommandWrapper(private val plugin: Notoriety) : SubCommand {
         val command = GuildCommand(plugin, plugin.guildService, plugin.guildGUIManager, plugin.economyService, plugin.i18nManager)
         // 領地システムのサブコマンドを追加
         command.addSubCommand(GuildTerritoryCommand(
+            territoryService = plugin.territoryService,
+            guildService = plugin.guildService,
+            i18n = plugin.i18nManager
+        ))
+        // シギル関連コマンドを追加
+        command.addSubCommand(GuildHomeCommand(
+            sigilService = plugin.sigilService,
+            territoryService = plugin.territoryService,
+            guildService = plugin.guildService,
+            i18n = plugin.i18nManager
+        ))
+        command.addSubCommand(GuildSigilCommand(
+            sigilService = plugin.sigilService,
             territoryService = plugin.territoryService,
             guildService = plugin.guildService,
             i18n = plugin.i18nManager

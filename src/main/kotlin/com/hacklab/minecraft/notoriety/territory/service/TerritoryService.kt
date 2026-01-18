@@ -2,6 +2,7 @@ package com.hacklab.minecraft.notoriety.territory.service
 
 import com.hacklab.minecraft.notoriety.territory.model.GuildTerritory
 import com.hacklab.minecraft.notoriety.territory.model.TerritoryChunk
+import com.hacklab.minecraft.notoriety.territory.model.TerritorySigil
 import org.bukkit.Location
 import java.util.UUID
 
@@ -11,10 +12,14 @@ import java.util.UUID
 interface TerritoryService {
 
     companion object {
-        /** 領地確保に必要な最小メンバー数 */
-        const val MIN_MEMBERS_FOR_TERRITORY = 5
+        /** 領地確保に必要な最小メンバー数（新方式: 不要） */
+        const val MIN_MEMBERS_FOR_TERRITORY = 1
 
-        /** 1チャンクあたりの必要メンバー数 */
+        /** 新方式: 1 + floor(memberCount / 3) */
+        const val MEMBERS_PER_CHUNK_DIVISOR = 3
+
+        /** 旧方式: 1チャンクあたりの必要メンバー数（後方互換用） */
+        @Deprecated("Use MEMBERS_PER_CHUNK_DIVISOR instead")
         const val MEMBERS_PER_CHUNK = 5
     }
 
@@ -23,11 +28,42 @@ interface TerritoryService {
     /**
      * 指定位置に領地チャンクを設定する
      * @param guildId ギルドID
-     * @param location プレイヤーの現在位置（チャンク中心）
+     * @param location プレイヤーの現在位置
      * @param requester 実行者UUID
+     * @param sigilName シギル名（飛び地の場合、nullなら自動生成）
      * @return 設定結果
      */
-    fun claimTerritory(guildId: Long, location: Location, requester: UUID): ClaimResult
+    fun claimTerritory(guildId: Long, location: Location, requester: UUID, sigilName: String? = null): ClaimResult
+
+    // === 隣接・飛び地判定 ===
+
+    /**
+     * 指定位置に隣接する既存チャンクを検索
+     * @param guildId ギルドID
+     * @param worldName ワールド名
+     * @param chunkX チャンクX座標
+     * @param chunkZ チャンクZ座標
+     * @return 隣接するチャンクのリスト
+     */
+    fun findAdjacentChunks(guildId: Long, worldName: String, chunkX: Int, chunkZ: Int): List<TerritoryChunk>
+
+    /**
+     * 指定位置が飛び地（既存領地と非隣接）かどうか
+     * @param guildId ギルドID
+     * @param worldName ワールド名
+     * @param chunkX チャンクX座標
+     * @param chunkZ チャンクZ座標
+     * @return 飛び地ならtrue
+     */
+    fun isEnclave(guildId: Long, worldName: String, chunkX: Int, chunkZ: Int): Boolean
+
+    /**
+     * 連続グループをマージする（新チャンクが複数グループを接続する場合）
+     * @param guildId ギルドID
+     * @param adjacentSigilIds 隣接するシギルIDのセット
+     * @return マージ後のシギルID
+     */
+    fun mergeGroups(guildId: Long, adjacentSigilIds: Set<Long>): Long?
 
     /**
      * ギルドの全領地を解放する
