@@ -113,6 +113,7 @@ class TerritoryMigrationService(
 
     /**
      * グループ用のシギルを作成してチャンクを紐付け
+     * 既存のビーコン位置があればそれを使用し、新規作成しない
      */
     private fun createSigilForGroup(
         territory: GuildTerritory,
@@ -124,16 +125,32 @@ class TerritoryMigrationService(
         // 代表チャンク（追加順が最も古いもの）を選択
         val representativeChunk = group.minByOrNull { it.addOrder } ?: return null
 
-        // シギル位置を計算（チャンク中央、地表）
         val world = Bukkit.getWorld(representativeChunk.worldName)
         if (world == null) {
             logger.warning("World '${representativeChunk.worldName}' not found, skipping sigil creation")
             return null
         }
 
-        val centerX = representativeChunk.centerBlockX + 8  // チャンク中央
-        val centerZ = representativeChunk.centerBlockZ + 8
-        val surfaceY = world.getHighestBlockYAt(centerX, centerZ) + 1
+        // 既存のビーコン位置を使用（beaconLocationがあればそれを使う）
+        @Suppress("DEPRECATION")
+        val existingBeaconLocation = representativeChunk.beaconLocation
+
+        val (sigilX, sigilY, sigilZ) = if (existingBeaconLocation != null) {
+            // 既存のビーコン位置を使用
+            logger.info("  Using existing beacon at (${existingBeaconLocation.blockX}, ${existingBeaconLocation.blockY}, ${existingBeaconLocation.blockZ})")
+            Triple(
+                existingBeaconLocation.blockX.toDouble(),
+                existingBeaconLocation.blockY.toDouble(),
+                existingBeaconLocation.blockZ.toDouble()
+            )
+        } else {
+            // 既存のビーコンがない場合はチャンク中央を使用（フォールバック）
+            val centerX = representativeChunk.centerBlockX
+            val centerZ = representativeChunk.centerBlockZ
+            val surfaceY = world.getHighestBlockYAt(centerX, centerZ) + 1
+            logger.info("  No existing beacon found, creating new at ($centerX, $surfaceY, $centerZ)")
+            Triple(centerX.toDouble(), surfaceY.toDouble(), centerZ.toDouble())
+        }
 
         // デフォルト名を生成（既存シギル数 + グループインデックス）
         val existingSigilCount = territory.sigilCount
@@ -144,9 +161,9 @@ class TerritoryMigrationService(
             territoryId = territory.id,
             name = sigilName,
             worldName = representativeChunk.worldName,
-            x = centerX.toDouble(),
-            y = surfaceY.toDouble(),
-            z = centerZ.toDouble()
+            x = sigilX,
+            y = sigilY,
+            z = sigilZ
         )
         val sigilId = sigilRepository.create(newSigil)
         val savedSigil = newSigil.copy(id = sigilId)
@@ -161,11 +178,14 @@ class TerritoryMigrationService(
         // シギルをキャッシュに追加
         cache.addSigil(savedSigil, territory.guildId)
 
-        // ビーコンを配置
-        val beaconLocation = Location(world, centerX.toDouble(), surfaceY.toDouble(), centerZ.toDouble())
-        beaconManager.placeBeacon(beaconLocation)
+        // 既存のビーコンがない場合のみ新規作成
+        if (existingBeaconLocation == null) {
+            val beaconLocation = Location(world, sigilX, sigilY, sigilZ)
+            beaconManager.placeBeacon(beaconLocation)
+        }
+        // 既存のビーコンがある場合は何もしない（既に配置されているため）
 
-        logger.info("  Created sigil '$sigilName' at ($centerX, $surfaceY, $centerZ) for ${group.size} chunks")
+        logger.info("  Created sigil '$sigilName' at (${sigilX.toInt()}, ${sigilY.toInt()}, ${sigilZ.toInt()}) for ${group.size} chunks")
 
         return savedSigil
     }
