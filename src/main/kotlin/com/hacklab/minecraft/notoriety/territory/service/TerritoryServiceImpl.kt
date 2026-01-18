@@ -47,12 +47,7 @@ class TerritoryServiceImpl(
         /** 旧方式: 1チャンクあたりの必要メンバー数（後方互換用） */
         @Deprecated("Use MEMBERS_PER_CHUNK_DIVISOR instead")
         const val MEMBERS_PER_CHUNK = 5
-
-        /** ビーコン検証の間隔（tick） - 5分 = 6000 tick */
-        const val BEACON_VERIFY_INTERVAL_TICKS = 6000L
     }
-
-    private var beaconVerifyTaskId: Int = -1
 
     init {
         // 起動時にキャッシュを読み込み
@@ -477,6 +472,7 @@ class TerritoryServiceImpl(
 
     /**
      * 全シギルのビーコンを検証し、欠損があれば修復
+     * サーバー起動時に1回だけ呼び出す
      * @return 修復したビーコン数
      */
     fun verifyAndRepairAllBeacons(): Int {
@@ -502,33 +498,44 @@ class TerritoryServiceImpl(
     }
 
     /**
-     * 定期的なビーコン検証タスクを開始
-     * プラグイン有効化後に呼び出すこと
+     * 指定チャンク内のシギルビーコンを検証・修復
+     * ChunkLoadEvent時に呼び出す
+     * @param worldName ワールド名
+     * @param chunkX チャンクX座標
+     * @param chunkZ チャンクZ座標
+     * @return 修復したビーコン数
      */
-    fun startBeaconVerifyTask() {
-        // 既存タスクがあればキャンセル
-        if (beaconVerifyTaskId != -1) {
-            Bukkit.getScheduler().cancelTask(beaconVerifyTaskId)
+    fun verifyBeaconsInChunk(worldName: String, chunkX: Int, chunkZ: Int): Int {
+        var repairedCount = 0
+
+        // このチャンク内にあるシギルを検索
+        for (territory in cache.getAllTerritories()) {
+            for (sigil in territory.sigils) {
+                // シギルがこのチャンク内にあるか確認
+                val sigilChunkX = sigil.x.toInt() shr 4
+                val sigilChunkZ = sigil.z.toInt() shr 4
+
+                if (sigil.worldName == worldName && sigilChunkX == chunkX && sigilChunkZ == chunkZ) {
+                    val location = sigil.location ?: continue
+                    if (beaconManager.repairBeaconIfMissing(location)) {
+                        repairedCount++
+                        val guildName = guildService.getGuild(territory.guildId)?.name ?: "Unknown"
+                        plugin.logger.info("Repaired missing beacon for sigil '${sigil.name}' of guild $guildName on chunk load")
+                    }
+                }
+            }
         }
 
-        // 起動時に1回実行（1秒後 = ワールドロード待ち）
-        Bukkit.getScheduler().runTaskLater(plugin, Runnable {
-            verifyAndRepairAllBeacons()
-        }, 20L)
-
-        // 定期実行タスク
-        beaconVerifyTaskId = Bukkit.getScheduler().runTaskTimer(plugin, Runnable {
-            verifyAndRepairAllBeacons()
-        }, BEACON_VERIFY_INTERVAL_TICKS, BEACON_VERIFY_INTERVAL_TICKS).taskId
+        return repairedCount
     }
 
     /**
-     * 定期タスクを停止
+     * 起動時のビーコン検証をスケジュール
+     * ワールドロード後に実行するため遅延させる
      */
-    fun stopBeaconVerifyTask() {
-        if (beaconVerifyTaskId != -1) {
-            Bukkit.getScheduler().cancelTask(beaconVerifyTaskId)
-            beaconVerifyTaskId = -1
-        }
+    fun scheduleStartupBeaconVerification() {
+        Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+            verifyAndRepairAllBeacons()
+        }, 20L) // 1秒後
     }
 }

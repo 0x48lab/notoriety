@@ -47,6 +47,7 @@ import com.hacklab.minecraft.notoriety.trust.TrustService
 import com.hacklab.minecraft.notoriety.territory.beacon.BeaconManager
 import com.hacklab.minecraft.notoriety.territory.beacon.BeaconManagerImpl
 import com.hacklab.minecraft.notoriety.territory.cache.TerritoryCache
+import com.hacklab.minecraft.notoriety.territory.listener.BeaconVerifyListener
 import com.hacklab.minecraft.notoriety.territory.listener.TerritoryEntryListener
 import com.hacklab.minecraft.notoriety.territory.listener.TerritoryProtectionListener
 import com.hacklab.minecraft.notoriety.territory.repository.SigilRepository
@@ -200,8 +201,8 @@ class Notoriety : JavaPlugin() {
             configManager = configManager
         )
 
-        // ビーコン検証タスク開始（欠損ビーコンを自動修復）
-        territoryServiceImpl.startBeaconVerifyTask()
+        // 起動時ビーコン検証をスケジュール（ワールドロード後に実行）
+        territoryServiceImpl.scheduleStartupBeaconVerification()
 
         // NotorietyService初期化（中央集約サービス）
         notorietyService = NotorietyService(
@@ -264,9 +265,6 @@ class Notoriety : JavaPlugin() {
     }
 
     override fun onDisable() {
-        // ビーコン検証タスク停止
-        (territoryService as? TerritoryServiceImpl)?.stopBeaconVerifyTask()
-
         playerManager.saveAll()
         databaseManager.shutdown()
         logger.info("Notoriety has been disabled!")
@@ -320,6 +318,7 @@ class Notoriety : JavaPlugin() {
         // 領地システムリスナー
         pm.registerEvents(TerritoryProtectionListener(territoryService, guildService, beaconManager, i18nManager), this)
         pm.registerEvents(TerritoryEntryListener(territoryService, guildService, i18nManager), this)
+        pm.registerEvents(BeaconVerifyListener(territoryService as TerritoryServiceImpl), this)
 
         // アチーブメントシステムリスナー
         pm.registerEvents(AchievementListener(achievementService, playerManager), this)
