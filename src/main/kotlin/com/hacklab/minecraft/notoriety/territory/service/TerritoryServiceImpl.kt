@@ -301,36 +301,75 @@ class TerritoryServiceImpl(
         val sigilId = chunk.sigilId
         val sigil = sigilId?.let { territory.getSigilById(it) }
 
-        // このシギルに属するチャンクが1つ（削除するチャンクのみ）ならシギルも削除
-        val shouldDeleteSigil = sigil != null &&
-            territory.chunks.count { it.sigilId == sigilId } <= 1
+        // シギルがこのチャンク内にあるかチェック（シギル＝アンカー）
+        val chunkContainsSigil = sigil != null && isChunkContainsSigil(chunk, sigil)
 
-        if (shouldDeleteSigil && sigil != null) {
+        if (chunkContainsSigil && sigil != null) {
+            // シギルのあるチャンクを解放 → グループ全体を解放
+            val chunksInGroup = territory.chunks.filter { it.sigilId == sigilId }
+            val releasedCount = chunksInGroup.size
+
             // シギルのビーコンを削除
             sigil.location?.let { beaconManager.removeBeacon(it) }
             // シギルをDB削除
             sigilRepository.delete(sigil.id)
             // キャッシュからシギル削除
             cache.removeSigil(sigil.id, guildId)
+
+            // グループ内の全チャンクを削除
+            chunksInGroup.forEach { groupChunk ->
+                repository.deleteChunk(groupChunk.id)
+                cache.removeChunk(groupChunk, guildId)
+            }
+
+            // 全チャンク削除なら領地自体を削除
+            if (territory.chunkCount <= releasedCount) {
+                sigilRepository.deleteByTerritory(territory.id)
+                repository.deleteTerritory(guildId)
+                cache.removeTerritory(guildId)
+            }
+
+            plugin.logger.info("Territory sigil group released: Guild ${guild.name} (ID: $guildId) released sigil '${sigil.name}' with $releasedCount chunks")
+
+            return ReleaseResult.Success(releasedCount)
+        } else {
+            // シギルのないチャンクを解放 → そのチャンクのみ解放
+            // シギルに属するチャンクが1つだけならシギルも削除
+            val shouldDeleteSigil = sigil != null &&
+                territory.chunks.count { it.sigilId == sigilId } <= 1
+
+            if (shouldDeleteSigil && sigil != null) {
+                sigil.location?.let { beaconManager.removeBeacon(it) }
+                sigilRepository.delete(sigil.id)
+                cache.removeSigil(sigil.id, guildId)
+            }
+
+            // チャンクをDB削除
+            repository.deleteChunk(chunk.id)
+            cache.removeChunk(chunk, guildId)
+
+            // 全チャンク削除なら領地自体を削除
+            if (territory.chunkCount <= 1) {
+                sigilRepository.deleteByTerritory(territory.id)
+                repository.deleteTerritory(guildId)
+                cache.removeTerritory(guildId)
+            }
+
+            plugin.logger.info("Territory chunk released: Guild ${guild.name} (ID: $guildId) released chunk #$chunkNumber at (${chunk.centerX}, ${chunk.centerZ})")
+
+            return ReleaseResult.Success(1)
         }
+    }
 
-        // チャンクをDB削除
-        repository.deleteChunk(chunk.id)
-
-        // キャッシュ更新
-        cache.removeChunk(chunk, guildId)
-
-        // 全チャンク削除なら領地自体を削除
-        if (territory.chunkCount <= 1) {
-            // 残りのシギルも削除（通常は上記で削除済みだが念のため）
-            sigilRepository.deleteByTerritory(territory.id)
-            repository.deleteTerritory(guildId)
-            cache.removeTerritory(guildId)
-        }
-
-        plugin.logger.info("Territory chunk released: Guild ${guild.name} (ID: $guildId) released chunk #$chunkNumber at (${chunk.centerX}, ${chunk.centerZ})")
-
-        return ReleaseResult.Success(1)
+    /**
+     * チャンクがシギル（ビーコン）を含んでいるかチェック
+     */
+    private fun isChunkContainsSigil(chunk: TerritoryChunk, sigil: TerritorySigil): Boolean {
+        val sigilChunkX = sigil.x.toInt() shr 4
+        val sigilChunkZ = sigil.z.toInt() shr 4
+        return chunk.worldName == sigil.worldName &&
+               chunk.chunkX == sigilChunkX &&
+               chunk.chunkZ == sigilChunkZ
     }
 
     override fun shrinkTerritoryTo(guildId: Long, targetChunkCount: Int) {
@@ -338,15 +377,41 @@ class TerritoryServiceImpl(
         if (territory.chunkCount <= targetChunkCount) return
 
         val fromCount = territory.chunkCount
+        val removeCount = territory.chunkCount - targetChunkCount
 
-        // LIFO順で削除（add_orderが大きい順）
-        val chunksToRemove = territory.getChunksByAddOrderDesc()
-            .take(territory.chunkCount - targetChunkCount)
+        // シギルを含むチャンクを特定
+        val sigilChunks = territory.chunks.filter { chunk ->
+            val sigil = chunk.sigilId?.let { territory.getSigilById(it) }
+            sigil != null && isChunkContainsSigil(chunk, sigil)
+        }.toSet()
+
+        // LIFO順で削除（add_orderが大きい順）、シギルチャンクは後回し
+        val nonSigilChunks = territory.getChunksByAddOrderDesc()
+            .filter { it !in sigilChunks }
+        val sigilChunksSorted = territory.getChunksByAddOrderDesc()
+            .filter { it in sigilChunks }
+
+        // 非シギルチャンクを優先して削除、足りなければシギルチャンクも削除
+        val chunksToRemove = (nonSigilChunks + sigilChunksSorted).take(removeCount)
 
         // 削除されるチャンクに紐づくシギルIDを記録
         val affectedSigilIds = chunksToRemove.mapNotNull { it.sigilId }.toSet()
 
-        chunksToRemove.forEach { chunk ->
+        // シギルチャンクが削除される場合、そのグループ全体を削除対象に追加
+        val sigilChunksBeingRemoved = chunksToRemove.filter { it in sigilChunks }
+        val additionalChunksToRemove = mutableListOf<TerritoryChunk>()
+        for (sigilChunk in sigilChunksBeingRemoved) {
+            val sigilId = sigilChunk.sigilId ?: continue
+            // このシギルグループの他のチャンクも削除対象に追加
+            val groupChunks = territory.chunks.filter {
+                it.sigilId == sigilId && it !in chunksToRemove && it !in additionalChunksToRemove
+            }
+            additionalChunksToRemove.addAll(groupChunks)
+        }
+
+        val allChunksToRemove = chunksToRemove + additionalChunksToRemove
+
+        allChunksToRemove.forEach { chunk ->
             // DB削除
             repository.deleteChunk(chunk.id)
             // キャッシュ更新
@@ -354,7 +419,8 @@ class TerritoryServiceImpl(
         }
 
         // 全チャンク削除なら領地自体を削除
-        if (targetChunkCount == 0) {
+        val remainingChunks = territory.chunkCount - allChunksToRemove.size
+        if (remainingChunks <= 0) {
             // 全シギルのビーコンを削除
             territory.sigils.forEach { sigil ->
                 sigil.location?.let { beaconManager.removeBeacon(it) }
@@ -366,10 +432,11 @@ class TerritoryServiceImpl(
             cache.removeTerritory(guildId)
         } else {
             // シギルのクリーンアップ - チャンクがなくなったシギルを削除
-            cleanupEmptySigils(guildId, affectedSigilIds)
+            val allAffectedSigilIds = allChunksToRemove.mapNotNull { it.sigilId }.toSet()
+            cleanupEmptySigils(guildId, allAffectedSigilIds)
         }
 
-        plugin.logger.info("Territory shrunk: Guild ID $guildId shrunk from $fromCount to $targetChunkCount chunks (removed ${fromCount - targetChunkCount} chunks)")
+        plugin.logger.info("Territory shrunk: Guild ID $guildId shrunk from $fromCount to $remainingChunks chunks (removed ${allChunksToRemove.size} chunks)")
     }
 
     /**
