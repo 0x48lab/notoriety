@@ -46,9 +46,9 @@ class TerritoryProtectionListener(
                 player.sendMessage(Component.text(i18n.get(
                     player.uniqueId,
                     "territory.protected_beacon",
-                    "§cTerritory beacon cannot be destroyed (%s)",
+                    "Territory beacon cannot be destroyed (%s)",
                     guildName
-                )))
+                )).color(NamedTextColor.RED))
                 event.isCancelled = true
                 return
             }
@@ -88,9 +88,9 @@ class TerritoryProtectionListener(
             player.sendMessage(Component.text(i18n.get(
                 player.uniqueId,
                 "territory.protected_place",
-                "§cYou cannot place blocks in %s's territory",
+                "You cannot place blocks in %s's territory",
                 guildName
-            )))
+            )).color(NamedTextColor.RED))
             event.isCancelled = true
         }
     }
@@ -122,9 +122,9 @@ class TerritoryProtectionListener(
             player.sendMessage(Component.text(i18n.get(
                 player.uniqueId,
                 "territory.protected_interact",
-                "§cYou cannot interact with this in %s's territory",
+                "You cannot interact with this in %s's territory",
                 guildName
-            )))
+            )).color(NamedTextColor.RED))
             event.isCancelled = true
         }
     }
@@ -154,9 +154,9 @@ class TerritoryProtectionListener(
             player.sendMessage(Component.text(i18n.get(
                 player.uniqueId,
                 "territory.protected_interact",
-                "§cYou cannot interact with this in %s's territory",
+                "You cannot interact with this in %s's territory",
                 guildName
-            )))
+            )).color(NamedTextColor.RED))
             event.isCancelled = true
         }
     }
@@ -183,9 +183,9 @@ class TerritoryProtectionListener(
         player.sendMessage(Component.text(i18n.get(
             player.uniqueId,
             "territory.protected_break",
-            "§cThis block is protected by %s's territory",
+            "This block is protected by %s's territory",
             guildName
-        )))
+        )).color(NamedTextColor.RED))
     }
 
     /**
