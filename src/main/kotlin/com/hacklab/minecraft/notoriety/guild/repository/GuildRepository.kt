@@ -129,6 +129,39 @@ class GuildRepository(private val databaseManager: DatabaseManager) {
         }
     }
 
+    fun updateName(id: Long, name: String) {
+        databaseManager.provider.useConnection { conn ->
+            val sql = "UPDATE guilds SET name = ? WHERE id = ?"
+            conn.prepareStatement(sql).use { stmt ->
+                stmt.setString(1, name)
+                stmt.setLong(2, id)
+                stmt.executeUpdate()
+            }
+        }
+    }
+
+    fun updateTag(id: Long, tag: String) {
+        databaseManager.provider.useConnection { conn ->
+            val sql = "UPDATE guilds SET tag = ? WHERE id = ?"
+            conn.prepareStatement(sql).use { stmt ->
+                stmt.setString(1, tag)
+                stmt.setLong(2, id)
+                stmt.executeUpdate()
+            }
+        }
+    }
+
+    fun updateDescription(id: Long, description: String?) {
+        databaseManager.provider.useConnection { conn ->
+            val sql = "UPDATE guilds SET description = ? WHERE id = ?"
+            conn.prepareStatement(sql).use { stmt ->
+                stmt.setString(1, description)
+                stmt.setLong(2, id)
+                stmt.executeUpdate()
+            }
+        }
+    }
+
     fun delete(id: Long) {
         databaseManager.provider.useConnection { conn ->
             val sql = "DELETE FROM guilds WHERE id = ?"

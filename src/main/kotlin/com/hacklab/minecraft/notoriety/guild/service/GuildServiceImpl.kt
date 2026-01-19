@@ -169,6 +169,89 @@ class GuildServiceImpl(
         guildCache.put(updatedGuild)
     }
 
+    override fun setName(guildId: Long, name: String, requester: UUID) {
+        val guild = getGuildOrThrow(guildId)
+        val membership = membershipRepository.findByPlayerUuid(requester)
+            ?: throw GuildException.NotMember(requester, guildId)
+
+        if (membership.guildId != guildId) {
+            throw GuildException.NotMember(requester, guildId)
+        }
+        if (membership.role != GuildRole.MASTER) {
+            throw GuildException.NotMaster(requester)
+        }
+
+        // バリデーション
+        if (!NAME_PATTERN.matches(name)) {
+            throw GuildException.InvalidName(name)
+        }
+        if (name != guild.name && guildRepository.existsByName(name)) {
+            throw GuildException.NameTaken(name)
+        }
+
+        guildRepository.updateName(guildId, name)
+
+        // キャッシュを更新
+        val updatedGuild = guild.copy(name = name)
+        guildCache.put(updatedGuild)
+    }
+
+    override fun setTag(guildId: Long, tag: String, requester: UUID) {
+        val guild = getGuildOrThrow(guildId)
+        val membership = membershipRepository.findByPlayerUuid(requester)
+            ?: throw GuildException.NotMember(requester, guildId)
+
+        if (membership.guildId != guildId) {
+            throw GuildException.NotMember(requester, guildId)
+        }
+        if (membership.role != GuildRole.MASTER) {
+            throw GuildException.NotMaster(requester)
+        }
+
+        val upperTag = tag.uppercase()
+
+        // バリデーション
+        if (!TAG_PATTERN.matches(tag)) {
+            throw GuildException.InvalidTag(tag)
+        }
+        if (upperTag != guild.tag && guildRepository.existsByTag(upperTag)) {
+            throw GuildException.TagTaken(tag)
+        }
+
+        guildRepository.updateTag(guildId, upperTag)
+
+        // キャッシュを更新
+        val updatedGuild = guild.copy(tag = upperTag)
+        guildCache.put(updatedGuild)
+
+        // オンラインメンバーのギルドタグを更新
+        val members = membershipRepository.findAllByGuildId(guildId)
+        members.forEach { member ->
+            Bukkit.getPlayer(member.playerUuid)?.let { player ->
+                guildTagManager.setGuildTag(player, updatedGuild)
+            }
+        }
+    }
+
+    override fun setDescription(guildId: Long, description: String?, requester: UUID) {
+        val guild = getGuildOrThrow(guildId)
+        val membership = membershipRepository.findByPlayerUuid(requester)
+            ?: throw GuildException.NotMember(requester, guildId)
+
+        if (membership.guildId != guildId) {
+            throw GuildException.NotMember(requester, guildId)
+        }
+        if (membership.role != GuildRole.MASTER) {
+            throw GuildException.NotMaster(requester)
+        }
+
+        guildRepository.updateDescription(guildId, description)
+
+        // キャッシュを更新
+        val updatedGuild = guild.copy(description = description)
+        guildCache.put(updatedGuild)
+    }
+
     override fun dissolveGuild(guildId: Long, requester: UUID) {
         val guild = getGuildOrThrow(guildId)
         val membership = membershipRepository.findByPlayerUuid(requester)

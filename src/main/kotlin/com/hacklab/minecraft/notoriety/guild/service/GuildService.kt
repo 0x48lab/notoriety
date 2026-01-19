@@ -24,6 +24,9 @@ interface GuildService {
      */
     fun createGovernmentGuild(creator: UUID, name: String, tag: String, description: String? = null): Guild
     fun setTagColor(guildId: Long, color: TagColor, requester: UUID)
+    fun setName(guildId: Long, name: String, requester: UUID)
+    fun setTag(guildId: Long, tag: String, requester: UUID)
+    fun setDescription(guildId: Long, description: String?, requester: UUID)
     fun dissolveGuild(guildId: Long, requester: UUID)
     fun getGuild(guildId: Long): Guild?
     fun getGuildByName(name: String): Guild?

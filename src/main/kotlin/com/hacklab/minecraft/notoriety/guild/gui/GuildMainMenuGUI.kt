@@ -89,14 +89,13 @@ class GuildMainMenuGUI(
             ))
         }
 
-        // タグカラー変更（右上）
-        if (role.canChangeTagColor()) {
+        // ギルド設定（右上）- マスターのみ
+        if (role == GuildRole.MASTER) {
             _inventory.setItem(24, createItem(
-                Material.LIME_DYE,
-                Component.text("タグカラー変更").color(NamedTextColor.YELLOW),
-                Component.text("現在: ").color(NamedTextColor.GRAY)
-                    .append(Component.text(guild.tagColor.name).color(guild.tagColor.namedTextColor)),
-                Component.text("クリックで変更").color(NamedTextColor.GRAY)
+                Material.ANVIL,
+                Component.text("ギルド設定").color(NamedTextColor.GOLD),
+                Component.text("名前、タグ、説明、色を変更").color(NamedTextColor.GRAY),
+                Component.text("クリックで設定画面を開く").color(NamedTextColor.GREEN)
             ))
         }
 
@@ -211,9 +210,9 @@ class GuildMainMenuGUI(
             }
 
             24 -> {
-                if (guild != null && membership?.role?.canChangeTagColor() == true) {
-                    // タグカラー変更
-                    guiManager.openColorSelect(player)
+                if (guild != null && membership?.role == GuildRole.MASTER) {
+                    // ギルド設定
+                    guiManager.openSettings(player)
                 } else if (guild == null) {
                     // ギルド一覧
                     guiManager.openGuildList(player)

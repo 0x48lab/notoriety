@@ -18,6 +18,8 @@ class GuildGUIManager(
     private val guildService: GuildService
 ) : Listener {
 
+    val inputManager = GuildInputManager(plugin)
+
     /**
      * メインメニューを開く
      */
@@ -51,6 +53,13 @@ class GuildGUIManager(
      */
     fun openColorSelect(player: Player) {
         GuildColorSelectGUI(player, guildService, this).open()
+    }
+
+    /**
+     * ギルド設定画面を開く（マスター専用）
+     */
+    fun openSettings(player: Player) {
+        GuildSettingsGUI(player, guildService, this, inputManager).open()
     }
 
     /**

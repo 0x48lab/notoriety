@@ -314,6 +314,7 @@ class Notoriety : JavaPlugin() {
         pm.registerEvents(GuildEventListener(guildService, chatService, guildTagManager, notorietyService, territoryService, i18nManager), this)
         pm.registerEvents(ChatListener(chatService, guildService), this)
         pm.registerEvents(guildGUIManager, this)
+        pm.registerEvents(guildGUIManager.inputManager, this)
 
         // 領地システムリスナー
         pm.registerEvents(TerritoryProtectionListener(territoryService, guildService, beaconManager, i18nManager), this)
