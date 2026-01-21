@@ -224,7 +224,7 @@ class Notoriety : JavaPlugin() {
         inspectService = InspectService(this, ownershipRepository, trustService, i18nManager, territoryService, guildService)
         inspectionStick = InspectionStick(this, i18nManager)
 
-        guildGUIManager = GuildGUIManager(this, guildService)
+        guildGUIManager = GuildGUIManager(this, guildService, territoryService)
 
         // アチーブメントシステム初期化
         val achievementRepository = AchievementRepository(databaseManager)
@@ -261,6 +261,14 @@ class Notoriety : JavaPlugin() {
             }
         }, 1L)  // 1 tick後に実行
 
+        // 9. APIをBukkitサービスとして登録
+        server.servicesManager.register(
+            NotorietyAPI::class.java,
+            api,
+            this,
+            org.bukkit.plugin.ServicePriority.Normal
+        )
+
         logger.info("Notoriety has been enabled!")
     }
 
@@ -292,7 +300,8 @@ class Notoriety : JavaPlugin() {
                 golemService = golemService,
                 notorietyService = notorietyService,
                 ownershipService = ownershipService,
-                guildService = guildService
+                guildService = guildService,
+                territoryService = territoryService
             ),
             this
         )

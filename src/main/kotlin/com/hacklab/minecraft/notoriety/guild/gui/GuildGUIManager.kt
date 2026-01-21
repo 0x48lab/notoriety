@@ -1,6 +1,7 @@
 package com.hacklab.minecraft.notoriety.guild.gui
 
 import com.hacklab.minecraft.notoriety.guild.service.GuildService
+import com.hacklab.minecraft.notoriety.territory.service.TerritoryService
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -15,7 +16,8 @@ import org.bukkit.plugin.java.JavaPlugin
  */
 class GuildGUIManager(
     private val plugin: JavaPlugin,
-    private val guildService: GuildService
+    private val guildService: GuildService,
+    val territoryService: TerritoryService? = null
 ) : Listener {
 
     val inputManager = GuildInputManager(plugin)

@@ -10,8 +10,10 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
+import org.bukkit.entity.Monster
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.block.BlockPlaceEvent
+import org.bukkit.event.entity.CreatureSpawnEvent
 import org.bukkit.event.entity.EntityExplodeEvent
 import org.bukkit.event.inventory.InventoryOpenEvent
 import org.bukkit.event.player.PlayerInteractEvent
@@ -158,6 +160,27 @@ class TerritoryProtectionListener(
             // 領地内のブロックも保護
             val territory = territoryService.getTerritoryAt(location)
             territory != null
+        }
+    }
+
+    /**
+     * 領地内のモンスタースポーン制御
+     * mobSpawnEnabledがfalseの領地ではモンスターのスポーンをブロック
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    fun onCreatureSpawn(event: CreatureSpawnEvent) {
+        // モンスターのみ対象
+        if (event.entity !is Monster) return
+
+        // スポナーからのスポーンは許可（トラップ用）
+        if (event.spawnReason == CreatureSpawnEvent.SpawnReason.SPAWNER) return
+
+        // コマンドやプラグインからのスポーンは許可
+        if (event.spawnReason == CreatureSpawnEvent.SpawnReason.CUSTOM) return
+
+        // 領地内でスポーンが許可されているかチェック
+        if (!territoryService.isMobSpawnAllowed(event.location)) {
+            event.isCancelled = true
         }
     }
 

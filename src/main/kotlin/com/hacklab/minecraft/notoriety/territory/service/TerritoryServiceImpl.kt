@@ -535,6 +535,26 @@ class TerritoryServiceImpl(
         plugin.logger.info("Loaded ${territories.size} territories into cache")
     }
 
+    // === 領地設定 ===
+
+    override fun setMobSpawnEnabled(guildId: Long, enabled: Boolean): Boolean {
+        val territory = getTerritory(guildId) ?: return false
+
+        // DB更新
+        repository.updateMobSpawnEnabled(territory.id, enabled)
+
+        // キャッシュ更新
+        territory.mobSpawnEnabled = enabled
+
+        plugin.logger.info("Territory mob spawn setting changed: Guild ID $guildId -> $enabled")
+        return true
+    }
+
+    override fun isMobSpawnAllowed(location: Location): Boolean {
+        val territory = getTerritoryAt(location) ?: return true  // 領地外はスポーン許可
+        return territory.mobSpawnEnabled
+    }
+
     // === ビーコン検証・修復 ===
 
     /**

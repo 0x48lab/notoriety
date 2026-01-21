@@ -147,4 +147,21 @@ interface TerritoryService {
      * キャッシュを再読み込み
      */
     fun reloadCache()
+
+    // === 領地設定 ===
+
+    /**
+     * モンスタースポーン設定を変更
+     * @param guildId ギルドID
+     * @param enabled true=スポーン許可, false=スポーン禁止
+     * @return 成功したらtrue
+     */
+    fun setMobSpawnEnabled(guildId: Long, enabled: Boolean): Boolean
+
+    /**
+     * 指定位置でモンスターがスポーン可能か
+     * @param location チェックする位置
+     * @return スポーン可能ならtrue（領地外または設定で許可されている場合）
+     */
+    fun isMobSpawnAllowed(location: Location): Boolean
 }

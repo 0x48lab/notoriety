@@ -4,6 +4,7 @@ import com.hacklab.minecraft.notoriety.guild.model.Guild
 import com.hacklab.minecraft.notoriety.guild.model.GuildRole
 import com.hacklab.minecraft.notoriety.guild.service.GuildException
 import com.hacklab.minecraft.notoriety.guild.service.GuildService
+import com.hacklab.minecraft.notoriety.territory.service.TerritoryService
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Material
@@ -26,6 +27,7 @@ class GuildSettingsGUI(
 
     private val guild: Guild? = guildService.getPlayerGuild(player.uniqueId)
     private val membership = guildService.getMembership(player.uniqueId)
+    private val territoryService: TerritoryService? = guiManager.territoryService
 
     companion object {
         private const val SLOT_GUILD_INFO = 4
@@ -33,6 +35,7 @@ class GuildSettingsGUI(
         private const val SLOT_TAG = 22
         private const val SLOT_DESCRIPTION = 24
         private const val SLOT_TAG_COLOR = 31
+        private const val SLOT_MOB_SPAWN = 40
     }
 
     override fun setupItems() {
@@ -109,6 +112,31 @@ class GuildSettingsGUI(
             Component.empty(),
             Component.text("クリックで変更").color(NamedTextColor.GREEN)
         ))
+
+        // モンスタースポーン設定（領地がある場合のみ表示）
+        if (territoryService != null) {
+            val territory = territoryService.getTerritory(guild.id)
+            if (territory != null) {
+                val mobSpawnEnabled = territory.mobSpawnEnabled
+                val statusText = if (mobSpawnEnabled) {
+                    Component.text("有効").color(NamedTextColor.GREEN)
+                } else {
+                    Component.text("無効").color(NamedTextColor.RED)
+                }
+                val material = if (mobSpawnEnabled) Material.ZOMBIE_HEAD else Material.BARRIER
+
+                _inventory.setItem(SLOT_MOB_SPAWN, createItem(
+                    material,
+                    Component.text("モンスタースポーン設定").color(NamedTextColor.DARK_PURPLE),
+                    Component.text("現在: ").color(NamedTextColor.GRAY).append(statusText),
+                    Component.empty(),
+                    Component.text("領地内のモンスターのスポーンを").color(NamedTextColor.GRAY),
+                    Component.text("許可または禁止します").color(NamedTextColor.GRAY),
+                    Component.empty(),
+                    Component.text("クリックで切り替え").color(NamedTextColor.YELLOW)
+                ))
+            }
+        }
 
         // ナビゲーション
         _inventory.setItem(SLOT_BACK, createBackButton())
@@ -211,6 +239,33 @@ class GuildSettingsGUI(
 
             SLOT_TAG_COLOR -> {
                 guiManager.openColorSelect(player)
+            }
+
+            SLOT_MOB_SPAWN -> {
+                if (territoryService != null) {
+                    val territory = territoryService.getTerritory(guild.id)
+                    if (territory != null) {
+                        // 現在の設定を反転
+                        val newValue = !territory.mobSpawnEnabled
+                        if (territoryService.setMobSpawnEnabled(guild.id, newValue)) {
+                            if (newValue) {
+                                player.sendMessage(
+                                    Component.text("領地内のモンスタースポーンを有効にしました").color(NamedTextColor.GREEN)
+                                )
+                            } else {
+                                player.sendMessage(
+                                    Component.text("領地内のモンスタースポーンを無効にしました").color(NamedTextColor.YELLOW)
+                                )
+                            }
+                            // GUIを更新
+                            guiManager.openSettings(player)
+                        } else {
+                            player.sendMessage(
+                                Component.text("設定の更新に失敗しました").color(NamedTextColor.RED)
+                            )
+                        }
+                    }
+                }
             }
         }
     }

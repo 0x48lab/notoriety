@@ -10,6 +10,7 @@ data class GuildTerritory(
     val id: Long = 0,
     val guildId: Long,
     val createdAt: Instant = Instant.now(),
+    var mobSpawnEnabled: Boolean = false,
     val chunks: MutableList<TerritoryChunk> = mutableListOf(),
     val sigils: MutableList<TerritorySigil> = mutableListOf()
 ) {

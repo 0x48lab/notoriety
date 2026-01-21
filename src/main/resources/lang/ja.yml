@@ -23,23 +23,23 @@ status:
 # Villager messages
 villager:
   prefix: "<村人>"
-  murderer: "人殺しが来た！"
-  destroy: "%sが物を壊した！"
-  theft: "%sが泥棒だ！"
-  kill_animal: "%sが家畜を殺した！"
-  dying: "%sは人殺しだ！"
-  witness_murder: "%sが村人を殺した！"
-  destroy_bed: "%sが私のベッドを壊した！"
-  destroy_workstation: "%sが私の仕事場を壊した！"
-  attack_villager: "%sが村人を攻撃した！"
-  kill_golem: "%sがゴーレムを殺した！"
+  murderer: "ひっ、怖い人が来たよ"
+  destroy: "%sさんが物を壊してるよ！"
+  theft: "%sさんが持っていっちゃう！"
+  kill_animal: "%sさんが動物を傷つけたよ"
+  dying: "%sさん、どうしてこんなこと"
+  witness_murder: "誰か助けて！%sさんが！"
+  destroy_bed: "%sさんが私のベッドを壊してるよ"
+  destroy_workstation: "%sさんが私の仕事場を壊してるよ"
+  attack_villager: "いたっ、%sさんやめてよ"
+  kill_golem: "%sさんがゴーレムを倒しちゃった"
   # Gray player warning messages (random selection)
-  gray_warning_1: "おい、%s...お前のこと見てるからな"
-  gray_warning_2: "あっ、泥棒の%sが来たぞ！"
-  gray_warning_3: "%s...悪いことするなよ"
-  gray_warning_4: "みんな気をつけろ、%sが来た"
-  gray_warning_5: "%sめ...この村では何もするな"
-  gray_warning_6: "おまえ...%sだな。覚えてるぞ"
+  gray_warning_1: "%sさん、ちょっと怖いな"
+  gray_warning_2: "あ、%sさんだ。少し不安だな"
+  gray_warning_3: "%sさん、何もしないでね"
+  gray_warning_4: "%sさんが来たよ。大丈夫かな？"
+  gray_warning_5: "%sさん、優しくしてくださいね"
+  gray_warning_6: "%sさんのこと、覚えてるよ"
 
 # Bounty messages
 bounty:
@@ -237,6 +237,21 @@ territory:
   # Shrink notifications
   shrink_warning: "警告: メンバー不足により領地が %d チャンクに縮小されました"
   shrink_member_left: "メンバー脱退により領地が縮小される可能性があります"
+
+  # Mob spawn settings
+  mobspawn_no_guild: "ギルドに所属していません"
+  mobspawn_no_territory: "ギルドには領地がありません"
+  mobspawn_status_enabled: "有効"
+  mobspawn_status_disabled: "無効"
+  mobspawn_current_status: "領地内のモンスタースポーン: %s"
+  mobspawn_usage: "使用法: /guild territory mobspawn <on|off>"
+  mobspawn_not_master: "モンスタースポーン設定を変更できるのはギルドマスターのみです"
+  mobspawn_invalid_arg: "無効な引数です。'on' または 'off' を使用してください"
+  mobspawn_enabled: "領地内のモンスタースポーンを有効にしました"
+  mobspawn_disabled: "領地内のモンスタースポーンを無効にしました"
+  mobspawn_failed: "モンスタースポーン設定の更新に失敗しました"
+  usage_mobspawn_cmd: "/guild territory mobspawn <on|off>"
+  usage_mobspawn_desc: " - 領地内のモンスタースポーンを切り替え"
 
 # Achievement messages
 achievement:

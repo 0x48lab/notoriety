@@ -7,6 +7,7 @@ import com.hacklab.minecraft.notoriety.crime.CrimeType
 import com.hacklab.minecraft.notoriety.guild.service.GuildService
 import com.hacklab.minecraft.notoriety.ownership.OwnershipService
 import com.hacklab.minecraft.notoriety.reputation.NameColor
+import com.hacklab.minecraft.notoriety.territory.service.TerritoryService
 import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.entity.Animals
@@ -37,7 +38,8 @@ class VillagerListener(
     private val golemService: GolemService,
     private val notorietyService: NotorietyService,
     private val ownershipService: OwnershipService,
-    private val guildService: GuildService
+    private val guildService: GuildService,
+    private val territoryService: TerritoryService
 ) : Listener {
 
     /**
@@ -611,10 +613,14 @@ class VillagerListener(
         notorietyService.updateDisplay(killer)
     }
 
-    // ゴーレムがスポーンした時に強化（攻撃された時にテレポートできるように）
+    // ゴーレムがスポーンした時に強化（領地内のみ）
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onGolemSpawn(event: CreatureSpawnEvent) {
         val golem = event.entity as? IronGolem ?: return
+
+        // 領地内でのみ強化
+        if (!territoryService.isInTerritory(golem.location)) return
+
         // 1tick遅らせて強化（スポーン直後は属性が正しく設定されないことがあるため）
         val plugin = Bukkit.getPluginManager().getPlugin("Notoriety") ?: return
         Bukkit.getScheduler().runTaskLater(plugin, Runnable {

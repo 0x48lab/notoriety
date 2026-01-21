@@ -291,13 +291,34 @@ class TerritoryRepository(private val databaseManager: DatabaseManager) {
         }
     }
 
+    /**
+     * モンスタースポーン設定を更新
+     */
+    fun updateMobSpawnEnabled(territoryId: Long, enabled: Boolean) {
+        provider.useConnection { conn ->
+            conn.prepareStatement(
+                "UPDATE guild_territories SET mob_spawn_enabled = ? WHERE id = ?"
+            ).use { stmt ->
+                stmt.setBoolean(1, enabled)
+                stmt.setLong(2, territoryId)
+                stmt.executeUpdate()
+            }
+        }
+    }
+
     private fun mapTerritory(rs: ResultSet): GuildTerritory {
         val createdAtStr = rs.getString("created_at")
         val createdAt = parseTimestamp(createdAtStr)
+        val mobSpawnEnabled = try {
+            rs.getBoolean("mob_spawn_enabled")
+        } catch (e: Exception) {
+            false
+        }
         return GuildTerritory(
             id = rs.getLong("id"),
             guildId = rs.getLong("guild_id"),
-            createdAt = createdAt
+            createdAt = createdAt,
+            mobSpawnEnabled = mobSpawnEnabled
         )
     }
 

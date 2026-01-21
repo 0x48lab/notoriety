@@ -407,6 +407,13 @@ class DatabaseManager(
                 } catch (e: Exception) {
                     // Column already exists, ignore
                 }
+
+                // Migration: Add mob_spawn_enabled column to guild_territories
+                try {
+                    stmt.executeUpdate("ALTER TABLE guild_territories ADD COLUMN mob_spawn_enabled BOOLEAN DEFAULT FALSE")
+                } catch (e: Exception) {
+                    // Column already exists, ignore
+                }
             }
         }
         plugin.logger.info("Database tables initialized successfully")

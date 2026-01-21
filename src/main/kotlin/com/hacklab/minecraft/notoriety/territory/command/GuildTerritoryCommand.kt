@@ -48,6 +48,7 @@ class GuildTerritoryCommand(
             "set", "claim" -> handleSet(player, args.drop(1).toTypedArray())
             "info", "status" -> handleInfo(player)
             "release", "abandon" -> handleRelease(player, args.drop(1).toTypedArray())
+            "mobspawn", "mob" -> handleMobSpawn(player, args.drop(1).toTypedArray())
             else -> {
                 showUsage(player)
                 true
@@ -394,6 +395,83 @@ class GuildTerritoryCommand(
         return true
     }
 
+    private fun handleMobSpawn(player: Player, args: Array<out String>): Boolean {
+        val uuid = player.uniqueId
+        val isOp = player.isOp
+
+        // ギルドIDを取得
+        var guildId = getPlayerGuildId(player)
+
+        if (guildId == null && isOp) {
+            // OPで自分のギルドがない場合、現在地の領地のギルドを取得
+            val territoryAtLocation = territoryService.getTerritoryAt(player.location)
+            if (territoryAtLocation != null) {
+                guildId = territoryAtLocation.guildId
+            }
+        }
+
+        if (guildId == null) {
+            i18n.sendError(player, "territory.mobspawn_no_guild", "You are not in a guild")
+            return true
+        }
+
+        val territory = territoryService.getTerritory(guildId)
+        if (territory == null) {
+            i18n.sendError(player, "territory.mobspawn_no_territory", "Your guild has no territory")
+            return true
+        }
+
+        // 引数なしの場合は現在の状態を表示
+        if (args.isEmpty()) {
+            val status = if (territory.mobSpawnEnabled) {
+                i18n.get(uuid, "territory.mobspawn_status_enabled", "enabled")
+            } else {
+                i18n.get(uuid, "territory.mobspawn_status_disabled", "disabled")
+            }
+            i18n.sendInfo(player, "territory.mobspawn_current_status",
+                "Monster spawn in territory: %s", status)
+            i18n.sendInfo(player, "territory.mobspawn_usage",
+                "Usage: /guild territory mobspawn <on|off>")
+            return true
+        }
+
+        // マスター権限チェック（OPは除外）
+        if (!isOp) {
+            val membership = guildService.getMembership(uuid)
+            if (membership == null || membership.role.name != "MASTER") {
+                i18n.sendError(player, "territory.mobspawn_not_master",
+                    "Only the guild master can change mob spawn settings")
+                return true
+            }
+        }
+
+        // on/off の設定
+        val enabled = when (args[0].lowercase()) {
+            "on", "true", "enable", "yes" -> true
+            "off", "false", "disable", "no" -> false
+            else -> {
+                i18n.sendError(player, "territory.mobspawn_invalid_arg",
+                    "Invalid argument. Use 'on' or 'off'")
+                return true
+            }
+        }
+
+        if (territoryService.setMobSpawnEnabled(guildId, enabled)) {
+            if (enabled) {
+                i18n.sendSuccess(player, "territory.mobspawn_enabled",
+                    "Monster spawn in territory has been enabled")
+            } else {
+                i18n.sendSuccess(player, "territory.mobspawn_disabled",
+                    "Monster spawn in territory has been disabled")
+            }
+        } else {
+            i18n.sendError(player, "territory.mobspawn_failed",
+                "Failed to update mob spawn settings")
+        }
+
+        return true
+    }
+
     private fun getPlayerGuildId(player: Player): Long? {
         return guildService.getPlayerGuild(player.uniqueId)?.id
     }
@@ -407,21 +485,30 @@ class GuildTerritoryCommand(
             .append(i18n.component(player, "territory.usage_info_desc", " - Show territory information", NamedTextColor.GRAY)))
         player.sendMessage(Component.text(i18n.get(uuid, "territory.usage_release_cmd", "/guild territory release <number|all>")).color(NamedTextColor.YELLOW)
             .append(i18n.component(player, "territory.usage_release_desc", " - Release territory", NamedTextColor.GRAY)))
+        player.sendMessage(Component.text(i18n.get(uuid, "territory.usage_mobspawn_cmd", "/guild territory mobspawn <on|off>")).color(NamedTextColor.YELLOW)
+            .append(i18n.component(player, "territory.usage_mobspawn_desc", " - Toggle monster spawn in territory", NamedTextColor.GRAY)))
     }
 
     override fun tabComplete(sender: CommandSender, args: Array<out String>): List<String> {
         if (args.size == 1) {
-            return listOf("set", "info", "release")
+            return listOf("set", "info", "release", "mobspawn")
                 .filter { it.startsWith(args[0].lowercase()) }
         }
-        if (args.size == 2 && args[0].lowercase() in listOf("release", "abandon")) {
-            val player = sender as? Player ?: return emptyList()
-            val guildId = getPlayerGuildId(player) ?: return emptyList()
-            val territory = territoryService.getTerritory(guildId) ?: return emptyList()
+        if (args.size == 2) {
+            when (args[0].lowercase()) {
+                "release", "abandon" -> {
+                    val player = sender as? Player ?: return emptyList()
+                    val guildId = getPlayerGuildId(player) ?: return emptyList()
+                    val territory = territoryService.getTerritory(guildId) ?: return emptyList()
 
-            // チャンク番号のリストと "all" を返す
-            val numbers = territory.chunks.map { it.addOrder.toString() }
-            return (numbers + "all").filter { it.startsWith(args[1].lowercase()) }
+                    // チャンク番号のリストと "all" を返す
+                    val numbers = territory.chunks.map { it.addOrder.toString() }
+                    return (numbers + "all").filter { it.startsWith(args[1].lowercase()) }
+                }
+                "mobspawn", "mob" -> {
+                    return listOf("on", "off").filter { it.startsWith(args[1].lowercase()) }
+                }
+            }
         }
         return emptyList()
     }

@@ -23,23 +23,23 @@ status:
 # Villager messages
 villager:
   prefix: "<Villager>"
-  murderer: "A murderer is coming!"
-  destroy: "%s destroyed property!"
-  theft: "%s is a thief!"
-  kill_animal: "%s killed livestock!"
-  dying: "%s is a murderer!"
-  witness_murder: "%s killed a villager!"
-  destroy_bed: "%s destroyed my bed!"
-  destroy_workstation: "%s destroyed my workstation!"
-  attack_villager: "%s attacked a villager!"
-  kill_golem: "%s killed a golem!"
+  murderer: "Eek, a scary person is here"
+  destroy: "%s is breaking things!"
+  theft: "%s is taking our stuff!"
+  kill_animal: "%s hurt the animals"
+  dying: "%s, why are you doing this"
+  witness_murder: "Someone help! %s is!"
+  destroy_bed: "%s is breaking my bed"
+  destroy_workstation: "%s is breaking my workplace"
+  attack_villager: "Ow, %s please stop"
+  kill_golem: "%s took down the golem"
   # Gray player warning messages (random selection)
-  gray_warning_1: "Hey %s... I'm watching you"
-  gray_warning_2: "Look, the thief %s is here!"
-  gray_warning_3: "%s... don't do anything bad"
-  gray_warning_4: "Everyone beware, %s is here"
-  gray_warning_5: "%s... don't do anything in this village"
-  gray_warning_6: "You... you're %s. I remember you"
+  gray_warning_1: "%s, you scare me a little"
+  gray_warning_2: "Oh, it's %s. I feel a bit uneasy"
+  gray_warning_3: "%s, please don't do anything bad"
+  gray_warning_4: "%s is here. Will it be okay?"
+  gray_warning_5: "%s, please be kind to us"
+  gray_warning_6: "I remember you, %s"
 
 # Bounty messages
 bounty:
@@ -237,6 +237,21 @@ territory:
   # Shrink notifications
   shrink_warning: "Warning: Territory shrunk to %d chunks due to insufficient members"
   shrink_member_left: "Territory may shrink due to member leaving"
+
+  # Mob spawn settings
+  mobspawn_no_guild: "You are not in a guild"
+  mobspawn_no_territory: "Your guild has no territory"
+  mobspawn_status_enabled: "enabled"
+  mobspawn_status_disabled: "disabled"
+  mobspawn_current_status: "Monster spawn in territory: %s"
+  mobspawn_usage: "Usage: /guild territory mobspawn <on|off>"
+  mobspawn_not_master: "Only the guild master can change mob spawn settings"
+  mobspawn_invalid_arg: "Invalid argument. Use 'on' or 'off'"
+  mobspawn_enabled: "Monster spawn in territory has been enabled"
+  mobspawn_disabled: "Monster spawn in territory has been disabled"
+  mobspawn_failed: "Failed to update mob spawn settings"
+  usage_mobspawn_cmd: "/guild territory mobspawn <on|off>"
+  usage_mobspawn_desc: " - Toggle monster spawn in territory"
 
 # Achievement messages
 achievement:
