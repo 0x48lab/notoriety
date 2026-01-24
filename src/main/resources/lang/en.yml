@@ -203,7 +203,10 @@ territory:
   info_current_location: " <- Current"
   release_chunk_success: "Released chunk #%d"
   release_chunk_not_found: "Chunk #%d not found"
-  release_usage: "Usage: /guild territory release <number|all>"
+  release_usage: "Usage: /guild territory release [number|all]"
+  release_not_in_territory: "You are not standing in your guild's territory"
+  protected_item_frame: "You cannot interact with item frames in %s's territory"
+  protected_sign: "You cannot edit signs in %s's territory"
 
   # Inspect integration
   inspect_territory: "Territory: %s"

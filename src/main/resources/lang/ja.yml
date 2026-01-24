@@ -203,7 +203,10 @@ territory:
   info_current_location: " ← 現在地"
   release_chunk_success: "チャンク #%d を解放しました"
   release_chunk_not_found: "チャンク #%d が見つかりません"
-  release_usage: "使用法: /guild territory release <番号|all>"
+  release_usage: "使用法: /guild territory release [番号|all]"
+  release_not_in_territory: "現在地はギルドの領地ではありません"
+  protected_item_frame: "%sの領地内のアイテムフレームは操作できません"
+  protected_sign: "%sの領地内の看板は編集できません"
 
   # Inspect integration
   inspect_territory: "領地: %s"

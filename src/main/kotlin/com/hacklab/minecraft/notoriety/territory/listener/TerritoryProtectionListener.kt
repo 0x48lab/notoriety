@@ -5,18 +5,20 @@ import com.hacklab.minecraft.notoriety.guild.service.GuildService
 import com.hacklab.minecraft.notoriety.territory.beacon.BeaconManager
 import com.hacklab.minecraft.notoriety.territory.service.TerritoryService
 import org.bukkit.GameMode
-import org.bukkit.Material
+import org.bukkit.entity.ItemFrame
+import org.bukkit.entity.Monster
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
-import org.bukkit.entity.Monster
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.block.BlockPlaceEvent
+import org.bukkit.event.block.SignChangeEvent
 import org.bukkit.event.entity.CreatureSpawnEvent
 import org.bukkit.event.entity.EntityExplodeEvent
+import org.bukkit.event.hanging.HangingBreakByEntityEvent
 import org.bukkit.event.inventory.InventoryOpenEvent
-import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.event.player.PlayerInteractEntityEvent
 
 /**
  * 領地保護リスナー
@@ -118,34 +120,6 @@ class TerritoryProtectionListener(
     }
 
     /**
-     * インタラクト（ドア、ボタン等）の保護
-     */
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    fun onPlayerInteract(event: PlayerInteractEvent) {
-        val player = event.player
-        val block = event.clickedBlock ?: return
-
-        // クリエイティブモードは除外
-        if (player.gameMode == GameMode.CREATIVE) return
-
-        // インタラクト対象のブロックタイプをチェック
-        if (!isProtectedInteractable(block.type)) return
-
-        val location = block.location
-
-        // 領地内かチェック
-        val territory = territoryService.getTerritoryAt(location) ?: return
-
-        // アクセス権チェック
-        if (!territoryService.canAccessAt(location, player.uniqueId)) {
-            val guildName = guildService.getGuild(territory.guildId)?.name ?: "Unknown"
-            i18n.sendError(player, "territory.protected_interact",
-                "You cannot interact with this in %s's territory", guildName)
-            event.isCancelled = true
-        }
-    }
-
-    /**
      * 爆発による破壊の保護
      */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -185,19 +159,75 @@ class TerritoryProtectionListener(
     }
 
     /**
-     * 保護対象のインタラクト可能ブロック
+     * アイテムフレームの操作保護
      */
-    private fun isProtectedInteractable(material: Material): Boolean {
-        return material.name.contains("DOOR") ||
-                material.name.contains("GATE") ||
-                material.name.contains("BUTTON") ||
-                material == Material.LEVER ||
-                material == Material.REPEATER ||
-                material == Material.COMPARATOR ||
-                material == Material.DAYLIGHT_DETECTOR ||
-                material == Material.NOTE_BLOCK ||
-                material == Material.JUKEBOX ||
-                material == Material.BELL ||
-                material == Material.LECTERN
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    fun onPlayerInteractEntity(event: PlayerInteractEntityEvent) {
+        val player = event.player
+        val entity = event.rightClicked
+
+        // アイテムフレームのみ対象（GlowItemFrameはItemFrameのサブクラス）
+        if (entity !is ItemFrame) return
+
+        // クリエイティブモードは除外
+        if (player.gameMode == GameMode.CREATIVE) return
+
+        val location = entity.location
+        val territory = territoryService.getTerritoryAt(location) ?: return
+
+        if (!territoryService.canAccessAt(location, player.uniqueId)) {
+            val guildName = guildService.getGuild(territory.guildId)?.name ?: "Unknown"
+            i18n.sendError(player, "territory.protected_item_frame",
+                "You cannot interact with item frames in %s's territory", guildName)
+            event.isCancelled = true
+        }
+    }
+
+    /**
+     * アイテムフレームの破壊保護
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    fun onHangingBreak(event: HangingBreakByEntityEvent) {
+        val entity = event.entity
+
+        // アイテムフレームのみ対象
+        if (entity !is ItemFrame) return
+
+        val remover = event.remover
+        val player = remover as? Player ?: return
+
+        // クリエイティブモードは除外
+        if (player.gameMode == GameMode.CREATIVE) return
+
+        val location = entity.location
+        val territory = territoryService.getTerritoryAt(location) ?: return
+
+        if (!territoryService.canAccessAt(location, player.uniqueId)) {
+            val guildName = guildService.getGuild(territory.guildId)?.name ?: "Unknown"
+            i18n.sendError(player, "territory.protected_item_frame",
+                "You cannot interact with item frames in %s's territory", guildName)
+            event.isCancelled = true
+        }
+    }
+
+    /**
+     * 看板編集の保護
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    fun onSignChange(event: SignChangeEvent) {
+        val player = event.player
+        val location = event.block.location
+
+        // クリエイティブモードは除外
+        if (player.gameMode == GameMode.CREATIVE) return
+
+        val territory = territoryService.getTerritoryAt(location) ?: return
+
+        if (!territoryService.canAccessAt(location, player.uniqueId)) {
+            val guildName = guildService.getGuild(territory.guildId)?.name ?: "Unknown"
+            i18n.sendError(player, "territory.protected_sign",
+                "You cannot edit signs in %s's territory", guildName)
+            event.isCancelled = true
+        }
     }
 }
