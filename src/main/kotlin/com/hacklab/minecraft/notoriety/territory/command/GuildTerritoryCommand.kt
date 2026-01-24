@@ -280,14 +280,6 @@ class GuildTerritoryCommand(
         val uuid = player.uniqueId
         val isOp = player.isOp
 
-        // 引数なしの場合は使用方法を表示
-        if (args.isEmpty()) {
-            i18n.sendWarning(player, "territory.release_usage", "Usage: /guild territory release <number|all>")
-            i18n.sendInfo(player, "territory.release_usage_number", "  number: Release a specific chunk (check with /guild territory info)")
-            i18n.sendInfo(player, "territory.release_usage_all", "  all: Release all chunks")
-            return true
-        }
-
         // ギルドIDを取得（OPの場合は現在地の領地からも取得可能）
         var guildId = getPlayerGuildId(player)
 
@@ -307,6 +299,11 @@ class GuildTerritoryCommand(
         // OPの場合はrequesterをnullにして権限チェックをスキップ
         val requester = if (isOp) null else uuid
 
+        // 引数なしの場合は現在地解放
+        if (args.isEmpty()) {
+            return handleReleaseCurrentLocation(player, guildId, requester)
+        }
+
         // "all" の場合は全解放
         if (args[0].lowercase() == "all") {
             return handleReleaseAll(player, guildId, requester)
@@ -320,6 +317,28 @@ class GuildTerritoryCommand(
         }
 
         return handleReleaseChunk(player, guildId, chunkNumber, requester)
+    }
+
+    /**
+     * 現在地のチャンクを解放
+     */
+    private fun handleReleaseCurrentLocation(player: Player, guildId: Long, requester: UUID?): Boolean {
+        val territory = territoryService.getTerritory(guildId)
+        if (territory == null) {
+            i18n.sendError(player, "territory.release_no_territory", "Your guild has no territory")
+            return true
+        }
+
+        // 現在地のチャンクを検索
+        val currentChunk = territory.chunks.find { it.containsLocation(player.location) }
+        if (currentChunk == null) {
+            i18n.sendError(player, "territory.release_not_in_territory",
+                "You are not standing in your guild's territory")
+            return true
+        }
+
+        // 既存の releaseChunk を呼び出し
+        return handleReleaseChunk(player, guildId, currentChunk.addOrder, requester)
     }
 
     private fun handleReleaseAll(player: Player, guildId: Long, requester: UUID? = player.uniqueId): Boolean {
