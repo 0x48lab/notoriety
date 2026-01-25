@@ -21,7 +21,8 @@ class CombatListener(
     private val playerManager: PlayerManager,
     private val notorietyService: NotorietyService,
     private val bountyService: BountyService,
-    private val trustService: TrustService
+    private val trustService: TrustService,
+    private val combatTagService: CombatTagService? = null
 ) : Listener {
 
     /**
@@ -40,6 +41,11 @@ class CombatListener(
     fun onPlayerDamage(event: EntityDamageByEntityEvent) {
         val attacker = event.damager as? Player ?: return
         val victim = event.entity as? Player ?: return
+
+        // 戦闘タグを記録（間接PK検知用）
+        // ノックバックの有無を判定（ダメージ > 0 ならノックバックが発生する可能性がある）
+        val hasKnockback = event.damage > 0 && !attacker.isSneaking
+        combatTagService?.tagPlayer(victim, attacker, event.damage, hasKnockback)
 
         // 犯罪判定
         when (val result = notorietyService.checkPlayerAttackCrime(attacker, victim)) {
@@ -126,6 +132,16 @@ class CombatListener(
 
             // 表示を更新
             notorietyService.updateDisplay(killer)
+        } else if (killer == null) {
+            // 直接のキラーがいない場合、間接PKをチェック
+            val lastDamage = victim.lastDamageCause
+            if (lastDamage != null) {
+                notorietyService.checkAndProcessIndirectPK(
+                    victim = victim,
+                    deathLocation = victim.location,
+                    deathCause = lastDamage.cause
+                )
+            }
         }
 
         notorietyService.updateDisplay(victim)

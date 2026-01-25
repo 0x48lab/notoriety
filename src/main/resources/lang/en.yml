@@ -13,6 +13,7 @@ crime:
   destroy_villager_workstation: "Villager Workstation Destruction"
   attack_villager: "Villager Attack"
   kill_golem: "Golem Killing"
+  indirect_pk: "Indirect Murder"
 
 # Status names
 status:
@@ -345,6 +346,21 @@ achievement:
 
   # Announcement messages
   server_announce: "★ %s unlocked '%s'! ★"
+
+# Indirect PK messages
+indirect_pk:
+  detected: "⚠ %s indirectly killed %s (%s)"
+  cause_lava: "Lava"
+  cause_tnt: "TNT Explosion"
+  cause_fall: "Fall Damage"
+  cause_suffocation: "Suffocation"
+  cause_fire: "Fire"
+
+# Territory hazard protection messages
+territory_hazard:
+  lava_blocked: "⚠ You cannot use lava buckets in this territory"
+  water_blocked: "⚠ You cannot use water buckets in this territory"
+  tnt_blocked: "⚠ You cannot place TNT in this territory"
 
 # Admin messages
 admin:

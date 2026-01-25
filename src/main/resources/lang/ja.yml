@@ -13,6 +13,7 @@ crime:
   destroy_villager_workstation: "村人の仕事場破壊"
   attack_villager: "村人への攻撃"
   kill_golem: "ゴーレム殺害"
+  indirect_pk: "間接殺人"
 
 # Status names
 status:
@@ -345,6 +346,21 @@ achievement:
 
   # Announcement messages
   server_announce: "★ %s が『%s』を達成しました！ ★"
+
+# Indirect PK messages
+indirect_pk:
+  detected: "⚠ %s が %s を間接的に殺害しました（%s）"
+  cause_lava: "マグマ"
+  cause_tnt: "TNT爆発"
+  cause_fall: "落下"
+  cause_suffocation: "窒息"
+  cause_fire: "火炎"
+
+# Territory hazard protection messages
+territory_hazard:
+  lava_blocked: "⚠ この領地内では溶岩バケツを使用できません"
+  water_blocked: "⚠ この領地内では水バケツを使用できません"
+  tnt_blocked: "⚠ この領地内ではTNTを設置できません"
 
 # Admin messages
 admin:

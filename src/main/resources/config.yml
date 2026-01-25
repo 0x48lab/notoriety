@@ -16,6 +16,22 @@ territory:
   # Number of members required per chunk (10 = 1 chunk per 10 members)
   members-per-chunk: 10
 
+# Indirect PK prevention settings
+indirect-pk:
+  # Enable/disable indirect PK detection
+  enabled: true
+  # Tracking duration in seconds (how long to track hazard placements)
+  tracking-duration-seconds: 10
+  # Maximum distance in blocks between hazard and death location
+  max-distance-blocks: 32
+  # Which hazards to track
+  tracking:
+    lava: true
+    tnt: true
+    fall: true
+    piston: false  # P3: Future implementation
+    water: false   # P3: Future implementation
+
 # Database configuration
 database:
   # Database type: sqlite or mysql
