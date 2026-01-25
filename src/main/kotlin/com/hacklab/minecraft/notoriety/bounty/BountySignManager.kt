@@ -113,6 +113,7 @@ class BountySignManager(
 
     /**
      * 看板の向きを取得（16方向のBlockFaceで返す）
+     * プレイヤーヘッドが看板の正面と同じ方向を向くように調整
      */
     private fun getSignRotation(signBlock: org.bukkit.block.Block): BlockFace? {
         val blockData = signBlock.blockData
@@ -120,8 +121,8 @@ class BountySignManager(
         return when (blockData) {
             // 立て看板: 直接回転を取得
             is Rotatable -> blockData.rotation
-            // 壁看板: 向きを回転に変換
-            is Directional -> blockData.facing
+            // 壁看板: facingは看板が向いている方向だが、ヘッドの回転は逆方向で解釈されるため反転
+            is Directional -> blockData.facing.oppositeFace
             else -> null
         }
     }
