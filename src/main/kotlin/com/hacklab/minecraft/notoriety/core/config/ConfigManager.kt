@@ -54,6 +54,64 @@ class ConfigManager(private val plugin: JavaPlugin) {
     val territoryNotificationsEnabled: Boolean
         get() = config.getBoolean("territory.notifications-enabled", true)
 
+    // === Indirect PK Settings ===
+
+    /**
+     * Whether indirect PK detection is enabled.
+     * Default: true
+     */
+    fun isIndirectPkEnabled(): Boolean =
+        config.getBoolean("indirect-pk.enabled", true)
+
+    /**
+     * Tracking duration in seconds for hazard placements.
+     * Default: 10
+     */
+    fun getIndirectPkTrackingDurationSeconds(): Long =
+        config.getLong("indirect-pk.tracking-duration-seconds", 10)
+
+    /**
+     * Maximum distance in blocks between hazard and death location.
+     * Default: 32
+     */
+    fun getIndirectPkMaxDistanceBlocks(): Int =
+        config.getInt("indirect-pk.max-distance-blocks", 32)
+
+    /**
+     * Whether to track lava placements.
+     * Default: true
+     */
+    fun isLavaTrackingEnabled(): Boolean =
+        config.getBoolean("indirect-pk.tracking.lava", true)
+
+    /**
+     * Whether to track TNT ignitions.
+     * Default: true
+     */
+    fun isTntTrackingEnabled(): Boolean =
+        config.getBoolean("indirect-pk.tracking.tnt", true)
+
+    /**
+     * Whether to track fall damage from combat.
+     * Default: true
+     */
+    fun isFallTrackingEnabled(): Boolean =
+        config.getBoolean("indirect-pk.tracking.fall", true)
+
+    /**
+     * Whether to track piston push deaths.
+     * Default: false (P3: Future implementation)
+     */
+    fun isPistonTrackingEnabled(): Boolean =
+        config.getBoolean("indirect-pk.tracking.piston", false)
+
+    /**
+     * Whether to track water flow deaths.
+     * Default: false (P3: Future implementation)
+     */
+    fun isWaterTrackingEnabled(): Boolean =
+        config.getBoolean("indirect-pk.tracking.water", false)
+
     init {
         plugin.saveDefaultConfig()
     }

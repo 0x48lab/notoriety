@@ -1,9 +1,12 @@
 package com.hacklab.minecraft.notoriety
 
 import com.hacklab.minecraft.notoriety.chat.service.ChatService
+import com.hacklab.minecraft.notoriety.combat.CombatTagService
+import com.hacklab.minecraft.notoriety.core.config.ConfigManager
 import com.hacklab.minecraft.notoriety.core.i18n.I18nManager
 import com.hacklab.minecraft.notoriety.core.player.PlayerData
 import com.hacklab.minecraft.notoriety.core.player.PlayerManager
+import com.hacklab.minecraft.notoriety.hazard.HazardTrackingService
 import com.hacklab.minecraft.notoriety.crime.CrimeRecord
 import com.hacklab.minecraft.notoriety.crime.CrimeRepository
 import com.hacklab.minecraft.notoriety.crime.CrimeType
@@ -23,6 +26,7 @@ import org.bukkit.entity.Player
 import org.bukkit.entity.Tameable
 import org.bukkit.entity.Villager
 import org.bukkit.entity.memory.MemoryKey
+import org.bukkit.event.entity.EntityDamageEvent
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -40,7 +44,10 @@ class NotorietyService(
     private val trustService: TrustService,
     private val guildService: GuildService,
     private val chatService: ChatService,
-    private val i18nManager: I18nManager
+    private val i18nManager: I18nManager,
+    private val configManager: ConfigManager,
+    private val hazardTrackingService: HazardTrackingService? = null,
+    private val combatTagService: CombatTagService? = null
 ) {
     // 警告のクールダウン管理（一元化）
     private data class WarningKey(val playerUuid: UUID, val targetId: String)
@@ -223,6 +230,118 @@ class NotorietyService(
         }
 
         Bukkit.getPlayer(killerUuid)?.let { updateDisplay(it) }
+    }
+
+    // ========== 間接PK処理 ==========
+
+    /**
+     * 間接PKをチェックし、該当する場合はPK処理を実行
+     * @param victim 死亡したプレイヤー
+     * @param deathLocation 死亡位置
+     * @param deathCause 死因
+     * @return 間接PKとして処理された場合true
+     */
+    fun checkAndProcessIndirectPK(
+        victim: Player,
+        deathLocation: Location,
+        deathCause: EntityDamageEvent.DamageCause
+    ): Boolean {
+        // 間接PK検知が無効の場合は処理しない
+        if (!configManager.isIndirectPkEnabled()) return false
+
+        // 被害者のデータを取得
+        val victimData = playerManager.getPlayer(victim) ?: return false
+
+        // 被害者が青プレイヤーでない場合は間接PKにならない
+        if (victimData.getNameColor() != NameColor.BLUE) return false
+
+        // 死因に応じて原因プレイヤーを特定
+        val (killerUuid, causeName) = when (deathCause) {
+            // マグマ/火災ダメージ
+            EntityDamageEvent.DamageCause.LAVA,
+            EntityDamageEvent.DamageCause.FIRE,
+            EntityDamageEvent.DamageCause.FIRE_TICK -> {
+                if (!configManager.isLavaTrackingEnabled()) return false
+                val placer = hazardTrackingService?.findLavaPlacer(deathLocation)
+                Pair(placer, i18nManager.get("indirect_pk.cause_lava", "Lava"))
+            }
+
+            // 爆発ダメージ
+            EntityDamageEvent.DamageCause.ENTITY_EXPLOSION,
+            EntityDamageEvent.DamageCause.BLOCK_EXPLOSION -> {
+                if (!configManager.isTntTrackingEnabled()) return false
+                val igniter = hazardTrackingService?.findTntIgniter(deathLocation)
+                Pair(igniter, i18nManager.get("indirect_pk.cause_tnt", "TNT Explosion"))
+            }
+
+            // 落下ダメージ
+            EntityDamageEvent.DamageCause.FALL -> {
+                if (!configManager.isFallTrackingEnabled()) return false
+                val attacker = combatTagService?.findLastAttacker(victim.uniqueId)
+                Pair(attacker, i18nManager.get("indirect_pk.cause_fall", "Fall Damage"))
+            }
+
+            // 窒息ダメージ（ピストン、水流）
+            EntityDamageEvent.DamageCause.SUFFOCATION -> {
+                if (!configManager.isPistonTrackingEnabled() && !configManager.isWaterTrackingEnabled()) return false
+                // TODO: P3で実装
+                return false
+            }
+
+            else -> return false
+        }
+
+        // 原因プレイヤーが特定できない場合は処理しない
+        if (killerUuid == null) return false
+
+        // 自殺の場合は処理しない
+        if (killerUuid == victim.uniqueId) return false
+
+        val killerPlayer = Bukkit.getPlayer(killerUuid)
+
+        // クリエイティブモードのプレイヤーは除外
+        if (killerPlayer?.gameMode == org.bukkit.GameMode.CREATIVE) return false
+
+        // 原因プレイヤーが被害者を信頼している場合は処理しない
+        if (trustService.isTrusted(victim.uniqueId, killerUuid)) return false
+
+        // 間接PK処理を実行
+        processIndirectPK(killerUuid, victim.uniqueId, deathLocation, causeName)
+
+        return true
+    }
+
+    /**
+     * 間接PKを処理（PK判定、履歴記録）
+     */
+    private fun processIndirectPK(
+        killerUuid: UUID,
+        victimUuid: UUID,
+        deathLocation: Location,
+        causeName: String
+    ) {
+        // 通常のPK処理と同様
+        onPlayerKill(killerUuid, victimUuid)
+
+        // 犯罪履歴を記録
+        recordCrimeHistory(
+            criminal = killerUuid,
+            crimeType = CrimeType.INDIRECT_PK,
+            alignmentPenalty = 0, // PK処理でAlignmentは既に変更済み
+            victim = victimUuid,
+            location = deathLocation,
+            detail = causeName
+        )
+
+        // 通知メッセージを送信
+        val killerName = Bukkit.getOfflinePlayer(killerUuid).name ?: "???"
+        val victimName = Bukkit.getOfflinePlayer(victimUuid).name ?: "???"
+        val message = i18nManager.get("indirect_pk.detected", "⚠ %s indirectly killed %s (%s)")
+            .format(killerName, victimName, causeName)
+
+        // 関係者に通知
+        Bukkit.getPlayer(killerUuid)?.sendMessage(message)
+        Bukkit.getPlayer(victimUuid)?.sendMessage(message)
     }
 
     // ========== 履歴取得 ==========

@@ -11,7 +11,11 @@ import com.hacklab.minecraft.notoriety.chat.command.WhisperCommand
 import com.hacklab.minecraft.notoriety.chat.repository.ChatSettingsRepository
 import com.hacklab.minecraft.notoriety.chat.service.ChatService
 import com.hacklab.minecraft.notoriety.combat.CombatListener
+import com.hacklab.minecraft.notoriety.combat.CombatTagService
 import com.hacklab.minecraft.notoriety.command.NotorietyCommand
+import com.hacklab.minecraft.notoriety.hazard.HazardPlacementListener
+import com.hacklab.minecraft.notoriety.hazard.HazardTrackingService
+import com.hacklab.minecraft.notoriety.hazard.TerritoryHazardProtectionListener
 import com.hacklab.minecraft.notoriety.core.config.ConfigManager
 import com.hacklab.minecraft.notoriety.core.database.DatabaseManager
 import com.hacklab.minecraft.notoriety.core.economy.EconomyService
@@ -91,6 +95,12 @@ class Notoriety : JavaPlugin() {
     lateinit var inspectService: InspectService
         private set
     lateinit var inspectionStick: InspectionStick
+        private set
+
+    // 間接PK防止システム
+    lateinit var hazardTrackingService: HazardTrackingService
+        private set
+    lateinit var combatTagService: CombatTagService
         private set
 
     // アチーブメントシステム
@@ -204,6 +214,16 @@ class Notoriety : JavaPlugin() {
         // 起動時ビーコン検証をスケジュール（ワールドロード後に実行）
         territoryServiceImpl.scheduleStartupBeaconVerification()
 
+        // 間接PK防止システム初期化（NotorietyServiceより先に初期化）
+        val trackingDurationSeconds = configManager.getIndirectPkTrackingDurationSeconds()
+        hazardTrackingService = HazardTrackingService(
+            trackingDurationSeconds = trackingDurationSeconds,
+            maxDistanceBlocks = configManager.getIndirectPkMaxDistanceBlocks()
+        )
+        combatTagService = CombatTagService(
+            tagDurationSeconds = trackingDurationSeconds
+        )
+
         // NotorietyService初期化（中央集約サービス）
         notorietyService = NotorietyService(
             playerManager = playerManager,
@@ -213,7 +233,10 @@ class Notoriety : JavaPlugin() {
             trustService = trustService,
             guildService = guildService,
             chatService = chatService,
-            i18nManager = i18nManager
+            i18nManager = i18nManager,
+            configManager = configManager,
+            hazardTrackingService = hazardTrackingService,
+            combatTagService = combatTagService
         )
 
         // その他サービス初期化
@@ -311,7 +334,8 @@ class Notoriety : JavaPlugin() {
                 playerManager = playerManager,
                 notorietyService = notorietyService,
                 bountyService = bountyService,
-                trustService = trustService
+                trustService = trustService,
+                combatTagService = combatTagService
             ),
             this
         )
@@ -332,6 +356,10 @@ class Notoriety : JavaPlugin() {
 
         // アチーブメントシステムリスナー
         pm.registerEvents(AchievementListener(achievementService, playerManager), this)
+
+        // 間接PK防止システムリスナー
+        pm.registerEvents(HazardPlacementListener(hazardTrackingService, configManager), this)
+        pm.registerEvents(TerritoryHazardProtectionListener(territoryService, guildService, i18nManager), this)
     }
 
     private fun registerCommands() {
@@ -452,6 +480,12 @@ class Notoriety : JavaPlugin() {
                     detail = pending.blockType.name
                 )
             }
+        }, 20L, 20L)  // 1秒 = 20 ticks
+
+        // 間接PK追跡データのクリーンアップ（1秒ごと）
+        server.scheduler.runTaskTimer(this, Runnable {
+            hazardTrackingService.cleanupExpiredEntries()
+            combatTagService.cleanupExpiredTags()
         }, 20L, 20L)  // 1秒 = 20 ticks
 
         // 懸賞金看板の更新（10秒ごと）
