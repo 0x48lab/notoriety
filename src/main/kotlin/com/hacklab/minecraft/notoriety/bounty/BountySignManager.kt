@@ -5,7 +5,10 @@ import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
+import org.bukkit.block.BlockFace
 import org.bukkit.block.Sign
+import org.bukkit.block.data.Directional
+import org.bukkit.block.data.Rotatable
 import org.bukkit.block.sign.Side
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.plugin.java.JavaPlugin
@@ -86,6 +89,10 @@ class BountySignManager(
     private fun setPlayerHead(signLocation: Location, playerUuid: UUID) {
         val headLocation = signLocation.clone().add(0.0, 1.0, 0.0)
         val block = headLocation.block
+        val signBlock = signLocation.block
+
+        // 看板の向きを取得
+        val signRotation = getSignRotation(signBlock)
 
         if (block.type != Material.PLAYER_HEAD && block.type != Material.PLAYER_WALL_HEAD) {
             block.type = Material.PLAYER_HEAD
@@ -93,7 +100,30 @@ class BountySignManager(
 
         val skull = block.state as? org.bukkit.block.Skull ?: return
         skull.setOwningPlayer(Bukkit.getOfflinePlayer(playerUuid))
+
+        // ヘッドの向きを看板に合わせる
+        val skullData = skull.blockData
+        if (skullData is Rotatable && signRotation != null) {
+            skullData.rotation = signRotation
+            skull.blockData = skullData
+        }
+
         skull.update()
+    }
+
+    /**
+     * 看板の向きを取得（16方向のBlockFaceで返す）
+     */
+    private fun getSignRotation(signBlock: org.bukkit.block.Block): BlockFace? {
+        val blockData = signBlock.blockData
+
+        return when (blockData) {
+            // 立て看板: 直接回転を取得
+            is Rotatable -> blockData.rotation
+            // 壁看板: 向きを回転に変換
+            is Directional -> blockData.facing
+            else -> null
+        }
     }
 
     private fun removePlayerHead(signLocation: Location) {
