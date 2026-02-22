@@ -41,6 +41,7 @@ import com.hacklab.minecraft.notoriety.guild.service.GuildServiceImpl
 import com.hacklab.minecraft.notoriety.inspect.InspectListener
 import com.hacklab.minecraft.notoriety.inspect.InspectService
 import com.hacklab.minecraft.notoriety.inspect.InspectionStick
+import com.hacklab.minecraft.notoriety.ownership.CropTrampleProtectionListener
 import com.hacklab.minecraft.notoriety.ownership.ExplosionProtectionListener
 import com.hacklab.minecraft.notoriety.ownership.OwnershipListener
 import com.hacklab.minecraft.notoriety.ownership.OwnershipRepository
@@ -316,6 +317,7 @@ class Notoriety : JavaPlugin() {
             this
         )
         pm.registerEvents(ExplosionProtectionListener(ownershipService), this)
+        pm.registerEvents(CropTrampleProtectionListener(ownershipService, territoryService), this)
         pm.registerEvents(
             VillagerListener(
                 playerManager = playerManager,
