@@ -1,5 +1,6 @@
 package com.hacklab.minecraft.notoriety.guild.command
 
+import com.hacklab.minecraft.notoriety.core.config.ConfigManager
 import com.hacklab.minecraft.notoriety.core.economy.EconomyService
 import com.hacklab.minecraft.notoriety.core.i18n.I18nManager
 import com.hacklab.minecraft.notoriety.guild.gui.GuildGUIManager
@@ -18,7 +19,8 @@ class GuildCommand(
     private val guildService: GuildService,
     private val guiManager: GuildGUIManager,
     private val economyService: EconomyService,
-    private val i18n: I18nManager
+    private val i18n: I18nManager,
+    private val configManager: ConfigManager
 ) : CommandExecutor, TabCompleter {
 
     private val subCommands = mutableMapOf<String, GuildSubCommand>()
@@ -27,7 +29,7 @@ class GuildCommand(
     init {
         // サブコマンドを登録
         registerSubCommand(GuildMenuCommand(guiManager))
-        registerSubCommand(GuildCreateCommand(guildService, economyService, i18n))
+        registerSubCommand(GuildCreateCommand(guildService, economyService, i18n, configManager))
         registerSubCommand(GuildInfoCommand(guildService))
         registerSubCommand(GuildListCommand(guildService))
         registerSubCommand(GuildMembersCommand(guildService))

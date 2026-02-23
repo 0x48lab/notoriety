@@ -9,6 +9,11 @@ ownership:
   # Set to 0 to disable expiration
   expiration-days: 30
 
+# Guild settings
+guild:
+  # Cost to create a guild (set to 0 for free)
+  creation-cost: 5000
+
 # Territory settings
 territory:
   # Maximum number of chunks a guild can own

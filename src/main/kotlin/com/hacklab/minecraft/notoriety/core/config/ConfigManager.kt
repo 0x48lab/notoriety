@@ -24,6 +24,15 @@ class ConfigManager(private val plugin: JavaPlugin) {
     val ownershipExpirationDays: Int
         get() = config.getInt("ownership.expiration-days", 30)
 
+    // === Guild Settings ===
+
+    /**
+     * Cost to create a guild.
+     * Default: 5000.0
+     */
+    val guildCreationCost: Double
+        get() = config.getDouble("guild.creation-cost", 5000.0)
+
     // === Territory Settings ===
 
     /**

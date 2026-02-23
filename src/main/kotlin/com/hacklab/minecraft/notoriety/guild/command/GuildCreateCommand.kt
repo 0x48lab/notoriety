@@ -1,5 +1,6 @@
 package com.hacklab.minecraft.notoriety.guild.command
 
+import com.hacklab.minecraft.notoriety.core.config.ConfigManager
 import com.hacklab.minecraft.notoriety.core.economy.EconomyService
 import com.hacklab.minecraft.notoriety.core.i18n.I18nManager
 import com.hacklab.minecraft.notoriety.guild.service.GuildException
@@ -12,16 +13,18 @@ import org.bukkit.entity.Player
 class GuildCreateCommand(
     private val guildService: GuildService,
     private val economyService: EconomyService,
-    private val i18n: I18nManager
+    private val i18n: I18nManager,
+    private val configManager: ConfigManager
 ) : GuildSubCommand {
 
     companion object {
-        /** ギルド作成費用 */
-        const val GUILD_CREATION_COST = 50000.0
         /** 政府ギルド作成フラグ */
         const val GOVERNMENT_FLAG = "--government"
         const val GOVERNMENT_FLAG_SHORT = "-g"
     }
+
+    private val creationCost: Double
+        get() = configManager.guildCreationCost
 
     override val name = "create"
     override val description = "Create a new guild"
@@ -36,7 +39,7 @@ class GuildCreateCommand(
             player.sendError(i18n.get(uuid, "guild.create_usage", "Usage: $usage"))
             player.sendInfo(i18n.get(uuid, "guild.create_name_hint", "Name: 3-32 characters"))
             player.sendInfo(i18n.get(uuid, "guild.create_tag_hint", "Tag: 2-4 characters"))
-            player.sendInfo(i18n.get(uuid, "guild.create_cost_hint", "Cost: %s", economyService.format(GUILD_CREATION_COST)))
+            player.sendInfo(i18n.get(uuid, "guild.create_cost_hint", "Cost: %s", economyService.format(creationCost)))
             if (player.isOp) {
                 player.sendInfo(i18n.get(uuid, "guild.create_government_hint", "OP only: Add --government for unlimited territory"))
             }
@@ -61,12 +64,12 @@ class GuildCreateCommand(
         if (!isGovernment) {
             // 所持金チェック
             val balance = economyService.getBalance(uuid)
-            if (balance < GUILD_CREATION_COST) {
+            if (balance < creationCost) {
                 player.sendError(i18n.get(
                     uuid,
                     "guild.create_insufficient_funds",
                     "Insufficient funds. Required: %s, You have: %s",
-                    economyService.format(GUILD_CREATION_COST),
+                    economyService.format(creationCost),
                     economyService.format(balance)
                 ))
                 return true
@@ -82,7 +85,7 @@ class GuildCreateCommand(
 
             // 政府ギルド以外は費用を徴収
             if (!isGovernment) {
-                if (!economyService.withdraw(uuid, GUILD_CREATION_COST)) {
+                if (!economyService.withdraw(uuid, creationCost)) {
                     // 万が一の失敗時（通常は発生しない）
                     player.sendError(i18n.get(uuid, "guild.create_withdraw_failed", "Failed to withdraw funds. Please try again."))
                     return true
@@ -103,7 +106,7 @@ class GuildCreateCommand(
             if (isGovernment) {
                 messageBuilder.append(Component.text(" [政府]").color(NamedTextColor.GOLD))
             } else {
-                val costDisplay = i18n.get(uuid, "guild.create_cost_display", "(Cost: %s)", economyService.format(GUILD_CREATION_COST))
+                val costDisplay = i18n.get(uuid, "guild.create_cost_display", "(Cost: %s)", economyService.format(creationCost))
                 messageBuilder.append(Component.text(" ").color(NamedTextColor.GREEN))
                     .append(Component.text(costDisplay).color(NamedTextColor.GRAY))
             }

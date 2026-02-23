@@ -16,7 +16,7 @@ import org.bukkit.entity.Player
 class GuildCommandWrapper(private val plugin: Notoriety) : SubCommand {
 
     private val guildCommand: GuildCommand by lazy {
-        val command = GuildCommand(plugin, plugin.guildService, plugin.guildGUIManager, plugin.economyService, plugin.i18nManager)
+        val command = GuildCommand(plugin, plugin.guildService, plugin.guildGUIManager, plugin.economyService, plugin.i18nManager, plugin.configManager)
         // 領地システムのサブコマンドを追加
         command.addSubCommand(GuildTerritoryCommand(
             territoryService = plugin.territoryService,
