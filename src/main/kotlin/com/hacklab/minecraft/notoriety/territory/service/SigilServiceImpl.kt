@@ -202,39 +202,58 @@ class SigilServiceImpl(
 
     /**
      * 安全なテレポート位置を探す
-     * シギル位置から上方向に空きスペースを探す
+     * シギル位置の上、および周囲を探索する
      */
     private fun findSafeTeleportLocation(sigilLocation: Location): Location? {
         val world = sigilLocation.world ?: return null
 
-        // シギルの1ブロック上から開始
-        var checkY = sigilLocation.blockY + 1
-        val maxY = world.maxHeight
+        // まずシギル直上を探索（Y+1から上方向）
+        val aboveResult = findSafeLocationAbove(world, sigilLocation.blockX, sigilLocation.blockY + 1, sigilLocation.blockZ)
+        if (aboveResult != null) {
+            aboveResult.yaw = sigilLocation.yaw
+            aboveResult.pitch = 0f
+            return aboveResult
+        }
 
-        while (checkY < maxY - 1) {
-            val checkLocation = Location(
+        // 直上がダメなら周囲4方向を探索
+        val offsets = arrayOf(intArrayOf(1, 0), intArrayOf(-1, 0), intArrayOf(0, 1), intArrayOf(0, -1))
+        for (offset in offsets) {
+            val result = findSafeLocationAbove(
                 world,
-                sigilLocation.x + 0.5,  // ブロック中央
-                checkY.toDouble(),
-                sigilLocation.z + 0.5
+                sigilLocation.blockX + offset[0],
+                sigilLocation.blockY,
+                sigilLocation.blockZ + offset[1]
             )
-
-            if (isSafeToStand(checkLocation)) {
-                // 視線方向を設定（シギル向き）
-                checkLocation.yaw = sigilLocation.yaw
-                checkLocation.pitch = 0f
-                return checkLocation
+            if (result != null) {
+                result.yaw = sigilLocation.yaw
+                result.pitch = 0f
+                return result
             }
-
-            checkY++
         }
 
         return null
     }
 
     /**
+     * 指定XZ座標で、startYから上方向に安全な位置を探す
+     */
+    private fun findSafeLocationAbove(world: org.bukkit.World, x: Int, startY: Int, z: Int): Location? {
+        val maxY = world.maxHeight
+        var checkY = startY
+
+        while (checkY < maxY - 1) {
+            val loc = Location(world, x + 0.5, checkY.toDouble(), z + 0.5)
+            if (isSafeToStand(loc)) {
+                return loc
+            }
+            checkY++
+        }
+        return null
+    }
+
+    /**
      * 指定位置に立てるか確認
-     * 足元と頭上が空気かどうか、足元の下が固体かどうか
+     * 足元と頭上が空気かどうか、足元の下が固体またはビーコンかどうか
      */
     private fun isSafeToStand(location: Location): Boolean {
         val world = location.world ?: return false
@@ -242,7 +261,8 @@ class SigilServiceImpl(
         val blockAtFeet = world.getBlockAt(location)
         val blockAtHead = blockAtFeet.getRelative(BlockFace.UP)
 
-        return blockBelow.type.isSolid &&
+        val canStandOn = blockBelow.type.isSolid || blockBelow.type == Material.BEACON
+        return canStandOn &&
                !blockAtFeet.type.isSolid &&
                !blockAtFeet.isLiquid &&
                !blockAtHead.type.isSolid &&
