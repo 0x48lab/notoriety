@@ -37,11 +37,24 @@ class ChatListener(
         val mode = chatService.getEffectiveChatMode(player, originalMessage)
 
         // ギルドチャットでギルドに所属していない場合
-        if (mode == ChatMode.GUILD && guildService.getPlayerGuild(player.uniqueId) == null) {
-            event.isCancelled = true
-            player.sendMessage(Component.text("You must be in a guild to use guild chat")
-                .color(NamedTextColor.RED))
-            return
+        if (mode == ChatMode.GUILD) {
+            val guild = guildService.getPlayerCivilianGuild(player.uniqueId)
+                ?: guildService.getPlayerGovernmentGuild(player.uniqueId)
+            if (guild == null) {
+                event.isCancelled = true
+                player.sendMessage(Component.text("You must be in a guild to use guild chat")
+                    .color(NamedTextColor.RED))
+                return
+            }
+        }
+        // 政府ギルドチャットで政府ギルドに所属していない場合
+        if (mode == ChatMode.GOV_GUILD) {
+            if (guildService.getPlayerGovernmentGuild(player.uniqueId) == null) {
+                event.isCancelled = true
+                player.sendMessage(Component.text("You must be in a government guild to use government guild chat")
+                    .color(NamedTextColor.RED))
+                return
+            }
         }
 
         // プレフィックスを削除
@@ -66,6 +79,7 @@ class ChatListener(
             ChatMode.LOCAL -> chatService.getLocalRecipients(player)
             ChatMode.GLOBAL -> player.server.onlinePlayers.toSet()
             ChatMode.GUILD -> chatService.getGuildRecipients(player)
+            ChatMode.GOV_GUILD -> chatService.getGovernmentGuildRecipients(player)
         }
 
         // イベントをキャンセルしてカスタム送信
@@ -81,6 +95,7 @@ class ChatListener(
             ChatMode.LOCAL -> "[Local]"
             ChatMode.GLOBAL -> "[Global]"
             ChatMode.GUILD -> "[Guild]"
+            ChatMode.GOV_GUILD -> "[Gov]"
         }
         player.server.consoleSender.sendMessage(
             Component.text("$modePrefix ${player.name}: $message")

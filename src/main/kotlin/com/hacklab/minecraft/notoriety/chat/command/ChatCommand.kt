@@ -96,6 +96,7 @@ class ChatCommand(
             ChatMode.LOCAL -> "Local (50 blocks)"
             ChatMode.GLOBAL -> "Global"
             ChatMode.GUILD -> "Guild"
+            ChatMode.GOV_GUILD -> "Government Guild"
         }
 
         player.sendMessage(Component.text("=== Chat Settings ===").color(NamedTextColor.GOLD))

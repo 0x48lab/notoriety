@@ -59,6 +59,7 @@ class ChatService(
             ChatMode.LOCAL -> "Local (50 blocks)"
             ChatMode.GLOBAL -> "Global (!)"
             ChatMode.GUILD -> "Guild (@)"
+            ChatMode.GOV_GUILD -> "Government Guild (@@)"
         }
         player.sendMessage(Component.text("Chat mode set to: $modeDisplay")
             .color(NamedTextColor.GREEN))
@@ -125,13 +126,25 @@ class ChatService(
     }
 
     fun formatMessage(player: Player, message: String, mode: ChatMode): Component {
-        val guild = guildService.getPlayerGuild(player.uniqueId)
-        val membership = guildService.getMembership(player.uniqueId)
-
         return when (mode) {
-            ChatMode.LOCAL -> formatLocalMessage(player, message, guild)
-            ChatMode.GLOBAL -> formatGlobalMessage(player, message, guild)
-            ChatMode.GUILD -> formatGuildMessage(player, message, guild)
+            ChatMode.LOCAL -> {
+                val guild = guildService.getPlayerGuild(player.uniqueId)
+                formatLocalMessage(player, message, guild)
+            }
+            ChatMode.GLOBAL -> {
+                val guild = guildService.getPlayerGuild(player.uniqueId)
+                formatGlobalMessage(player, message, guild)
+            }
+            ChatMode.GUILD -> {
+                // 民間ギルド優先、フォールバック: 政府ギルド
+                val guild = guildService.getPlayerCivilianGuild(player.uniqueId)
+                    ?: guildService.getPlayerGovernmentGuild(player.uniqueId)
+                formatGuildMessage(player, message, guild)
+            }
+            ChatMode.GOV_GUILD -> {
+                val guild = guildService.getPlayerGovernmentGuild(player.uniqueId)
+                formatGovernmentGuildMessage(player, message, guild)
+            }
         }
     }
 
@@ -168,6 +181,21 @@ class ChatService(
             .append(Component.text(player.name).color(nameColor))
             .append(Component.text(": ").color(NamedTextColor.GRAY))
             .append(Component.text(message).color(NamedTextColor.GREEN))
+            .build()
+    }
+
+    private fun formatGovernmentGuildMessage(player: Player, message: String, guild: Guild?): Component {
+        if (guild == null) {
+            return Component.text("[Error] Not in a government guild").color(NamedTextColor.RED)
+        }
+
+        val nameColor = getPlayerNameColor(player)
+        return Component.text()
+            .append(Component.text("[Gov] ").color(NamedTextColor.DARK_AQUA))
+            .append(Component.text("[${guild.tag}] ").color(guild.tagColor.namedTextColor))
+            .append(Component.text(player.name).color(nameColor))
+            .append(Component.text(": ").color(NamedTextColor.GRAY))
+            .append(Component.text(message).color(NamedTextColor.DARK_AQUA))
             .build()
     }
 
@@ -214,7 +242,18 @@ class ChatService(
     }
 
     fun getGuildRecipients(player: Player): Set<Player> {
-        val guild = guildService.getPlayerGuild(player.uniqueId) ?: return emptySet()
+        // 民間ギルド優先、フォールバック: 政府ギルド
+        val guild = guildService.getPlayerCivilianGuild(player.uniqueId)
+            ?: guildService.getPlayerGovernmentGuild(player.uniqueId)
+            ?: return emptySet()
+        val members = guildService.getMembers(guild.id, 0, 1000)
+        return members.mapNotNull { member ->
+            player.server.getPlayer(member.playerUuid)
+        }.toSet()
+    }
+
+    fun getGovernmentGuildRecipients(player: Player): Set<Player> {
+        val guild = guildService.getPlayerGovernmentGuild(player.uniqueId) ?: return emptySet()
         val members = guildService.getMembers(guild.id, 0, 1000)
         return members.mapNotNull { member ->
             player.server.getPlayer(member.playerUuid)
