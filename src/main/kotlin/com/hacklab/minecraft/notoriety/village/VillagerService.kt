@@ -27,10 +27,18 @@ class VillagerService(
     }
 
     // プレイヤーUUID -> 最終警告時刻
-    private val lastWarningTime = mutableMapOf<java.util.UUID, Long>()
+    private val lastWarningTime = ConcurrentHashMap<UUID, Long>()
 
     // 「人殺しが来た」のクールダウン（プレイヤーごと）
     private val murdererShoutCooldowns = ConcurrentHashMap<UUID, Instant>()
+
+    /**
+     * プレイヤー関連のキャッシュを削除
+     */
+    fun cleanupPlayer(playerUuid: UUID) {
+        lastWarningTime.remove(playerUuid)
+        murdererShoutCooldowns.remove(playerUuid)
+    }
 
     fun checkRedPlayerProximity(player: Player): Villager? {
         val data = playerManager.getPlayer(player) ?: return null

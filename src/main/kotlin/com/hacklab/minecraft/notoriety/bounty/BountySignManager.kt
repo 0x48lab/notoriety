@@ -38,7 +38,10 @@ class BountySignManager(
         signs.removeIf { it.location == location }
         signs.add(BountySign(location, rank))
         save()
-        updateSign(location, rank)
+        // 即座に看板を更新
+        val bounty = bountyService.getActiveBountyByRank(rank)
+        lastDisplayed[rank] = bounty?.target
+        updateSign(location, rank, bounty)
     }
 
     fun unregisterSign(location: Location) {
@@ -50,18 +53,31 @@ class BountySignManager(
     fun isRegisteredSign(location: Location): Boolean =
         signs.any { it.location == location }
 
+    // 前回表示した看板内容のキャッシュ（rank -> target UUID or null）
+    private val lastDisplayed = mutableMapOf<Int, UUID?>()
+
     fun updateAllSigns() {
+        if (signs.isEmpty()) return
+
+        // ランキングリストを1回だけ取得（filter + sort は1回のみ）
+        val activeBounties = bountyService.getBountyList()
+
         signs.forEach { sign ->
-            updateSign(sign.location, sign.rank)
+            val rank = sign.rank
+            val bounty = if (rank > 0 && rank <= activeBounties.size) activeBounties[rank - 1] else null
+            val currentTarget = bounty?.target
+
+            // 表示内容が変わっていない場合はスキップ
+            if (lastDisplayed[rank] == currentTarget) return@forEach
+            lastDisplayed[rank] = currentTarget
+
+            updateSign(sign.location, rank, bounty)
         }
     }
 
-    private fun updateSign(location: Location, rank: Int) {
+    private fun updateSign(location: Location, rank: Int, bounty: BountyEntry?) {
         val block = location.block
         val sign = block.state as? Sign ?: return
-
-        // 赤プレイヤー（アクティブなPK）のみを表示
-        val bounty = bountyService.getActiveBountyByRank(rank)
 
         val frontSide = sign.getSide(Side.FRONT)
 

@@ -3,12 +3,15 @@ package com.hacklab.minecraft.notoriety.command
 import com.hacklab.minecraft.notoriety.Notoriety
 import com.hacklab.minecraft.notoriety.achievement.command.AchievementCommand
 import com.hacklab.minecraft.notoriety.inspect.InspectCommand
+import com.hacklab.minecraft.notoriety.zone.command.ZoneCommand
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.command.TabCompleter
 
 class NotorietyCommand(private val plugin: Notoriety) : CommandExecutor, TabCompleter {
+
+    internal val zoneCommand = ZoneCommand(plugin.zoneService, plugin.i18nManager)
 
     private val subCommands: Map<String, SubCommand> by lazy {
         val achievementCommand = AchievementCommand(plugin.achievementService, plugin.i18nManager)
@@ -24,7 +27,8 @@ class NotorietyCommand(private val plugin: Notoriety) : CommandExecutor, TabComp
             "guild" to GuildCommandWrapper(plugin),
             "chat" to ChatCommandWrapper(plugin.chatService),
             "achievements" to achievementCommand,
-            "ach" to achievementCommand
+            "ach" to achievementCommand,
+            "zone" to zoneCommand
         )
     }
 
@@ -75,6 +79,7 @@ class NotorietyCommand(private val plugin: Notoriety) : CommandExecutor, TabComp
         sender.sendMessage("/noty achievements [player] [category] - Achievement list")
         sender.sendMessage("/noty inspect [tool] - Inspect mode / Get inspection stick")
         sender.sendMessage("/noty locale [ja|en|reset] - Change language")
+        sender.sendMessage("/noty zone <subcommand> - Zone protection (Admin)")
         sender.sendMessage("/noty admin ... - Admin commands")
     }
 }

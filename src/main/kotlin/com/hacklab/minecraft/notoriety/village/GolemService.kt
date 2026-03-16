@@ -28,6 +28,15 @@ class GolemService(private val playerManager: PlayerManager) {
     // ゴーレムのホーム位置を記録（UUID -> 元の位置）
     private val golemHomeLocations = ConcurrentHashMap<UUID, Location>()
 
+    /**
+     * 無効なゴーレムのホーム位置エントリを削除
+     */
+    fun cleanupDeadGolems() {
+        golemHomeLocations.keys.removeIf { uuid ->
+            org.bukkit.Bukkit.getEntity(uuid) == null
+        }
+    }
+
     fun callGolemToAttack(target: Player, nearVillager: Location): Boolean {
         val golem = findNearbyGolem(nearVillager) ?: return false
 

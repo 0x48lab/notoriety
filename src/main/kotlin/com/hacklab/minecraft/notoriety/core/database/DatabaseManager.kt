@@ -2,6 +2,7 @@ package com.hacklab.minecraft.notoriety.core.database
 
 import com.hacklab.minecraft.notoriety.core.config.ConfigManager
 import org.bukkit.plugin.java.JavaPlugin
+import java.sql.Connection
 
 class DatabaseManager(
     private val plugin: JavaPlugin,
@@ -414,8 +415,173 @@ class DatabaseManager(
                 } catch (e: Exception) {
                     // Column already exists, ignore
                 }
+
+                // ===== Feature 011: Guild Base Teleport =====
+
+                // Guild bases table (1 guild : 0..1 base)
+                stmt.executeUpdate("""
+                    CREATE TABLE IF NOT EXISTS guild_bases (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        guild_id BIGINT NOT NULL UNIQUE,
+                        world_name VARCHAR(64) NOT NULL,
+                        x DOUBLE NOT NULL,
+                        y DOUBLE NOT NULL,
+                        z DOUBLE NOT NULL,
+                        yaw FLOAT NOT NULL DEFAULT 0,
+                        pitch FLOAT NOT NULL DEFAULT 0,
+                        set_by VARCHAR(36) NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+
+                stmt.executeUpdate("""
+                    CREATE INDEX IF NOT EXISTS idx_guild_bases_guild
+                    ON guild_bases (guild_id)
+                """.trimIndent())
+
+                // ===== Feature 012: Silent Area Protection =====
+
+                // Protected zones table
+                stmt.executeUpdate("""
+                    CREATE TABLE IF NOT EXISTS protected_zones (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name VARCHAR(32) NOT NULL UNIQUE,
+                        world_name VARCHAR(64) NOT NULL,
+                        x1 INT NOT NULL,
+                        y1 INT NOT NULL,
+                        z1 INT NOT NULL,
+                        x2 INT NOT NULL,
+                        y2 INT NOT NULL,
+                        z2 INT NOT NULL,
+                        creator_uuid VARCHAR(36) NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """.trimIndent())
+
+                stmt.executeUpdate("""
+                    CREATE INDEX IF NOT EXISTS idx_protected_zones_name
+                    ON protected_zones (name)
+                """.trimIndent())
+
+                stmt.executeUpdate("""
+                    CREATE INDEX IF NOT EXISTS idx_protected_zones_world
+                    ON protected_zones (world_name)
+                """.trimIndent())
+
+                // ===== Feature 010: Dual Guild Membership =====
+                // Migrate guild_memberships UNIQUE(player_uuid) → UNIQUE(player_uuid, guild_id)
+                migrateMembershipUniqueConstraint(conn)
             }
         }
         plugin.logger.info("Database tables initialized successfully")
+    }
+
+    /**
+     * Migrate guild_memberships from UNIQUE(player_uuid) to UNIQUE(player_uuid, guild_id)
+     * to support dual guild membership (government + civilian).
+     */
+    private fun migrateMembershipUniqueConstraint(conn: Connection) {
+        // Check if migration is needed by testing if the composite index already exists
+        val isSqlite = configManager.databaseType != "mysql"
+
+        if (isSqlite) {
+            // Check if composite index already exists
+            val hasCompositeIndex = conn.createStatement().use { stmt ->
+                stmt.executeQuery("SELECT name FROM sqlite_master WHERE type='index' AND name='idx_membership_player_guild'").use { rs ->
+                    rs.next()
+                }
+            }
+            if (hasCompositeIndex) return // Already migrated
+
+            plugin.logger.info("Migrating guild_memberships for dual guild membership support (SQLite)...")
+
+            val autoCommit = conn.autoCommit
+            conn.autoCommit = false
+            try {
+                conn.createStatement().use { stmt ->
+                    // 1. Rename existing table
+                    stmt.executeUpdate("ALTER TABLE guild_memberships RENAME TO guild_memberships_old")
+
+                    // 2. Create new table without UNIQUE on player_uuid alone
+                    stmt.executeUpdate("""
+                        CREATE TABLE guild_memberships (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            guild_id INTEGER NOT NULL,
+                            player_uuid VARCHAR(36) NOT NULL,
+                            role VARCHAR(16) NOT NULL DEFAULT 'MEMBER',
+                            joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE
+                        )
+                    """.trimIndent())
+
+                    // 3. Copy data
+                    stmt.executeUpdate("""
+                        INSERT INTO guild_memberships (id, guild_id, player_uuid, role, joined_at)
+                        SELECT id, guild_id, player_uuid, role, joined_at FROM guild_memberships_old
+                    """.trimIndent())
+
+                    // 4. Drop old table
+                    stmt.executeUpdate("DROP TABLE guild_memberships_old")
+
+                    // 5. Create new indexes
+                    stmt.executeUpdate("""
+                        CREATE UNIQUE INDEX idx_membership_player_guild
+                        ON guild_memberships (player_uuid, guild_id)
+                    """.trimIndent())
+                    stmt.executeUpdate("""
+                        CREATE INDEX IF NOT EXISTS idx_membership_guild
+                        ON guild_memberships (guild_id)
+                    """.trimIndent())
+                    stmt.executeUpdate("""
+                        CREATE INDEX IF NOT EXISTS idx_membership_player
+                        ON guild_memberships (player_uuid)
+                    """.trimIndent())
+                }
+                conn.commit()
+                plugin.logger.info("guild_memberships migration completed successfully")
+            } catch (e: Exception) {
+                conn.rollback()
+                plugin.logger.severe("guild_memberships migration failed, rolling back: ${e.message}")
+                throw e
+            } finally {
+                conn.autoCommit = autoCommit
+            }
+        } else {
+            // MySQL migration
+            val hasCompositeIndex = conn.createStatement().use { stmt ->
+                stmt.executeQuery("""
+                    SELECT COUNT(*) FROM information_schema.STATISTICS
+                    WHERE TABLE_SCHEMA = DATABASE()
+                    AND TABLE_NAME = 'guild_memberships'
+                    AND INDEX_NAME = 'idx_membership_player_guild'
+                """.trimIndent()).use { rs ->
+                    rs.next() && rs.getInt(1) > 0
+                }
+            }
+            if (hasCompositeIndex) return // Already migrated
+
+            plugin.logger.info("Migrating guild_memberships for dual guild membership support (MySQL)...")
+
+            conn.createStatement().use { stmt ->
+                // Drop the old UNIQUE on player_uuid
+                try {
+                    stmt.executeUpdate("ALTER TABLE guild_memberships DROP INDEX player_uuid")
+                } catch (e: Exception) {
+                    // Index might have a different name, try common alternatives
+                    try {
+                        stmt.executeUpdate("ALTER TABLE guild_memberships DROP INDEX idx_membership_player_unique")
+                    } catch (e2: Exception) {
+                        plugin.logger.warning("Could not drop old unique index on player_uuid: ${e.message}")
+                    }
+                }
+                // Add composite unique index
+                stmt.executeUpdate("""
+                    ALTER TABLE guild_memberships
+                    ADD UNIQUE INDEX idx_membership_player_guild (player_uuid, guild_id)
+                """.trimIndent())
+            }
+            plugin.logger.info("guild_memberships migration completed successfully (MySQL)")
+        }
     }
 }

@@ -79,9 +79,9 @@ class TerritoryEntryListener(
                     TerritoryEnterEvent(player, currentTerritory, currentGuild.name)
                 )
 
-                // 自分のギルドかどうかでメッセージを変える
-                val playerGuild = guildService.getPlayerGuild(playerUuid)
-                val isOwnTerritory = playerGuild?.id == currentGuildId
+                // 自分のいずれかのギルドかどうかでメッセージを変える（二重所属対応）
+                val playerGuilds = guildService.getPlayerGuilds(playerUuid)
+                val isOwnTerritory = playerGuilds.any { it.id == currentGuildId }
 
                 if (isOwnTerritory) {
                     i18n.sendSuccess(player, "territory.enter_own_territory",
@@ -116,52 +116,52 @@ class TerritoryEntryListener(
         val player = event.player
         val playerUuid = player.uniqueId
 
-        // ギルドを取得
-        val guild = guildService.getPlayerGuild(playerUuid) ?: return
-
-        // ギルドマスターかどうかをチェック
-        val membership = guildService.getMembership(playerUuid) ?: return
-        if (membership.role.name != "MASTER") return
+        // マスターであるギルドを全て取得（二重所属対応）
+        val masterGuilds = guildService.getPlayerGuilds(playerUuid)
+            .filter { it.masterUuid == playerUuid }
+        if (masterGuilds.isEmpty()) return
 
         // 1秒後に通知（他のメッセージと被らないように）
         Bukkit.getScheduler().runTaskLater(Bukkit.getPluginManager().plugins.first { it.name == "Notoriety" }, Runnable {
             if (!player.isOnline) return@Runnable
 
-            val territory = territoryService.getTerritory(guild.id)
-            val memberCount = guildService.getMemberCount(guild.id)
-            val allowedChunks = territoryService.calculateAllowedChunks(memberCount)
+            for (guild in masterGuilds) {
+                val territory = territoryService.getTerritory(guild.id)
+                val memberCount = guildService.getMemberCount(guild.id)
+                val allowedChunks = territoryService.calculateAllowedChunks(memberCount)
 
-            // 領地状態ヘッダー
-            i18n.sendHeader(player, "territory.gm_territory_status", "=== Guild Territory Status ===")
+                // 領地状態ヘッダー
+                i18n.sendHeader(player, "territory.gm_territory_status", "=== Guild Territory Status ===")
 
-            if (territory == null || territory.chunkCount == 0) {
-                // 領地なし
-                if (memberCount >= TerritoryService.MIN_MEMBERS_FOR_TERRITORY) {
-                    i18n.sendWarning(player, "territory.gm_no_territory_can_claim",
-                        "You have no territory. You can claim up to %d chunks! (/guild territory set)",
-                        allowedChunks)
+                if (territory == null || territory.chunkCount == 0) {
+                    // 領地なし
+                    if (memberCount >= TerritoryService.MIN_MEMBERS_FOR_TERRITORY) {
+                        i18n.sendWarning(player, "territory.gm_no_territory_can_claim",
+                            "You have no territory. You can claim up to %d chunks! (/guild territory set)",
+                            allowedChunks)
+                    } else {
+                        val needed = TerritoryService.MIN_MEMBERS_FOR_TERRITORY - memberCount
+                        i18n.sendWarning(player, "territory.gm_no_territory_need_members",
+                            "You have no territory. Need %d more members to claim territory.",
+                            needed)
+                    }
                 } else {
-                    val needed = TerritoryService.MIN_MEMBERS_FOR_TERRITORY - memberCount
-                    i18n.sendWarning(player, "territory.gm_no_territory_need_members",
-                        "You have no territory. Need %d more members to claim territory.",
-                        needed)
-                }
-            } else {
-                // 領地情報
-                i18n.send(player, "territory.gm_chunks_info",
-                    "Territory: %d / %d chunks",
-                    territory.chunkCount, allowedChunks)
+                    // 領地情報
+                    i18n.send(player, "territory.gm_chunks_info",
+                        "Territory: %d / %d chunks",
+                        territory.chunkCount, allowedChunks)
 
-                // 追加可能なチャンク
-                val canClaim = allowedChunks - territory.chunkCount
-                if (canClaim > 0) {
-                    i18n.sendSuccess(player, "territory.gm_can_expand",
-                        "You can expand by %d more chunks", canClaim)
-                } else if (memberCount < TerritoryService.MIN_MEMBERS_FOR_TERRITORY) {
-                    // メンバー不足で領地が縮小される可能性
-                    i18n.sendError(player, "territory.gm_member_warning",
-                        "⚠ Warning: With only %d members, you may lose territory if members leave",
-                        memberCount)
+                    // 追加可能なチャンク
+                    val canClaim = allowedChunks - territory.chunkCount
+                    if (canClaim > 0) {
+                        i18n.sendSuccess(player, "territory.gm_can_expand",
+                            "You can expand by %d more chunks", canClaim)
+                    } else if (memberCount < TerritoryService.MIN_MEMBERS_FOR_TERRITORY) {
+                        // メンバー不足で領地が縮小される可能性
+                        i18n.sendError(player, "territory.gm_member_warning",
+                            "⚠ Warning: With only %d members, you may lose territory if members leave",
+                            memberCount)
+                    }
                 }
             }
         }, 20L)  // 1秒後

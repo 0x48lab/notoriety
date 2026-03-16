@@ -82,7 +82,10 @@ class OwnershipRepository(private val databaseManager: DatabaseManager) {
     }
 
     fun getOwnershipInfo(location: Location): BlockOwnershipInfo? {
-        val blockLoc = location.toBlockLoc()
+        return getOwnershipInfoByBlockLoc(location.toBlockLoc())
+    }
+
+    fun getOwnershipInfoByBlockLoc(blockLoc: BlockLocation): BlockOwnershipInfo? {
         return databaseManager.provider.useConnection { conn ->
             val stmt = conn.prepareStatement(
                 "SELECT owner_uuid, placed_at FROM block_ownership WHERE world = ? AND x = ? AND y = ? AND z = ?"

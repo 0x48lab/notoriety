@@ -38,23 +38,30 @@ class GuildTerritoryCommand(
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {
         val player = sender as Player
         val uuid = player.uniqueId
+        val cleanedArgs = stripGovFlag(args)
 
-        if (args.isEmpty()) {
+        if (cleanedArgs.isEmpty()) {
             showUsage(player)
             return true
         }
 
-        return when (args[0].lowercase()) {
-            "set", "claim" -> handleSet(player, args.drop(1).toTypedArray())
+        // --gov フラグを子ハンドラに引き継ぐため、useGovをフィールドに保持
+        currentUseGov = hasGovFlag(args)
+
+        return when (cleanedArgs[0].lowercase()) {
+            "set", "claim" -> handleSet(player, cleanedArgs.drop(1).toTypedArray())
             "info", "status" -> handleInfo(player)
-            "release", "abandon" -> handleRelease(player, args.drop(1).toTypedArray())
-            "mobspawn", "mob" -> handleMobSpawn(player, args.drop(1).toTypedArray())
+            "release", "abandon" -> handleRelease(player, cleanedArgs.drop(1).toTypedArray())
+            "mobspawn", "mob" -> handleMobSpawn(player, cleanedArgs.drop(1).toTypedArray())
             else -> {
                 showUsage(player)
                 true
             }
         }
     }
+
+    // 現在のコマンド実行で --gov が使われているかどうか（スレッドローカルではないが、コマンド実行は同期的なので問題なし）
+    private var currentUseGov = false
 
     private fun handleSet(player: Player, args: Array<out String>): Boolean {
         val uuid = player.uniqueId
@@ -98,14 +105,14 @@ class GuildTerritoryCommand(
 
         when (result) {
             is ClaimResult.Success -> {
-                val guild = guildService.getPlayerGuild(uuid)
-                val territory = territoryService.getTerritory(guild?.id ?: 0)
+                val resolvedGuild = guildService.getGuild(guildId)
+                val territory = territoryService.getTerritory(guildId)
                 val totalChunks = territory?.chunkCount ?: 1
 
                 // 基本メッセージ
                 i18n.sendSuccess(player, "territory.claim_success", "Territory claimed! (%d/%d chunks)",
                     totalChunks,
-                    territoryService.calculateAllowedChunks(guildService.getMemberCount(guild?.id ?: 0)))
+                    territoryService.calculateAllowedChunks(guildService.getMemberCount(guildId)))
 
                 // シギル関連メッセージ
                 if (result.isNewSigil && result.sigil != null) {
@@ -115,8 +122,8 @@ class GuildTerritoryCommand(
                     // シギル作成イベント発火
                     Bukkit.getPluginManager().callEvent(
                         SigilCreateEvent(
-                            guildId = guild?.id ?: 0,
-                            guildName = guild?.name ?: "",
+                            guildId = guildId,
+                            guildName = resolvedGuild?.name ?: "",
                             sigil = result.sigil,
                             createdBy = uuid,
                             isEnclave = totalChunks > 1  // 2個目以降で新規シギル = 飛び地
@@ -136,8 +143,8 @@ class GuildTerritoryCommand(
                 // 領地確保イベント発火
                 Bukkit.getPluginManager().callEvent(
                     TerritoryClaimEvent(
-                        guildId = guild?.id ?: 0,
-                        guildName = guild?.name ?: "",
+                        guildId = guildId,
+                        guildName = resolvedGuild?.name ?: "",
                         claimedBy = uuid,
                         chunk = result.chunk,
                         totalChunks = totalChunks
@@ -151,8 +158,7 @@ class GuildTerritoryCommand(
                 i18n.sendError(player, "territory.claim_not_master", "Only the guild master can claim territory")
             }
             is ClaimResult.NotEnoughMembers -> {
-                val guild = guildService.getPlayerGuild(uuid)
-                val memberCount = guildService.getMemberCount(guild?.id ?: 0)
+                val memberCount = guildService.getMemberCount(guildId)
                 i18n.sendError(player, "territory.claim_not_enough_members",
                     "You need at least %d members to claim territory (current: %d)",
                     TerritoryService.MIN_MEMBERS_FOR_TERRITORY, memberCount)
@@ -165,8 +171,7 @@ class GuildTerritoryCommand(
                     "Your guild has reached the maximum territory limit (%d chunks)", maxChunks)
             }
             is ClaimResult.MemberChunkLimitReached -> {
-                val guild = guildService.getPlayerGuild(uuid)
-                val memberCount = guildService.getMemberCount(guild?.id ?: 0)
+                val memberCount = guildService.getMemberCount(guildId)
                 val maxChunks = territoryService.calculateAllowedChunks(memberCount)
                 i18n.sendError(player, "territory.claim_member_limit",
                     "Your current member count (%d) only allows %d chunks", memberCount, maxChunks)
@@ -199,8 +204,12 @@ class GuildTerritoryCommand(
         val uuid = player.uniqueId
         val isOp = player.isOp
 
-        // ギルドを取得（OPの場合は現在地の領地からも取得可能）
-        var guild = guildService.getPlayerGuild(uuid)
+        // ギルドを取得（--gov対応、OPの場合は現在地の領地からも取得可能）
+        var guild = if (currentUseGov) {
+            guildService.getPlayerGovernmentGuild(uuid)
+        } else {
+            guildService.getPlayerGuild(uuid)
+        }
 
         if (guild == null && isOp) {
             // OPで自分のギルドがない場合、現在地の領地のギルドを取得
@@ -492,7 +501,12 @@ class GuildTerritoryCommand(
     }
 
     private fun getPlayerGuildId(player: Player): Long? {
-        return guildService.getPlayerGuild(player.uniqueId)?.id
+        val guild = if (currentUseGov) {
+            guildService.getPlayerGovernmentGuild(player.uniqueId)
+        } else {
+            guildService.getPlayerGuild(player.uniqueId)
+        }
+        return guild?.id
     }
 
     private fun showUsage(player: Player) {
@@ -510,7 +524,7 @@ class GuildTerritoryCommand(
 
     override fun tabComplete(sender: CommandSender, args: Array<out String>): List<String> {
         if (args.size == 1) {
-            return listOf("set", "info", "release", "mobspawn")
+            return listOf("set", "info", "release", "mobspawn", "--gov")
                 .filter { it.startsWith(args[0].lowercase()) }
         }
         if (args.size == 2) {

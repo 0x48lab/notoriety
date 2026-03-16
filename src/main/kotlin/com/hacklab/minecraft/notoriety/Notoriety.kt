@@ -57,6 +57,9 @@ import com.hacklab.minecraft.notoriety.territory.listener.TerritoryEntryListener
 import com.hacklab.minecraft.notoriety.territory.listener.TerritoryProtectionListener
 import com.hacklab.minecraft.notoriety.territory.repository.SigilRepository
 import com.hacklab.minecraft.notoriety.territory.repository.TerritoryRepository
+import com.hacklab.minecraft.notoriety.territory.repository.GuildBaseRepository
+import com.hacklab.minecraft.notoriety.territory.service.GuildBaseService
+import com.hacklab.minecraft.notoriety.territory.service.GuildBaseServiceImpl
 import com.hacklab.minecraft.notoriety.territory.service.SigilService
 import com.hacklab.minecraft.notoriety.territory.service.SigilServiceImpl
 import com.hacklab.minecraft.notoriety.territory.service.TerritoryService
@@ -65,6 +68,13 @@ import com.hacklab.minecraft.notoriety.village.GolemService
 import com.hacklab.minecraft.notoriety.village.TradeListener
 import com.hacklab.minecraft.notoriety.village.VillagerListener
 import com.hacklab.minecraft.notoriety.village.VillagerService
+import com.hacklab.minecraft.notoriety.zone.command.ZoneCommand
+import com.hacklab.minecraft.notoriety.zone.listener.ZoneEntryListener
+import com.hacklab.minecraft.notoriety.zone.listener.ZoneProtectionListener
+import com.hacklab.minecraft.notoriety.zone.listener.ZoneToolListener
+import com.hacklab.minecraft.notoriety.zone.repository.ProtectedZoneRepository
+import com.hacklab.minecraft.notoriety.zone.service.ZoneService
+import com.hacklab.minecraft.notoriety.zone.service.ZoneServiceImpl
 import org.bukkit.Bukkit
 import org.bukkit.command.TabCompleter
 import org.bukkit.plugin.java.JavaPlugin
@@ -116,10 +126,16 @@ class Notoriety : JavaPlugin() {
     lateinit var guildGUIManager: GuildGUIManager
         private set
 
+    // 保護エリアシステム
+    lateinit var zoneService: ZoneService
+        private set
+
     // 領地システム
     lateinit var territoryService: TerritoryService
         private set
     lateinit var sigilService: SigilService
+        private set
+    lateinit var guildBaseService: GuildBaseService
         private set
     private lateinit var beaconManager: BeaconManager
     private lateinit var territoryCache: TerritoryCache
@@ -141,6 +157,11 @@ class Notoriety : JavaPlugin() {
         // 2. データベース初期化
         databaseManager = DatabaseManager(this, configManager)
         databaseManager.initialize()
+
+        // 保護エリアシステム初期化（DBテーブル作成後すぐ）
+        val protectedZoneRepository = ProtectedZoneRepository(databaseManager)
+        zoneService = ZoneServiceImpl(protectedZoneRepository)
+        zoneService.loadAll()
 
         // 3. 経済システム連携
         economyService = EconomyService(this)
@@ -211,6 +232,10 @@ class Notoriety : JavaPlugin() {
             cache = territoryServiceImpl.getCache(),
             configManager = configManager
         )
+
+        // GuildBaseService初期化
+        val guildBaseRepository = GuildBaseRepository(databaseManager)
+        guildBaseService = GuildBaseServiceImpl(guildBaseRepository, sigilService)
 
         // 起動時ビーコン検証をスケジュール（ワールドロード後に実行）
         territoryServiceImpl.scheduleStartupBeaconVerification()
@@ -305,7 +330,7 @@ class Notoriety : JavaPlugin() {
     private fun registerListeners() {
         val pm = server.pluginManager
 
-        pm.registerEvents(PlayerListener(playerManager, notorietyService, teamManager), this)
+        pm.registerEvents(PlayerListener(playerManager, notorietyService, teamManager, villagerService), this)
         pm.registerEvents(
             OwnershipListener(
                 plugin = this,
@@ -362,10 +387,19 @@ class Notoriety : JavaPlugin() {
         // 間接PK防止システムリスナー
         pm.registerEvents(HazardPlacementListener(hazardTrackingService, configManager), this)
         pm.registerEvents(TerritoryHazardProtectionListener(territoryService, guildService, i18nManager), this)
+
+        // 保護エリアシステムリスナー
+        pm.registerEvents(ZoneProtectionListener(zoneService, i18nManager), this)
+        pm.registerEvents(ZoneEntryListener(zoneService, i18nManager), this)
     }
 
     private fun registerCommands() {
         val mainCommand = NotorietyCommand(this)
+
+        // ZoneToolListener needs the same ZoneCommand instance for shared selections
+        server.pluginManager.registerEvents(
+            ZoneToolListener(mainCommand.zoneCommand, i18nManager), this
+        )
 
         getCommand("notoriety")?.let {
             it.setExecutor(mainCommand)
@@ -470,8 +504,9 @@ class Notoriety : JavaPlugin() {
             }
         }, 72000L, 72000L)  // 1時間 = 72000 ticks
 
-        // 保留犯罪のチェック（1秒ごと）
+        // 毎秒クリーンアップタスク（統合）
         server.scheduler.runTaskTimer(this, Runnable {
+            // 保留犯罪のチェック
             ownershipService.getExpiredPendingCrimes().forEach { pending ->
                 notorietyService.commitCrime(
                     criminal = pending.playerUuid,
@@ -482,12 +517,13 @@ class Notoriety : JavaPlugin() {
                     detail = pending.blockType.name
                 )
             }
-        }, 20L, 20L)  // 1秒 = 20 ticks
-
-        // 間接PK追跡データのクリーンアップ（1秒ごと）
-        server.scheduler.runTaskTimer(this, Runnable {
+            // 間接PK追跡データのクリーンアップ
             hazardTrackingService.cleanupExpiredEntries()
             combatTagService.cleanupExpiredTags()
+            // ゴーレムの無効エントリ削除
+            golemService.cleanupDeadGolems()
+            // 警告クールダウンの期限切れエントリ削除
+            notorietyService.cleanupExpiredWarnings()
         }, 20L, 20L)  // 1秒 = 20 ticks
 
         // 懸賞金看板の更新（10秒ごと）

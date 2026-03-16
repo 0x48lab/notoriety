@@ -31,6 +31,9 @@ import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.entity.EntityTargetEvent
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.PlayerMoveEvent
+import org.bukkit.event.player.PlayerQuitEvent
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class VillagerListener(
     private val playerManager: PlayerManager,
@@ -41,6 +44,15 @@ class VillagerListener(
     private val guildService: GuildService,
     private val territoryService: TerritoryService
 ) : Listener {
+
+    companion object {
+        private const val PROXIMITY_CHECK_DISTANCE_SQ = 64.0 // 8ブロック^2
+        private const val PROXIMITY_CHECK_INTERVAL_MS = 2000L // 2秒
+    }
+
+    // プレイヤーごとの最終近接チェック状態
+    private data class ProximityCheckState(val x: Double, val z: Double, val timestamp: Long)
+    private val lastProximityCheck = ConcurrentHashMap<UUID, ProximityCheckState>()
 
     /**
      * 村人のベッドを壊そうとした時の警告
@@ -124,8 +136,26 @@ class VillagerListener(
 
         val player = event.player
         val data = playerManager.getPlayer(player) ?: return
+        val color = data.getNameColor()
 
-        when (data.getNameColor()) {
+        // 青プレイヤーは即座にスキップ（getNearbyEntities を呼ばない）
+        if (color == NameColor.BLUE) return
+
+        // スロットル: 前回チェックから8ブロック以上移動 or 2秒以上経過した場合のみ再チェック
+        val now = System.currentTimeMillis()
+        val to = event.to
+        val lastCheck = lastProximityCheck[player.uniqueId]
+        if (lastCheck != null) {
+            val dx = to.x - lastCheck.x
+            val dz = to.z - lastCheck.z
+            val distSq = dx * dx + dz * dz
+            if (distSq < PROXIMITY_CHECK_DISTANCE_SQ && (now - lastCheck.timestamp) < PROXIMITY_CHECK_INTERVAL_MS) {
+                return
+            }
+        }
+        lastProximityCheck[player.uniqueId] = ProximityCheckState(to.x, to.z, now)
+
+        when (color) {
             NameColor.RED -> {
                 // 村人の反応
                 val villager = villagerService.checkRedPlayerProximity(player)
@@ -144,6 +174,11 @@ class VillagerListener(
             }
             else -> {}
         }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    fun onPlayerQuit(event: PlayerQuitEvent) {
+        lastProximityCheck.remove(event.player.uniqueId)
     }
 
     // 村人殺害

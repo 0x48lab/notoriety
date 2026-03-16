@@ -494,9 +494,9 @@ class TerritoryServiceImpl(
     override fun canAccessAt(location: Location, playerUuid: UUID): Boolean {
         val territory = getTerritoryAt(location) ?: return true  // 領地外は自由
 
-        // ギルドメンバーかチェック
-        val playerGuild = guildService.getPlayerGuild(playerUuid)
-        return playerGuild?.id == territory.guildId
+        // いずれかの所属ギルドの領地であればアクセス許可（二重所属対応）
+        val playerGuilds = guildService.getPlayerGuilds(playerUuid)
+        return playerGuilds.any { it.id == territory.guildId }
     }
 
     // === 計算 ===
