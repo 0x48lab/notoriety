@@ -26,6 +26,11 @@ class SigilServiceImpl(
     private val configManager: ConfigManager? = null
 ) : SigilService {
 
+    companion object {
+        /** 拠点TPキーワードと衝突するため、シギル名として使用禁止 */
+        val RESERVED_SIGIL_NAMES = listOf("base", "拠点")
+    }
+
     // テレポートクールダウン追跡（プレイヤーUUID -> 最終テレポート時刻）
     private val teleportCooldowns = ConcurrentHashMap<UUID, Long>()
 
@@ -105,6 +110,11 @@ class SigilServiceImpl(
             return RenameResult.InvalidName("名前は32文字以内で、英数字・ひらがな・カタカナ・漢字のみ使用可能です")
         }
 
+        // 予約語チェック（拠点TPキーワードとの衝突防止）
+        if (RESERVED_SIGIL_NAMES.any { it.equals(newName, ignoreCase = true) }) {
+            return RenameResult.InvalidName("この名前は予約されています")
+        }
+
         // 重複チェック
         if (sigilRepository.existsByName(sigil.territoryId, newName)) {
             return RenameResult.NameAlreadyExists(newName)
@@ -140,10 +150,10 @@ class SigilServiceImpl(
         val cooldownResult = checkCooldown(player.uniqueId)
         if (cooldownResult != null) return cooldownResult
 
-        val sigilLocation = sigil.location ?: return TeleportResult.WorldNotFound
+        val location = sigil.location ?: return TeleportResult.WorldNotFound
 
         // 安全なテレポート位置を探す
-        val safeLocation = findSafeTeleportLocation(sigilLocation)
+        val safeLocation = findSafeTeleportLocation(location)
             ?: return TeleportResult.NoSafeLocation
 
         player.teleport(safeLocation)
@@ -156,11 +166,7 @@ class SigilServiceImpl(
         return TeleportResult.Success(sigil)
     }
 
-    /**
-     * テレポートクールダウンをチェック
-     * @return クールダウン中なら TeleportResult.OnCooldown、そうでなければ null
-     */
-    private fun checkCooldown(playerUuid: UUID): TeleportResult.OnCooldown? {
+    override fun checkCooldown(playerUuid: UUID): TeleportResult.OnCooldown? {
         val cooldownSeconds = configManager?.sigilTeleportCooldown ?: 30
         if (cooldownSeconds <= 0) return null
 
@@ -173,6 +179,10 @@ class SigilServiceImpl(
         }
 
         return null
+    }
+
+    override fun setCooldown(playerUuid: UUID) {
+        teleportCooldowns[playerUuid] = System.currentTimeMillis()
     }
 
     /**
@@ -200,17 +210,13 @@ class SigilServiceImpl(
         return teleportToSigil(player, sigil)
     }
 
-    /**
-     * 安全なテレポート位置を探す
-     * シギル位置の上、および周囲を探索する
-     */
-    private fun findSafeTeleportLocation(sigilLocation: Location): Location? {
-        val world = sigilLocation.world ?: return null
+    override fun findSafeTeleportLocation(location: Location): Location? {
+        val world = location.world ?: return null
 
         // まずシギル直上を探索（Y+1から上方向）
-        val aboveResult = findSafeLocationAbove(world, sigilLocation.blockX, sigilLocation.blockY + 1, sigilLocation.blockZ)
+        val aboveResult = findSafeLocationAbove(world, location.blockX, location.blockY + 1, location.blockZ)
         if (aboveResult != null) {
-            aboveResult.yaw = sigilLocation.yaw
+            aboveResult.yaw = location.yaw
             aboveResult.pitch = 0f
             return aboveResult
         }
@@ -220,12 +226,12 @@ class SigilServiceImpl(
         for (offset in offsets) {
             val result = findSafeLocationAbove(
                 world,
-                sigilLocation.blockX + offset[0],
-                sigilLocation.blockY,
-                sigilLocation.blockZ + offset[1]
+                location.blockX + offset[0],
+                location.blockY,
+                location.blockZ + offset[1]
             )
             if (result != null) {
-                result.yaw = sigilLocation.yaw
+                result.yaw = location.yaw
                 result.pitch = 0f
                 return result
             }

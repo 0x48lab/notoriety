@@ -2,6 +2,7 @@ package com.hacklab.minecraft.notoriety.command
 
 import com.hacklab.minecraft.notoriety.Notoriety
 import com.hacklab.minecraft.notoriety.guild.command.GuildCommand
+import com.hacklab.minecraft.notoriety.territory.command.GuildBaseCommand
 import com.hacklab.minecraft.notoriety.territory.command.GuildHomeCommand
 import com.hacklab.minecraft.notoriety.territory.command.GuildSigilCommand
 import com.hacklab.minecraft.notoriety.territory.command.GuildTerritoryCommand
@@ -28,11 +29,18 @@ class GuildCommandWrapper(private val plugin: Notoriety) : SubCommand {
             sigilService = plugin.sigilService,
             territoryService = plugin.territoryService,
             guildService = plugin.guildService,
+            guildBaseService = plugin.guildBaseService,
             i18n = plugin.i18nManager
         ))
         command.addSubCommand(GuildSigilCommand(
             sigilService = plugin.sigilService,
             territoryService = plugin.territoryService,
+            guildService = plugin.guildService,
+            i18n = plugin.i18nManager
+        ))
+        // ギルド拠点コマンドを追加
+        command.addSubCommand(GuildBaseCommand(
+            guildBaseService = plugin.guildBaseService,
             guildService = plugin.guildService,
             i18n = plugin.i18nManager
         ))

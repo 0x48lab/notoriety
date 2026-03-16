@@ -2,6 +2,7 @@ package com.hacklab.minecraft.notoriety.territory.command
 
 import com.hacklab.minecraft.notoriety.core.i18n.I18nManager
 import com.hacklab.minecraft.notoriety.guild.command.GuildSubCommand
+import com.hacklab.minecraft.notoriety.guild.model.Guild
 import com.hacklab.minecraft.notoriety.guild.service.GuildService
 import com.hacklab.minecraft.notoriety.territory.event.SigilRenameEvent
 import com.hacklab.minecraft.notoriety.territory.service.RenameResult
@@ -31,16 +32,17 @@ class GuildSigilCommand(
 
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {
         val player = sender as Player
-        val uuid = player.uniqueId
 
-        if (args.isEmpty()) {
+        val (guild, cleanedArgs) = resolveTargetGuild(player, args, guildService)
+
+        if (cleanedArgs.isEmpty()) {
             showUsage(player)
             return true
         }
 
-        return when (args[0].lowercase()) {
-            "list", "一覧" -> handleList(player)
-            "rename", "名前変更" -> handleRename(player, args.drop(1).toTypedArray())
+        return when (cleanedArgs[0].lowercase()) {
+            "list", "一覧" -> handleList(player, guild)
+            "rename", "名前変更" -> handleRename(player, guild, cleanedArgs.drop(1).toTypedArray())
             else -> {
                 showUsage(player)
                 true
@@ -48,9 +50,8 @@ class GuildSigilCommand(
         }
     }
 
-    private fun handleList(player: Player): Boolean {
+    private fun handleList(player: Player, guild: Guild?): Boolean {
         val uuid = player.uniqueId
-        val guild = guildService.getPlayerGuild(uuid)
 
         if (guild == null) {
             player.sendError(i18n.get(uuid, "sigil.list_not_in_guild", "You are not in a guild"))
@@ -85,7 +86,7 @@ class GuildSigilCommand(
         return true
     }
 
-    private fun handleRename(player: Player, args: Array<out String>): Boolean {
+    private fun handleRename(player: Player, guild: Guild?, args: Array<out String>): Boolean {
         val uuid = player.uniqueId
 
         if (args.size < 2) {
@@ -93,7 +94,6 @@ class GuildSigilCommand(
             return true
         }
 
-        val guild = guildService.getPlayerGuild(uuid)
         if (guild == null) {
             player.sendError("ギルドに所属していません")
             return true
@@ -166,18 +166,24 @@ class GuildSigilCommand(
 
     override fun tabComplete(sender: CommandSender, args: Array<out String>): List<String> {
         val player = sender as? Player ?: return emptyList()
+        val cleanedArgs = stripGovFlag(args)
 
-        if (args.size == 1) {
-            return listOf("list", "rename")
-                .filter { it.startsWith(args[0].lowercase()) }
+        if (cleanedArgs.size == 1) {
+            val input = cleanedArgs[0].lowercase()
+            val subcommands = listOf("list", "rename")
+                .filter { it.startsWith(input) }
+            if (args.size == 1 && !hasGovFlag(args)) {
+                return subcommands + listOf("--gov").filter { it.startsWith(input) }
+            }
+            return subcommands
         }
 
-        if (args.size == 2 && args[0].lowercase() in listOf("rename", "名前変更")) {
-            // シギル名の補完
-            val guild = guildService.getPlayerGuild(player.uniqueId) ?: return emptyList()
+        if (cleanedArgs.size == 2 && cleanedArgs[0].lowercase() in listOf("rename", "名前変更")) {
+            val (guild, _) = resolveTargetGuild(player, args, guildService)
+            if (guild == null) return emptyList()
             val territory = territoryService.getTerritory(guild.id) ?: return emptyList()
             return territory.sigils.map { it.name }
-                .filter { it.lowercase().startsWith(args[1].lowercase()) }
+                .filter { it.lowercase().startsWith(cleanedArgs[1].lowercase()) }
         }
 
         return emptyList()

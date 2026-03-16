@@ -87,6 +87,28 @@ interface SigilService {
      */
     fun teleportToSigilByName(player: Player, guildId: Long, sigilName: String): TeleportResult
 
+    // === クールダウン・安全着地共有 ===
+
+    /**
+     * テレポートクールダウンをチェック
+     * @param playerUuid プレイヤーUUID
+     * @return クールダウン中なら TeleportResult.OnCooldown、そうでなければ null
+     */
+    fun checkCooldown(playerUuid: UUID): TeleportResult.OnCooldown?
+
+    /**
+     * テレポートクールダウンを設定
+     * @param playerUuid プレイヤーUUID
+     */
+    fun setCooldown(playerUuid: UUID)
+
+    /**
+     * 安全なテレポート位置を探す
+     * @param location 基準位置
+     * @return 安全な位置、見つからない場合はnull
+     */
+    fun findSafeTeleportLocation(location: Location): Location?
+
     // === ビーコンブロック管理 ===
 
     /**
@@ -106,8 +128,11 @@ interface SigilService {
  * テレポート結果を表すsealed class
  */
 sealed class TeleportResult {
-    /** テレポート成功 */
+    /** テレポート成功（シギル） */
     data class Success(val sigil: TerritorySigil) : TeleportResult()
+
+    /** テレポート成功（拠点） */
+    data class BaseSuccess(val base: com.hacklab.minecraft.notoriety.territory.model.GuildBase) : TeleportResult()
 
     /** シギルが見つからない */
     data object SigilNotFound : TeleportResult()
@@ -129,6 +154,9 @@ sealed class TeleportResult {
 
     /** ワールドが見つからない */
     data object WorldNotFound : TeleportResult()
+
+    /** 拠点が設定されていない */
+    data object NoBase : TeleportResult()
 }
 
 /**
