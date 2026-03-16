@@ -25,15 +25,15 @@ class GuildGUIManager(
     /**
      * メインメニューを開く
      */
-    fun openMainMenu(player: Player) {
-        GuildMainMenuGUI(player, guildService, this).open()
+    fun openMainMenu(player: Player, guildId: Long? = null) {
+        GuildMainMenuGUI(player, guildService, this, guildId).open()
     }
 
     /**
      * メンバー一覧を開く
      */
-    fun openMembersList(player: Player, page: Int = 0) {
-        GuildMembersGUI(player, guildService, this, page).open()
+    fun openMembersList(player: Player, page: Int = 0, guildId: Long? = null) {
+        GuildMembersGUI(player, guildService, this, page, guildId).open()
     }
 
     /**
@@ -46,22 +46,22 @@ class GuildGUIManager(
     /**
      * 入会申請一覧を開く
      */
-    fun openApplicationsList(player: Player, page: Int = 0) {
+    fun openApplicationsList(player: Player, page: Int = 0, guildId: Long? = null) {
         GuildApplicationsGUI(player, guildService, this, page).open()
     }
 
     /**
      * 色選択画面を開く
      */
-    fun openColorSelect(player: Player) {
-        GuildColorSelectGUI(player, guildService, this).open()
+    fun openColorSelect(player: Player, guildId: Long? = null) {
+        GuildColorSelectGUI(player, guildService, this, guildId).open()
     }
 
     /**
      * ギルド設定画面を開く（マスター専用）
      */
-    fun openSettings(player: Player) {
-        GuildSettingsGUI(player, guildService, this, inputManager).open()
+    fun openSettings(player: Player, guildId: Long? = null) {
+        GuildSettingsGUI(player, guildService, this, inputManager, guildId).open()
     }
 
     /**

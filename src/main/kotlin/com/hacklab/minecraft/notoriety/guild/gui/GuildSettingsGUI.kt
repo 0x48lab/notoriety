@@ -18,15 +18,22 @@ class GuildSettingsGUI(
     player: Player,
     private val guildService: GuildService,
     private val guiManager: GuildGUIManager,
-    private val inputManager: GuildInputManager
+    private val inputManager: GuildInputManager,
+    private val targetGuildId: Long? = null
 ) : GuildGUI(
     player,
     Component.text("ギルド設定").color(NamedTextColor.GOLD),
     54
 ) {
 
-    private val guild: Guild? = guildService.getPlayerGuild(player.uniqueId)
-    private val membership = guildService.getMembership(player.uniqueId)
+    private val guild: Guild? = if (targetGuildId != null) {
+        guildService.getGuild(targetGuildId)
+    } else {
+        guildService.getPlayerGuild(player.uniqueId)
+    }
+    private val membership = guild?.let {
+        guildService.getMembership(player.uniqueId, it.id)
+    } ?: guildService.getMembership(player.uniqueId)
     private val territoryService: TerritoryService? = guiManager.territoryService
 
     companion object {
@@ -148,7 +155,7 @@ class GuildSettingsGUI(
         val guild = this.guild ?: return
 
         when (slot) {
-            SLOT_BACK -> guiManager.openMainMenu(player)
+            SLOT_BACK -> guiManager.openMainMenu(player, targetGuildId)
             SLOT_CLOSE -> player.closeInventory()
 
             SLOT_NAME -> {
@@ -171,10 +178,10 @@ class GuildSettingsGUI(
                             player.sendMessage(Component.text("エラー: ${e.message}").color(NamedTextColor.RED))
                         }
                         // GUIを再度開く
-                        guiManager.openSettings(player)
+                        guiManager.openSettings(player, targetGuildId)
                     },
                     onCancel = {
-                        guiManager.openSettings(player)
+                        guiManager.openSettings(player, targetGuildId)
                     }
                 )
             }
@@ -198,10 +205,10 @@ class GuildSettingsGUI(
                         } catch (e: Exception) {
                             player.sendMessage(Component.text("エラー: ${e.message}").color(NamedTextColor.RED))
                         }
-                        guiManager.openSettings(player)
+                        guiManager.openSettings(player, targetGuildId)
                     },
                     onCancel = {
-                        guiManager.openSettings(player)
+                        guiManager.openSettings(player, targetGuildId)
                     }
                 )
             }
@@ -229,16 +236,16 @@ class GuildSettingsGUI(
                         } catch (e: Exception) {
                             player.sendMessage(Component.text("エラー: ${e.message}").color(NamedTextColor.RED))
                         }
-                        guiManager.openSettings(player)
+                        guiManager.openSettings(player, targetGuildId)
                     },
                     onCancel = {
-                        guiManager.openSettings(player)
+                        guiManager.openSettings(player, targetGuildId)
                     }
                 )
             }
 
             SLOT_TAG_COLOR -> {
-                guiManager.openColorSelect(player)
+                guiManager.openColorSelect(player, targetGuildId)
             }
 
             SLOT_MOB_SPAWN -> {
@@ -258,7 +265,7 @@ class GuildSettingsGUI(
                                 )
                             }
                             // GUIを更新
-                            guiManager.openSettings(player)
+                            guiManager.openSettings(player, targetGuildId)
                         } else {
                             player.sendMessage(
                                 Component.text("設定の更新に失敗しました").color(NamedTextColor.RED)

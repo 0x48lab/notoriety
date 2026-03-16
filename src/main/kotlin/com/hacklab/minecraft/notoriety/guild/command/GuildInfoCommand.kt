@@ -25,10 +25,17 @@ class GuildInfoCommand(
         .withZone(ZoneId.systemDefault())
 
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {
-        val guild: Guild? = if (args.isNotEmpty()) {
-            guildService.getGuildByName(args.joinToString(" "))
+        val cleanedArgs = stripGovFlag(args)
+        val useGov = hasGovFlag(args)
+
+        val guild: Guild? = if (cleanedArgs.isNotEmpty()) {
+            guildService.getGuildByName(cleanedArgs.joinToString(" "))
         } else if (sender is Player) {
-            guildService.getPlayerGuild(sender.uniqueId)
+            if (useGov) {
+                guildService.getPlayerGovernmentGuild(sender.uniqueId)
+            } else {
+                guildService.getPlayerGuild(sender.uniqueId)
+            }
         } else {
             sender.sendMessage(Component.text("Specify a guild name: /guild info <name>")
                 .color(NamedTextColor.RED))
@@ -36,7 +43,7 @@ class GuildInfoCommand(
         }
 
         if (guild == null) {
-            if (args.isEmpty() && sender is Player) {
+            if (cleanedArgs.isEmpty() && sender is Player) {
                 sender.sendMessage(Component.text("You are not in a guild")
                     .color(NamedTextColor.RED))
             } else {
@@ -97,9 +104,10 @@ class GuildInfoCommand(
     override fun tabComplete(sender: CommandSender, args: Array<out String>): List<String> {
         if (args.size == 1) {
             val input = args[0].lowercase()
-            return guildService.getAllGuilds(0, 100)
+            val names = guildService.getAllGuilds(0, 100)
                 .map { it.name }
                 .filter { it.lowercase().startsWith(input) }
+            return (names + listOf("--gov").filter { it.startsWith(input) })
         }
         return emptyList()
     }

@@ -19,14 +19,14 @@ class GuildColorCommand(
 
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {
         val player = sender as Player
+        val (guild, cleanedArgs) = resolveTargetGuild(player, args, guildService)
 
-        val guild = guildService.getPlayerGuild(player.uniqueId)
         if (guild == null) {
             player.sendError("You are not in a guild")
             return true
         }
 
-        if (args.isEmpty()) {
+        if (cleanedArgs.isEmpty()) {
             // 色一覧を表示
             player.sendMessage(Component.text("=== Available Colors ===").color(NamedTextColor.GOLD))
             player.sendMessage(Component.text("Current: ")
@@ -47,11 +47,11 @@ class GuildColorCommand(
             return true
         }
 
-        val colorName = args[0].uppercase()
+        val colorName = cleanedArgs[0].uppercase()
         val color = TagColor.fromString(colorName)
 
         if (color == null) {
-            player.sendError("Invalid color: ${args[0]}")
+            player.sendError("Invalid color: ${cleanedArgs[0]}")
             player.sendInfo("Use /guild color to see available colors")
             return true
         }
@@ -75,9 +75,10 @@ class GuildColorCommand(
     override fun tabComplete(sender: CommandSender, args: Array<out String>): List<String> {
         if (args.size == 1) {
             val input = args[0].lowercase()
-            return TagColor.entries
+            val colors = TagColor.entries
                 .map { it.name.lowercase() }
                 .filter { it.startsWith(input) }
+            return colors + listOf("--gov").filter { it.startsWith(input) }
         }
         return emptyList()
     }

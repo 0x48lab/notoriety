@@ -24,15 +24,15 @@ class GuildMembersCommand(
 
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {
         val player = sender as Player
-        val guild = guildService.getPlayerGuild(player.uniqueId)
+        val (guild, cleanedArgs) = resolveTargetGuild(player, args, guildService)
 
         if (guild == null) {
             player.sendError("You are not in a guild")
             return true
         }
 
-        val page = if (args.isNotEmpty()) {
-            args[0].toIntOrNull()?.minus(1)?.coerceAtLeast(0) ?: 0
+        val page = if (cleanedArgs.isNotEmpty()) {
+            cleanedArgs[0].toIntOrNull()?.minus(1)?.coerceAtLeast(0) ?: 0
         } else {
             0
         }
@@ -91,6 +91,9 @@ class GuildMembersCommand(
     }
 
     override fun tabComplete(sender: CommandSender, args: Array<out String>): List<String> {
+        if (args.size == 1 && args[0].startsWith("-")) {
+            return listOf("--gov").filter { it.startsWith(args[0].lowercase()) }
+        }
         return emptyList()
     }
 }

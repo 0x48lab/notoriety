@@ -19,8 +19,9 @@ class GuildDissolveCommand(
     override val usage = "/guild dissolve"
     override val aliases = listOf("disband", "delete")
 
-    // 確認待ちのプレイヤー（10秒間有効）
-    private val pendingConfirmations = ConcurrentHashMap<UUID, Long>()
+    // 確認待ちのプレイヤー（10秒間有効）- ギルドIDとタイムスタンプを保存
+    private data class PendingDissolve(val guildId: Long, val timestamp: Long)
+    private val pendingConfirmations = ConcurrentHashMap<UUID, PendingDissolve>()
 
     companion object {
         private const val CONFIRMATION_TIMEOUT_MS = 10_000L
@@ -28,19 +29,27 @@ class GuildDissolveCommand(
 
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {
         val player = sender as Player
+        val (guild, cleanedArgs) = resolveTargetGuild(player, args, guildService)
+        val useGov = hasGovFlag(args)
 
-        val guild = guildService.getPlayerGuild(player.uniqueId)
         if (guild == null) {
             player.sendError("You are not in a guild")
             return true
         }
 
         // 確認チェック
-        val confirmArg = args.getOrNull(0)?.lowercase()
+        val confirmArg = cleanedArgs.getOrNull(0)?.lowercase()
 
         if (confirmArg == "confirm") {
-            val confirmTime = pendingConfirmations[player.uniqueId]
-            if (confirmTime == null || System.currentTimeMillis() - confirmTime > CONFIRMATION_TIMEOUT_MS) {
+            val pending = pendingConfirmations[player.uniqueId]
+            if (pending == null || System.currentTimeMillis() - pending.timestamp > CONFIRMATION_TIMEOUT_MS) {
+                player.sendError("Confirmation expired. Run /guild dissolve again")
+                pendingConfirmations.remove(player.uniqueId)
+                return true
+            }
+
+            // 確認時のギルドIDが一致することを検証
+            if (pending.guildId != guild.id) {
                 player.sendError("Confirmation expired. Run /guild dissolve again")
                 pendingConfirmations.remove(player.uniqueId)
                 return true
@@ -68,7 +77,7 @@ class GuildDissolveCommand(
 
         // 確認プロンプト
         val memberCount = guildService.getMemberCount(guild.id)
-        pendingConfirmations[player.uniqueId] = System.currentTimeMillis()
+        pendingConfirmations[player.uniqueId] = PendingDissolve(guild.id, System.currentTimeMillis())
 
         player.sendMessage(Component.text()
             .append(Component.text("WARNING: ").color(NamedTextColor.DARK_RED))
@@ -82,15 +91,23 @@ class GuildDissolveCommand(
             .append(Component.text("Members affected: ").color(NamedTextColor.GRAY))
             .append(Component.text("$memberCount").color(NamedTextColor.WHITE))
             .build())
+        val govSuffix = if (useGov) " --gov" else ""
         player.sendMessage(Component.text()
             .append(Component.text("[Click to Confirm]")
                 .color(NamedTextColor.RED)
-                .clickEvent(ClickEvent.runCommand("/guild dissolve confirm")))
+                .clickEvent(ClickEvent.runCommand("/guild dissolve${govSuffix} confirm")))
             .append(Component.text(" or type ").color(NamedTextColor.GRAY))
-            .append(Component.text("/guild dissolve confirm").color(NamedTextColor.WHITE))
+            .append(Component.text("/guild dissolve${govSuffix} confirm").color(NamedTextColor.WHITE))
             .build())
         player.sendInfo("This confirmation expires in 10 seconds")
 
         return true
+    }
+
+    override fun tabComplete(sender: CommandSender, args: Array<out String>): List<String> {
+        if (args.size == 1) {
+            return listOf("--gov", "confirm").filter { it.startsWith(args[0].lowercase()) }
+        }
+        return emptyList()
     }
 }

@@ -19,19 +19,19 @@ class GuildTransferCommand(
 
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {
         val player = sender as Player
+        val (guild, cleanedArgs) = resolveTargetGuild(player, args, guildService)
 
-        if (args.isEmpty()) {
+        if (cleanedArgs.isEmpty()) {
             player.sendError("Usage: $usage")
             return true
         }
 
-        val guild = guildService.getPlayerGuild(player.uniqueId)
         if (guild == null) {
             player.sendError("You are not in a guild")
             return true
         }
 
-        val targetName = args[0]
+        val targetName = cleanedArgs[0]
         val target = Bukkit.getOfflinePlayer(targetName)
 
         try {
@@ -60,16 +60,25 @@ class GuildTransferCommand(
     }
 
     override fun tabComplete(sender: CommandSender, args: Array<out String>): List<String> {
-        if (args.size == 1 && sender is Player) {
-            val guild = guildService.getPlayerGuild(sender.uniqueId) ?: return emptyList()
+        val cleanedArgs = stripGovFlag(args)
+        if (cleanedArgs.size == 1 && sender is Player) {
+            val (guild, _) = resolveTargetGuild(sender, args, guildService)
+            if (guild == null) return emptyList()
             val members = guildService.getMembers(guild.id, 0, 50)
-            val input = args[0].lowercase()
+            val input = cleanedArgs[0].lowercase()
 
-            return members
+            val names = members
                 .filter { it.playerUuid != sender.uniqueId }
                 .filter { it.role != GuildRole.MASTER }
                 .mapNotNull { Bukkit.getOfflinePlayer(it.playerUuid).name }
                 .filter { it.lowercase().startsWith(input) }
+            if (args.size == 1 && !hasGovFlag(args)) {
+                return names + listOf("--gov").filter { it.startsWith(input) }
+            }
+            return names
+        }
+        if (!hasGovFlag(args)) {
+            return listOf("--gov").filter { it.startsWith(args.last().lowercase()) }
         }
         return emptyList()
     }

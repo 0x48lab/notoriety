@@ -49,7 +49,12 @@ class GuildServiceImpl(
         if (guildRepository.existsByTag(tag)) {
             throw GuildException.TagTaken(tag)
         }
-        if (membershipRepository.findByPlayerUuid(creator) != null) {
+        // Check if player already has a civilian guild (government guild is OK)
+        val existingMemberships = membershipRepository.findAllByPlayerUuid(creator)
+        val hasCivilianGuild = existingMemberships.any { membership ->
+            getGuild(membership.guildId)?.isGovernment == false
+        }
+        if (hasCivilianGuild) {
             throw GuildException.AlreadyInGuild(creator)
         }
 
@@ -105,7 +110,12 @@ class GuildServiceImpl(
         if (guildRepository.existsByTag(tag)) {
             throw GuildException.TagTaken(tag)
         }
-        if (membershipRepository.findByPlayerUuid(creator) != null) {
+        // Check if player already has a government guild (civilian guild is OK)
+        val existingMemberships = membershipRepository.findAllByPlayerUuid(creator)
+        val hasGovernmentGuild = existingMemberships.any { membership ->
+            getGuild(membership.guildId)?.isGovernment == true
+        }
+        if (hasGovernmentGuild) {
             throw GuildException.AlreadyInGuild(creator)
         }
 
@@ -152,12 +162,9 @@ class GuildServiceImpl(
 
     override fun setTagColor(guildId: Long, color: TagColor, requester: UUID) {
         val guild = getGuildOrThrow(guildId)
-        val membership = membershipRepository.findByPlayerUuid(requester)
+        val membership = membershipRepository.findByPlayerAndGuild(requester, guildId)
             ?: throw GuildException.NotMember(requester, guildId)
 
-        if (membership.guildId != guildId) {
-            throw GuildException.NotMember(requester, guildId)
-        }
         if (!membership.role.canChangeTagColor()) {
             throw GuildException.NotMaster(requester)
         }
@@ -171,12 +178,9 @@ class GuildServiceImpl(
 
     override fun setName(guildId: Long, name: String, requester: UUID) {
         val guild = getGuildOrThrow(guildId)
-        val membership = membershipRepository.findByPlayerUuid(requester)
+        val membership = membershipRepository.findByPlayerAndGuild(requester, guildId)
             ?: throw GuildException.NotMember(requester, guildId)
 
-        if (membership.guildId != guildId) {
-            throw GuildException.NotMember(requester, guildId)
-        }
         if (membership.role != GuildRole.MASTER) {
             throw GuildException.NotMaster(requester)
         }
@@ -198,12 +202,9 @@ class GuildServiceImpl(
 
     override fun setTag(guildId: Long, tag: String, requester: UUID) {
         val guild = getGuildOrThrow(guildId)
-        val membership = membershipRepository.findByPlayerUuid(requester)
+        val membership = membershipRepository.findByPlayerAndGuild(requester, guildId)
             ?: throw GuildException.NotMember(requester, guildId)
 
-        if (membership.guildId != guildId) {
-            throw GuildException.NotMember(requester, guildId)
-        }
         if (membership.role != GuildRole.MASTER) {
             throw GuildException.NotMaster(requester)
         }
@@ -235,12 +236,9 @@ class GuildServiceImpl(
 
     override fun setDescription(guildId: Long, description: String?, requester: UUID) {
         val guild = getGuildOrThrow(guildId)
-        val membership = membershipRepository.findByPlayerUuid(requester)
+        val membership = membershipRepository.findByPlayerAndGuild(requester, guildId)
             ?: throw GuildException.NotMember(requester, guildId)
 
-        if (membership.guildId != guildId) {
-            throw GuildException.NotMember(requester, guildId)
-        }
         if (membership.role != GuildRole.MASTER) {
             throw GuildException.NotMaster(requester)
         }
@@ -254,25 +252,19 @@ class GuildServiceImpl(
 
     override fun dissolveGuild(guildId: Long, requester: UUID) {
         val guild = getGuildOrThrow(guildId)
-        val membership = membershipRepository.findByPlayerUuid(requester)
+        val requesterMembership = membershipRepository.findByPlayerAndGuild(requester, guildId)
             ?: throw GuildException.NotMember(requester, guildId)
 
-        if (membership.guildId != guildId) {
-            throw GuildException.NotMember(requester, guildId)
-        }
-        if (membership.role != GuildRole.MASTER) {
+        if (requesterMembership.role != GuildRole.MASTER) {
             throw GuildException.NotMaster(requester)
         }
 
-        // 全メンバーを取得してタグを削除
+        // 全メンバーを取得
         val members = membershipRepository.findAllByGuildId(guildId)
         val memberUuids = members.map { it.playerUuid }
 
+        // メンバー離脱イベントを先に発火
         members.forEach { member ->
-            Bukkit.getPlayer(member.playerUuid)?.let { player ->
-                guildTagManager.removeGuildTag(player)
-            }
-            // メンバー離脱イベント
             Bukkit.getPluginManager().callEvent(
                 GuildMemberLeaveEvent(guild, member.playerUuid, LeaveReason.DISSOLVED)
             )
@@ -289,6 +281,18 @@ class GuildServiceImpl(
 
         // キャッシュから削除
         guildCache.remove(guildId)
+
+        // 元メンバーのタグを更新（他のギルドがあればそちらのタグを設定）
+        members.forEach { member ->
+            Bukkit.getPlayer(member.playerUuid)?.let { player ->
+                val remainingGuild = getPlayerGuild(member.playerUuid)
+                if (remainingGuild != null) {
+                    guildTagManager.setGuildTag(player, remainingGuild)
+                } else {
+                    guildTagManager.removeGuildTag(player)
+                }
+            }
+        }
 
         // イベント発火
         Bukkit.getPluginManager().callEvent(
@@ -313,8 +317,29 @@ class GuildServiceImpl(
     }
 
     override fun getPlayerGuild(playerUuid: UUID): Guild? {
-        val membership = membershipRepository.findByPlayerUuid(playerUuid) ?: return null
-        return getGuild(membership.guildId)
+        // Civilian guild priority, fallback to government guild
+        val memberships = membershipRepository.findAllByPlayerUuid(playerUuid)
+        if (memberships.isEmpty()) return null
+
+        val guilds = memberships.mapNotNull { getGuild(it.guildId) }
+        return guilds.firstOrNull { !it.isGovernment } ?: guilds.firstOrNull()
+    }
+
+    override fun getPlayerCivilianGuild(playerUuid: UUID): Guild? {
+        val memberships = membershipRepository.findAllByPlayerUuid(playerUuid)
+        return memberships.mapNotNull { getGuild(it.guildId) }
+            .firstOrNull { !it.isGovernment }
+    }
+
+    override fun getPlayerGovernmentGuild(playerUuid: UUID): Guild? {
+        val memberships = membershipRepository.findAllByPlayerUuid(playerUuid)
+        return memberships.mapNotNull { getGuild(it.guildId) }
+            .firstOrNull { it.isGovernment }
+    }
+
+    override fun getPlayerGuilds(playerUuid: UUID): List<Guild> {
+        val memberships = membershipRepository.findAllByPlayerUuid(playerUuid)
+        return memberships.mapNotNull { getGuild(it.guildId) }
     }
 
     override fun getAllGuilds(page: Int, pageSize: Int): List<Guild> {
@@ -342,19 +367,17 @@ class GuildServiceImpl(
         return membershipRepository.findByPlayerUuid(playerUuid)
     }
 
+    override fun getMembership(playerUuid: UUID, guildId: Long): GuildMembership? {
+        return membershipRepository.findByPlayerAndGuild(playerUuid, guildId)
+    }
+
     override fun kickMember(guildId: Long, targetUuid: UUID, requester: UUID) {
         val guild = getGuildOrThrow(guildId)
-        val requesterMembership = membershipRepository.findByPlayerUuid(requester)
+        val requesterMembership = membershipRepository.findByPlayerAndGuild(requester, guildId)
             ?: throw GuildException.NotMember(requester, guildId)
-        val targetMembership = membershipRepository.findByPlayerUuid(targetUuid)
+        val targetMembership = membershipRepository.findByPlayerAndGuild(targetUuid, guildId)
             ?: throw GuildException.NotMember(targetUuid, guildId)
 
-        if (requesterMembership.guildId != guildId) {
-            throw GuildException.NotMember(requester, guildId)
-        }
-        if (targetMembership.guildId != guildId) {
-            throw GuildException.NotMember(targetUuid, guildId)
-        }
         if (requester == targetUuid) {
             throw GuildException.CannotKickSelf()
         }
@@ -362,12 +385,17 @@ class GuildServiceImpl(
             throw GuildException.NotMaster(requester)
         }
 
-        // メンバーシップを削除
-        membershipRepository.deleteByPlayerUuid(targetUuid)
+        // メンバーシップを削除（このギルドのみ）
+        membershipRepository.deleteByPlayerAndGuild(targetUuid, guildId)
 
-        // ギルドタグを削除
+        // ギルドタグを更新（他のギルドがあればそちらのタグを設定）
         Bukkit.getPlayer(targetUuid)?.let { player ->
-            guildTagManager.removeGuildTag(player)
+            val remainingGuild = getPlayerGuild(targetUuid)
+            if (remainingGuild != null) {
+                guildTagManager.setGuildTag(player, remainingGuild)
+            } else {
+                guildTagManager.removeGuildTag(player)
+            }
         }
 
         // イベント発火
@@ -377,30 +405,41 @@ class GuildServiceImpl(
     }
 
     override fun leaveGuild(playerUuid: UUID) {
-        val membership = membershipRepository.findByPlayerUuid(playerUuid)
-            ?: throw GuildException.NotInGuild(playerUuid)
-        val guild = getGuildOrThrow(membership.guildId)
+        // Delegate to guild-specific overload with civilian-priority guild
+        val guild = getPlayerGuild(playerUuid) ?: throw GuildException.NotInGuild(playerUuid)
+        leaveGuild(playerUuid, guild.id)
+    }
+
+    override fun leaveGuild(playerUuid: UUID, guildId: Long) {
+        val membership = membershipRepository.findByPlayerAndGuild(playerUuid, guildId)
+            ?: throw GuildException.NotMember(playerUuid, guildId)
+        val guild = getGuildOrThrow(guildId)
 
         // マスターは他のメンバーがいる間は脱退できない
         if (membership.role == GuildRole.MASTER) {
-            val memberCount = membershipRepository.countByGuildId(membership.guildId)
+            val memberCount = membershipRepository.countByGuildId(guildId)
             if (memberCount > 1) {
                 throw GuildException.MasterCannotLeave()
             }
         }
 
-        // メンバーシップを削除
-        membershipRepository.deleteByPlayerUuid(playerUuid)
+        // メンバーシップを削除（ギルド指定）
+        membershipRepository.deleteByPlayerAndGuild(playerUuid, guildId)
 
-        // ギルドタグを削除
+        // ギルドタグを更新（他のギルドがあればそちらのタグを設定）
         Bukkit.getPlayer(playerUuid)?.let { player ->
-            guildTagManager.removeGuildTag(player)
+            val remainingGuild = getPlayerGuild(playerUuid)
+            if (remainingGuild != null) {
+                guildTagManager.setGuildTag(player, remainingGuild)
+            } else {
+                guildTagManager.removeGuildTag(player)
+            }
         }
 
         // マスターが最後の一人だった場合、ギルドを解散
         if (membership.role == GuildRole.MASTER) {
-            guildRepository.delete(membership.guildId)
-            guildCache.remove(membership.guildId)
+            guildRepository.delete(guildId)
+            guildCache.remove(guildId)
             Bukkit.getPluginManager().callEvent(
                 GuildDissolveEvent(guild, playerUuid, listOf(playerUuid))
             )
@@ -414,17 +453,11 @@ class GuildServiceImpl(
 
     override fun promoteToViceMaster(guildId: Long, targetUuid: UUID, requester: UUID) {
         val guild = getGuildOrThrow(guildId)
-        val requesterMembership = membershipRepository.findByPlayerUuid(requester)
+        val requesterMembership = membershipRepository.findByPlayerAndGuild(requester, guildId)
             ?: throw GuildException.NotMember(requester, guildId)
-        val targetMembership = membershipRepository.findByPlayerUuid(targetUuid)
+        val targetMembership = membershipRepository.findByPlayerAndGuild(targetUuid, guildId)
             ?: throw GuildException.NotMember(targetUuid, guildId)
 
-        if (requesterMembership.guildId != guildId) {
-            throw GuildException.NotMember(requester, guildId)
-        }
-        if (targetMembership.guildId != guildId) {
-            throw GuildException.NotMember(targetUuid, guildId)
-        }
         if (!requesterMembership.role.canPromote()) {
             throw GuildException.NotMaster(requester)
         }
@@ -436,7 +469,7 @@ class GuildServiceImpl(
         }
 
         val oldRole = targetMembership.role
-        membershipRepository.updateRole(targetUuid, GuildRole.VICE_MASTER)
+        membershipRepository.updateRole(targetUuid, guildId, GuildRole.VICE_MASTER)
 
         // イベント発火
         Bukkit.getPluginManager().callEvent(
@@ -446,17 +479,11 @@ class GuildServiceImpl(
 
     override fun demoteToMember(guildId: Long, targetUuid: UUID, requester: UUID) {
         val guild = getGuildOrThrow(guildId)
-        val requesterMembership = membershipRepository.findByPlayerUuid(requester)
+        val requesterMembership = membershipRepository.findByPlayerAndGuild(requester, guildId)
             ?: throw GuildException.NotMember(requester, guildId)
-        val targetMembership = membershipRepository.findByPlayerUuid(targetUuid)
+        val targetMembership = membershipRepository.findByPlayerAndGuild(targetUuid, guildId)
             ?: throw GuildException.NotMember(targetUuid, guildId)
 
-        if (requesterMembership.guildId != guildId) {
-            throw GuildException.NotMember(requester, guildId)
-        }
-        if (targetMembership.guildId != guildId) {
-            throw GuildException.NotMember(targetUuid, guildId)
-        }
         if (!requesterMembership.role.canDemote()) {
             throw GuildException.NotMaster(requester)
         }
@@ -465,7 +492,7 @@ class GuildServiceImpl(
         }
 
         val oldRole = targetMembership.role
-        membershipRepository.updateRole(targetUuid, GuildRole.MEMBER)
+        membershipRepository.updateRole(targetUuid, guildId, GuildRole.MEMBER)
 
         // イベント発火
         Bukkit.getPluginManager().callEvent(
@@ -475,25 +502,19 @@ class GuildServiceImpl(
 
     override fun transferMaster(guildId: Long, newMasterUuid: UUID, currentMaster: UUID) {
         val guild = getGuildOrThrow(guildId)
-        val currentMasterMembership = membershipRepository.findByPlayerUuid(currentMaster)
+        val currentMasterMembership = membershipRepository.findByPlayerAndGuild(currentMaster, guildId)
             ?: throw GuildException.NotMember(currentMaster, guildId)
-        val newMasterMembership = membershipRepository.findByPlayerUuid(newMasterUuid)
+        val newMasterMembership = membershipRepository.findByPlayerAndGuild(newMasterUuid, guildId)
             ?: throw GuildException.NotMember(newMasterUuid, guildId)
 
-        if (currentMasterMembership.guildId != guildId) {
-            throw GuildException.NotMember(currentMaster, guildId)
-        }
-        if (newMasterMembership.guildId != guildId) {
-            throw GuildException.NotMember(newMasterUuid, guildId)
-        }
         if (currentMasterMembership.role != GuildRole.MASTER) {
             throw GuildException.NotMaster(currentMaster)
         }
 
         // 新マスターをMASTERに
-        membershipRepository.updateRole(newMasterUuid, GuildRole.MASTER)
+        membershipRepository.updateRole(newMasterUuid, guildId, GuildRole.MASTER)
         // 旧マスターをVICE_MASTERに
-        membershipRepository.updateRole(currentMaster, GuildRole.VICE_MASTER)
+        membershipRepository.updateRole(currentMaster, guildId, GuildRole.VICE_MASTER)
         // ギルドのmaster_uuidを更新
         guildRepository.updateMaster(guildId, newMasterUuid)
 
@@ -514,16 +535,14 @@ class GuildServiceImpl(
 
     override fun invitePlayer(guildId: Long, inviteeUuid: UUID, inviter: UUID): GuildInvitation {
         val guild = getGuildOrThrow(guildId)
-        val inviterMembership = membershipRepository.findByPlayerUuid(inviter)
+        val inviterMembership = membershipRepository.findByPlayerAndGuild(inviter, guildId)
             ?: throw GuildException.NotMember(inviter, guildId)
 
-        if (inviterMembership.guildId != guildId) {
-            throw GuildException.NotMember(inviter, guildId)
-        }
         if (!inviterMembership.role.canInvite()) {
             throw GuildException.NotMasterOrVice(inviter)
         }
-        if (membershipRepository.findByPlayerUuid(inviteeUuid) != null) {
+        // Check if invitee already has a guild of the same type
+        if (hasGuildOfSameType(inviteeUuid, guild)) {
             throw GuildException.AlreadyInGuild(inviteeUuid)
         }
         if (invitationRepository.existsByGuildAndInvitee(guildId, inviteeUuid)) {
@@ -567,11 +586,13 @@ class GuildServiceImpl(
             invitationRepository.delete(invitationId)
             throw GuildException.InvitationExpired(invitationId)
         }
-        if (membershipRepository.findByPlayerUuid(playerUuid) != null) {
-            throw GuildException.AlreadyInGuild(playerUuid)
-        }
 
         val guild = getGuildOrThrow(invitation.guildId)
+
+        // Check if player already has a guild of the same type (civilian or government)
+        if (hasGuildOfSameType(playerUuid, guild)) {
+            throw GuildException.AlreadyInGuild(playerUuid)
+        }
 
         // ギルドが満員でないかチェック
         val memberCount = membershipRepository.countByGuildId(invitation.guildId)
@@ -642,12 +663,9 @@ class GuildServiceImpl(
     }
 
     override fun cancelInvitation(guildId: Long, inviter: UUID, inviteeUuid: UUID) {
-        val inviterMembership = membershipRepository.findByPlayerUuid(inviter)
+        val inviterMembership = membershipRepository.findByPlayerAndGuild(inviter, guildId)
             ?: throw GuildException.NotMember(inviter, guildId)
 
-        if (inviterMembership.guildId != guildId) {
-            throw GuildException.NotMember(inviter, guildId)
-        }
         if (!inviterMembership.role.canInvite()) {
             throw GuildException.NotMasterOrVice(inviter)
         }
@@ -679,8 +697,8 @@ class GuildServiceImpl(
     override fun applyToGuild(guildId: Long, applicantUuid: UUID, message: String?): GuildApplication {
         val guild = getGuildOrThrow(guildId)
 
-        // 既にギルドに所属している場合はエラー
-        if (membershipRepository.findByPlayerUuid(applicantUuid) != null) {
+        // Check if player already has a guild of the same type
+        if (hasGuildOfSameType(applicantUuid, guild)) {
             throw GuildException.AlreadyInGuild(applicantUuid)
         }
         // 既に申請済みの場合はエラー
@@ -720,12 +738,9 @@ class GuildServiceImpl(
             ?: throw GuildException.ApplicationNotFound(applicationId)
 
         val guild = getGuildOrThrow(application.guildId)
-        val approverMembership = membershipRepository.findByPlayerUuid(approverUuid)
+        val approverMembership = membershipRepository.findByPlayerAndGuild(approverUuid, application.guildId)
             ?: throw GuildException.NotMember(approverUuid, application.guildId)
 
-        if (approverMembership.guildId != application.guildId) {
-            throw GuildException.NotMember(approverUuid, application.guildId)
-        }
         // マスターまたは副マスターのみ承認可能
         if (!approverMembership.role.canInvite()) {
             throw GuildException.NotMasterOrVice(approverUuid)
@@ -735,8 +750,8 @@ class GuildServiceImpl(
             applicationRepository.delete(applicationId)
             throw GuildException.ApplicationExpired(applicationId)
         }
-        // 既にギルドに所属している場合はエラー
-        if (membershipRepository.findByPlayerUuid(application.applicantUuid) != null) {
+        // Check if player already has a guild of the same type
+        if (hasGuildOfSameType(application.applicantUuid, guild)) {
             applicationRepository.delete(applicationId)
             throw GuildException.AlreadyInGuild(application.applicantUuid)
         }
@@ -773,12 +788,9 @@ class GuildServiceImpl(
         val application = applicationRepository.findById(applicationId)
             ?: throw GuildException.ApplicationNotFound(applicationId)
 
-        val rejectorMembership = membershipRepository.findByPlayerUuid(rejectorUuid)
+        val rejectorMembership = membershipRepository.findByPlayerAndGuild(rejectorUuid, application.guildId)
             ?: throw GuildException.NotMember(rejectorUuid, application.guildId)
 
-        if (rejectorMembership.guildId != application.guildId) {
-            throw GuildException.NotMember(rejectorUuid, application.guildId)
-        }
         // マスターまたは副マスターのみ拒否可能
         if (!rejectorMembership.role.canInvite()) {
             throw GuildException.NotMasterOrVice(rejectorUuid)
@@ -860,5 +872,17 @@ class GuildServiceImpl(
 
     private fun getGuildOrThrow(guildId: Long): Guild {
         return getGuild(guildId) ?: throw GuildException.NotFound(guildId)
+    }
+
+    /**
+     * Check if a player already has a guild of the same type (civilian or government)
+     * as the target guild. Used for membership validation during invite/apply/join.
+     */
+    private fun hasGuildOfSameType(playerUuid: UUID, targetGuild: Guild): Boolean {
+        val existingMemberships = membershipRepository.findAllByPlayerUuid(playerUuid)
+        return existingMemberships.any { membership ->
+            val guild = getGuild(membership.guildId)
+            guild != null && guild.isGovernment == targetGuild.isGovernment
+        }
     }
 }

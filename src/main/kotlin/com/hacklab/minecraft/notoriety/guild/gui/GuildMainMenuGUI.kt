@@ -17,15 +17,24 @@ import org.bukkit.event.inventory.InventoryClickEvent
 class GuildMainMenuGUI(
     player: Player,
     private val guildService: GuildService,
-    private val guiManager: GuildGUIManager
+    private val guiManager: GuildGUIManager,
+    targetGuildId: Long? = null
 ) : GuildGUI(
     player,
     Component.text("ギルドメニュー").color(NamedTextColor.GOLD),
     54
 ) {
 
-    private val guild: Guild? = guildService.getPlayerGuild(player.uniqueId)
-    private val membership: GuildMembership? = guildService.getMembership(player.uniqueId)
+    private val allGuilds: List<Guild> = guildService.getPlayerGuilds(player.uniqueId)
+    private val guild: Guild? = if (targetGuildId != null) {
+        allGuilds.find { it.id == targetGuildId }
+    } else {
+        guildService.getPlayerGuild(player.uniqueId)
+    }
+    private val membership: GuildMembership? = guild?.let {
+        guildService.getMembership(player.uniqueId, it.id)
+    }
+    private val otherGuild: Guild? = allGuilds.find { it.id != guild?.id }
 
     override fun setupItems() {
         fillBorder()
@@ -52,6 +61,7 @@ class GuildMainMenuGUI(
         _inventory.setItem(4, createItem(
             Material.SHIELD,
             Component.text("[${guild.tag}] ${guild.name}").color(guild.tagColor.namedTextColor),
+            if (guild.isGovernment) Component.text("政府ギルド").color(NamedTextColor.YELLOW) else Component.text("民間ギルド").color(NamedTextColor.GREEN),
             Component.text("マスター: ${Bukkit.getOfflinePlayer(guild.masterUuid).name}").color(NamedTextColor.GRAY),
             Component.text("あなたの役職: ${getRoleDisplayName(role)}").color(NamedTextColor.GRAY),
             Component.text("メンバー数: ${guildService.getMemberCount(guild.id)}/${guild.maxMembers}").color(NamedTextColor.GRAY)
@@ -113,6 +123,17 @@ class GuildMainMenuGUI(
             Component.text("ギルド一覧").color(NamedTextColor.AQUA),
             Component.text("他のギルドを確認").color(NamedTextColor.GRAY)
         ))
+
+        // 他のギルドへ切り替え（二重所属の場合）
+        if (otherGuild != null) {
+            val label = if (otherGuild.isGovernment) "政府ギルド" else "民間ギルド"
+            _inventory.setItem(8, createItem(
+                Material.ENDER_EYE,
+                Component.text("${label}に切り替え").color(NamedTextColor.LIGHT_PURPLE),
+                Component.text("[${otherGuild.tag}] ${otherGuild.name}").color(otherGuild.tagColor.namedTextColor),
+                Component.text("クリックで切り替え").color(NamedTextColor.GRAY)
+            ))
+        }
 
         // 脱退（右下）
         if (role != GuildRole.MASTER) {
@@ -180,10 +201,17 @@ class GuildMainMenuGUI(
                 }
             }
 
+            8 -> {
+                // 他のギルドに切り替え
+                if (otherGuild != null) {
+                    guiManager.openMainMenu(player, otherGuild.id)
+                }
+            }
+
             20 -> {
                 if (guild != null) {
                     // メンバー一覧
-                    guiManager.openMembersList(player)
+                    guiManager.openMembersList(player, guildId = guild.id)
                 } else {
                     // ギルド作成 - コマンドで案内
                     player.closeInventory()
@@ -212,7 +240,7 @@ class GuildMainMenuGUI(
             24 -> {
                 if (guild != null && membership?.role == GuildRole.MASTER) {
                     // ギルド設定
-                    guiManager.openSettings(player)
+                    guiManager.openSettings(player, guild.id)
                 } else if (guild == null) {
                     // ギルド一覧
                     guiManager.openGuildList(player)
@@ -259,7 +287,7 @@ class GuildMainMenuGUI(
                             ),
                             onConfirm = {
                                 try {
-                                    guildService.leaveGuild(player.uniqueId)
+                                    guildService.leaveGuild(player.uniqueId, guild.id)
                                     player.sendMessage(Component.text("ギルドを脱退しました").color(NamedTextColor.GREEN))
                                 } catch (e: Exception) {
                                     player.sendMessage(Component.text("エラー: ${e.message}").color(NamedTextColor.RED))

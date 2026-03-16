@@ -20,15 +20,22 @@ class GuildMembersGUI(
     player: Player,
     private val guildService: GuildService,
     private val guiManager: GuildGUIManager,
-    private val page: Int = 0
+    private val page: Int = 0,
+    private val targetGuildId: Long? = null
 ) : GuildGUI(
     player,
     Component.text("メンバー一覧").color(NamedTextColor.AQUA),
     54
 ) {
 
-    private val guild = guildService.getPlayerGuild(player.uniqueId)
-    private val myMembership = guildService.getMembership(player.uniqueId)
+    private val guild = if (targetGuildId != null) {
+        guildService.getGuild(targetGuildId)
+    } else {
+        guildService.getPlayerGuild(player.uniqueId)
+    }
+    private val myMembership = guild?.let {
+        guildService.getMembership(player.uniqueId, it.id)
+    } ?: guildService.getMembership(player.uniqueId)
     private val myRole = myMembership?.role
     private val members = guild?.let { guildService.getMembers(it.id, page * ITEMS_PER_PAGE, ITEMS_PER_PAGE) } ?: emptyList()
     private val totalMembers = guild?.let { guildService.getMemberCount(it.id) } ?: 0
@@ -148,10 +155,10 @@ class GuildMembersGUI(
         val slot = event.slot
 
         when (slot) {
-            SLOT_BACK -> guiManager.openMainMenu(player)
+            SLOT_BACK -> guiManager.openMainMenu(player, targetGuildId)
             SLOT_CLOSE -> player.closeInventory()
-            SLOT_PREV_PAGE -> if (page > 0) guiManager.openMembersList(player, page - 1)
-            SLOT_NEXT_PAGE -> if (page < maxPage) guiManager.openMembersList(player, page + 1)
+            SLOT_PREV_PAGE -> if (page > 0) guiManager.openMembersList(player, page - 1, targetGuildId)
+            SLOT_NEXT_PAGE -> if (page < maxPage) guiManager.openMembersList(player, page + 1, targetGuildId)
             in CONTENT_SLOTS -> handleMemberClick(event)
         }
     }
@@ -181,7 +188,7 @@ class GuildMembersGUI(
                         try {
                             guildService.transferMaster(guild.id, member.playerUuid, player.uniqueId)
                             player.sendMessage(Component.text("マスターを譲渡しました").color(NamedTextColor.GREEN))
-                            guiManager.openMembersList(player, page)
+                            guiManager.openMembersList(player, page, targetGuildId)
                         } catch (e: Exception) {
                             player.sendMessage(Component.text("エラー: ${e.message}").color(NamedTextColor.RED))
                         }
@@ -199,7 +206,7 @@ class GuildMembersGUI(
                         try {
                             guildService.kickMember(guild.id, member.playerUuid, player.uniqueId)
                             player.sendMessage(Component.text("${targetName}をキックしました").color(NamedTextColor.GREEN))
-                            guiManager.openMembersList(player, page)
+                            guiManager.openMembersList(player, page, targetGuildId)
                         } catch (e: Exception) {
                             player.sendMessage(Component.text("エラー: ${e.message}").color(NamedTextColor.RED))
                         }
@@ -212,7 +219,7 @@ class GuildMembersGUI(
                     guildService.promoteToViceMaster(guild.id, member.playerUuid, player.uniqueId)
                     val targetName = Bukkit.getOfflinePlayer(member.playerUuid).name ?: "Unknown"
                     player.sendMessage(Component.text("${targetName}を昇格させました").color(NamedTextColor.GREEN))
-                    guiManager.openMembersList(player, page)
+                    guiManager.openMembersList(player, page, targetGuildId)
                 } catch (e: Exception) {
                     player.sendMessage(Component.text("エラー: ${e.message}").color(NamedTextColor.RED))
                 }
@@ -223,7 +230,7 @@ class GuildMembersGUI(
                     guildService.demoteToMember(guild.id, member.playerUuid, player.uniqueId)
                     val targetName = Bukkit.getOfflinePlayer(member.playerUuid).name ?: "Unknown"
                     player.sendMessage(Component.text("${targetName}を降格させました").color(NamedTextColor.GREEN))
-                    guiManager.openMembersList(player, page)
+                    guiManager.openMembersList(player, page, targetGuildId)
                 } catch (e: Exception) {
                     player.sendMessage(Component.text("エラー: ${e.message}").color(NamedTextColor.RED))
                 }

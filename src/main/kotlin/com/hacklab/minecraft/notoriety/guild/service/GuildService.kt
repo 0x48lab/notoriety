@@ -31,6 +31,16 @@ interface GuildService {
     fun getGuild(guildId: Long): Guild?
     fun getGuildByName(name: String): Guild?
     fun getPlayerGuild(playerUuid: UUID): Guild?
+
+    /** Get the player's civilian (non-government) guild only */
+    fun getPlayerCivilianGuild(playerUuid: UUID): Guild?
+
+    /** Get the player's government guild only */
+    fun getPlayerGovernmentGuild(playerUuid: UUID): Guild?
+
+    /** Get all guilds the player belongs to */
+    fun getPlayerGuilds(playerUuid: UUID): List<Guild>
+
     fun getAllGuilds(page: Int = 0, pageSize: Int = 10): List<Guild>
     fun getGuildCount(): Int
 
@@ -39,8 +49,10 @@ interface GuildService {
     fun getMembers(guildId: Long, page: Int = 0, pageSize: Int = 45): List<GuildMembership>
     fun getMemberCount(guildId: Long): Int
     fun getMembership(playerUuid: UUID): GuildMembership?
+    fun getMembership(playerUuid: UUID, guildId: Long): GuildMembership?
     fun kickMember(guildId: Long, targetUuid: UUID, requester: UUID)
     fun leaveGuild(playerUuid: UUID)
+    fun leaveGuild(playerUuid: UUID, guildId: Long)
     fun promoteToViceMaster(guildId: Long, targetUuid: UUID, requester: UUID)
     fun demoteToMember(guildId: Long, targetUuid: UUID, requester: UUID)
     fun transferMaster(guildId: Long, newMasterUuid: UUID, currentMaster: UUID)

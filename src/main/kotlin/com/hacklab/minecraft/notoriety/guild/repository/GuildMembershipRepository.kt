@@ -29,12 +29,52 @@ class GuildMembershipRepository(private val databaseManager: DatabaseManager) {
 
     fun findByPlayerUuid(playerUuid: UUID): GuildMembership? {
         return databaseManager.provider.useConnection { conn ->
-            val sql = "SELECT * FROM guild_memberships WHERE player_uuid = ?"
+            val sql = "SELECT * FROM guild_memberships WHERE player_uuid = ? LIMIT 1"
             conn.prepareStatement(sql).use { stmt ->
                 stmt.setString(1, playerUuid.toString())
                 stmt.executeQuery().use { rs ->
                     if (rs.next()) mapToMembership(rs) else null
                 }
+            }
+        }
+    }
+
+    fun findAllByPlayerUuid(playerUuid: UUID): List<GuildMembership> {
+        return databaseManager.provider.useConnection { conn ->
+            val sql = "SELECT * FROM guild_memberships WHERE player_uuid = ?"
+            conn.prepareStatement(sql).use { stmt ->
+                stmt.setString(1, playerUuid.toString())
+                stmt.executeQuery().use { rs ->
+                    val memberships = mutableListOf<GuildMembership>()
+                    while (rs.next()) {
+                        memberships.add(mapToMembership(rs))
+                    }
+                    memberships
+                }
+            }
+        }
+    }
+
+    fun findByPlayerAndGuild(playerUuid: UUID, guildId: Long): GuildMembership? {
+        return databaseManager.provider.useConnection { conn ->
+            val sql = "SELECT * FROM guild_memberships WHERE player_uuid = ? AND guild_id = ?"
+            conn.prepareStatement(sql).use { stmt ->
+                stmt.setString(1, playerUuid.toString())
+                stmt.setLong(2, guildId)
+                stmt.executeQuery().use { rs ->
+                    if (rs.next()) mapToMembership(rs) else null
+                }
+            }
+        }
+    }
+
+    fun deleteByPlayerAndGuild(playerUuid: UUID, guildId: Long) {
+        databaseManager.provider.useConnection { conn ->
+            val sql = "DELETE FROM guild_memberships WHERE player_uuid = ? AND guild_id = ?"
+            conn.prepareStatement(sql).use { stmt ->
+                stmt.setString(1, playerUuid.toString())
+                stmt.setLong(2, guildId)
+                stmt.executeUpdate()
             }
         }
     }
@@ -107,6 +147,18 @@ class GuildMembershipRepository(private val databaseManager: DatabaseManager) {
         }
     }
 
+    fun updateRole(playerUuid: UUID, guildId: Long, role: GuildRole) {
+        databaseManager.provider.useConnection { conn ->
+            val sql = "UPDATE guild_memberships SET role = ? WHERE player_uuid = ? AND guild_id = ?"
+            conn.prepareStatement(sql).use { stmt ->
+                stmt.setString(1, role.name)
+                stmt.setString(2, playerUuid.toString())
+                stmt.setLong(3, guildId)
+                stmt.executeUpdate()
+            }
+        }
+    }
+
     fun deleteByPlayerUuid(playerUuid: UUID) {
         databaseManager.provider.useConnection { conn ->
             val sql = "DELETE FROM guild_memberships WHERE player_uuid = ?"
@@ -127,12 +179,18 @@ class GuildMembershipRepository(private val databaseManager: DatabaseManager) {
         }
     }
 
+    /**
+     * Check if two players are in the same civilian guild.
+     * Government guild membership alone does NOT grant auto-trust.
+     */
     fun areInSameGuild(player1: UUID, player2: UUID): Boolean {
         return databaseManager.provider.useConnection { conn ->
             val sql = """
                 SELECT COUNT(*) FROM guild_memberships m1
                 JOIN guild_memberships m2 ON m1.guild_id = m2.guild_id
+                JOIN guilds g ON m1.guild_id = g.id
                 WHERE m1.player_uuid = ? AND m2.player_uuid = ?
+                AND g.is_government = FALSE
             """.trimIndent()
             conn.prepareStatement(sql).use { stmt ->
                 stmt.setString(1, player1.toString())

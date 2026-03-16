@@ -15,14 +15,19 @@ import org.bukkit.event.inventory.InventoryClickEvent
 class GuildColorSelectGUI(
     player: Player,
     private val guildService: GuildService,
-    private val guiManager: GuildGUIManager
+    private val guiManager: GuildGUIManager,
+    private val targetGuildId: Long? = null
 ) : GuildGUI(
     player,
     Component.text("タグカラー選択").color(NamedTextColor.YELLOW),
     54
 ) {
 
-    private val guild = guildService.getPlayerGuild(player.uniqueId)
+    private val guild = if (targetGuildId != null) {
+        guildService.getGuild(targetGuildId)
+    } else {
+        guildService.getPlayerGuild(player.uniqueId)
+    }
 
     // 色とマテリアルのマッピング
     private val colorMaterials = mapOf(
@@ -130,7 +135,7 @@ class GuildColorSelectGUI(
         val slot = event.slot
 
         when (slot) {
-            SLOT_BACK -> guiManager.openMainMenu(player)
+            SLOT_BACK -> guiManager.openSettings(player, targetGuildId)
             SLOT_CLOSE -> player.closeInventory()
             in colorSlots -> handleColorClick(event)
         }
@@ -156,7 +161,7 @@ class GuildColorSelectGUI(
                     .append(Component.text(colorNames[selectedColor] ?: selectedColor.name).color(selectedColor.namedTextColor))
                     .append(Component.text("に変更しました").color(NamedTextColor.GREEN))
             )
-            guiManager.openColorSelect(player) // リフレッシュ
+            guiManager.openColorSelect(player, targetGuildId) // リフレッシュ
         } catch (e: Exception) {
             player.sendMessage(Component.text("エラー: ${e.message}").color(NamedTextColor.RED))
         }

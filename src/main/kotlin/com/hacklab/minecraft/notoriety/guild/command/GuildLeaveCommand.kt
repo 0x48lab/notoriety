@@ -19,14 +19,14 @@ class GuildLeaveCommand(
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {
         val player = sender as Player
 
-        val guild = guildService.getPlayerGuild(player.uniqueId)
+        val (guild, _) = resolveTargetGuild(player, args, guildService)
         if (guild == null) {
             player.sendError("You are not in a guild")
             return true
         }
 
         try {
-            guildService.leaveGuild(player.uniqueId)
+            guildService.leaveGuild(player.uniqueId, guild.id)
 
             player.sendMessage(Component.text()
                 .append(Component.text("You have left ").color(NamedTextColor.YELLOW))
@@ -41,5 +41,12 @@ class GuildLeaveCommand(
         }
 
         return true
+    }
+
+    override fun tabComplete(sender: CommandSender, args: Array<out String>): List<String> {
+        if (args.size == 1) {
+            return listOf("--gov").filter { it.startsWith(args[0].lowercase()) }
+        }
+        return emptyList()
     }
 }

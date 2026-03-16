@@ -30,8 +30,8 @@ class GuildInfoGUI(
 ) {
 
     private val guild = guildService.getGuild(guildId)
-    private val myGuild = guildService.getPlayerGuild(player.uniqueId)
-    private val isMyGuild = guild?.id == myGuild?.id
+    private val myGuilds = guildService.getPlayerGuilds(player.uniqueId)
+    private val isMyGuild = myGuilds.any { it.id == guild?.id }
 
     override fun setupItems() {
         fillBorder()
@@ -150,8 +150,8 @@ class GuildInfoGUI(
                 Component.text("メンバー管理").color(NamedTextColor.GREEN),
                 Component.text("クリックでメンバー一覧へ").color(NamedTextColor.GRAY)
             ))
-        } else if (myGuild == null && guild != null) {
-            // 自分がどのギルドにも所属していない場合は入会申請ボタンを表示
+        } else if (!isMyGuild) {
+            // 自分がこのギルドに所属していない場合は入会申請ボタンを表示
             val hasInvitation = guildService.hasInvitation(guild.id, player.uniqueId)
             val hasApplication = guildService.hasApplication(guild.id, player.uniqueId)
 
@@ -198,7 +198,7 @@ class GuildInfoGUI(
             SLOT_BACK -> guiManager.openGuildList(player)
             SLOT_CLOSE -> player.closeInventory()
             40 -> {
-                if (myGuild == null && guild != null) {
+                if (!isMyGuild && guild != null) {
                     val hasInvitation = guildService.hasInvitation(guild.id, player.uniqueId)
                     val hasApplication = guildService.hasApplication(guild.id, player.uniqueId)
 
@@ -263,8 +263,8 @@ class GuildInfoGUI(
                 }
             }
             49 -> {
-                if (isMyGuild) {
-                    guiManager.openMembersList(player)
+                if (isMyGuild && guild != null) {
+                    guiManager.openMembersList(player, guildId = guild.id)
                 }
             }
         }

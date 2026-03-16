@@ -22,19 +22,19 @@ class GuildInviteCommand(
 
     override fun execute(sender: CommandSender, args: Array<out String>): Boolean {
         val player = sender as Player
+        val (guild, cleanedArgs) = resolveTargetGuild(player, args, guildService)
 
-        if (args.isEmpty()) {
+        if (cleanedArgs.isEmpty()) {
             player.sendError("Usage: $usage")
             return true
         }
 
-        val guild = guildService.getPlayerGuild(player.uniqueId)
         if (guild == null) {
             player.sendError("You are not in a guild")
             return true
         }
 
-        val targetName = args[0]
+        val targetName = cleanedArgs[0]
         val target = Bukkit.getOfflinePlayer(targetName)
 
         if (!target.hasPlayedBefore() && !target.isOnline) {
@@ -81,12 +81,20 @@ class GuildInviteCommand(
     }
 
     override fun tabComplete(sender: CommandSender, args: Array<out String>): List<String> {
-        if (args.size == 1) {
-            val input = args[0].lowercase()
-            return Bukkit.getOnlinePlayers()
+        val cleanedArgs = stripGovFlag(args)
+        if (cleanedArgs.size == 1) {
+            val input = cleanedArgs[0].lowercase()
+            val players = Bukkit.getOnlinePlayers()
                 .filter { it.uniqueId != (sender as? Player)?.uniqueId }
                 .map { it.name }
                 .filter { it.lowercase().startsWith(input) }
+            if (args.size == 1 && !hasGovFlag(args)) {
+                return players + listOf("--gov").filter { it.startsWith(input) }
+            }
+            return players
+        }
+        if (args.size == 2 && !hasGovFlag(args)) {
+            return listOf("--gov").filter { it.startsWith(args[1].lowercase()) }
         }
         return emptyList()
     }

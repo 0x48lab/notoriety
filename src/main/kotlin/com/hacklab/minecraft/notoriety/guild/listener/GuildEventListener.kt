@@ -17,6 +17,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
+import java.util.UUID
 
 class GuildEventListener(
     private val guildService: GuildService,
@@ -70,8 +71,10 @@ class GuildEventListener(
 
     @EventHandler(priority = EventPriority.MONITOR)
     fun onGuildMemberLeave(event: GuildMemberLeaveEvent) {
-        // ギルドチャットモードをリセット
-        chatService.resetGuildChatMode(listOf(event.memberUuid))
+        // ギルドチャットモードをリセット（他のギルドに所属していない場合のみ）
+        if (guildService.getPlayerGuilds(event.memberUuid).isEmpty()) {
+            chatService.resetGuildChatMode(listOf(event.memberUuid))
+        }
 
         // 離脱/追放されたプレイヤーの表示を更新
         Bukkit.getPlayer(event.memberUuid)?.let { player ->
@@ -174,8 +177,9 @@ class GuildEventListener(
 
     @EventHandler(priority = EventPriority.MONITOR)
     fun onGuildMemberJoin(event: GuildMemberJoinEvent) {
-        // ギルドタグを表示
-        guildTagManager.setGuildTag(event.member, event.guild)
+        // ギルドタグを表示（民間ギルド優先で表示ギルドを決定）
+        val displayGuild = guildService.getPlayerGuild(event.member.uniqueId) ?: event.guild
+        guildTagManager.setGuildTag(event.member, displayGuild)
 
         // 表示を更新
         notorietyService.updateDisplay(event.member)
@@ -231,18 +235,24 @@ class GuildEventListener(
     @EventHandler(priority = EventPriority.NORMAL)
     fun onPlayerJoin(event: PlayerJoinEvent) {
         val player = event.player
-        val guild = guildService.getPlayerGuild(player.uniqueId) ?: return
+        val displayGuild = guildService.getPlayerGuild(player.uniqueId) ?: return
 
-        // ギルドタグを設定
-        guildTagManager.setGuildTag(player, guild)
+        // ギルドタグを設定（民間優先）
+        guildTagManager.setGuildTag(player, displayGuild)
 
-        // ギルドメンバーに通知
-        val members = guildService.getMembers(guild.id, 0, 1000)
-        members.filter { it.playerUuid != player.uniqueId }.forEach { member ->
-            Bukkit.getPlayer(member.playerUuid)?.sendMessage(
-                Component.text("[Guild] ${player.name} is now online")
-                    .color(NamedTextColor.GREEN)
-            )
+        // 全所属ギルドのメンバーにログイン通知（二重所属対応）
+        val allGuilds = guildService.getPlayerGuilds(player.uniqueId)
+        val notifiedPlayers = mutableSetOf<UUID>()
+        for (guild in allGuilds) {
+            val members = guildService.getMembers(guild.id, 0, 1000)
+            members.filter { it.playerUuid != player.uniqueId && it.playerUuid !in notifiedPlayers }
+                .forEach { member ->
+                    notifiedPlayers.add(member.playerUuid)
+                    Bukkit.getPlayer(member.playerUuid)?.sendMessage(
+                        Component.text("[Guild] ${player.name} is now online")
+                            .color(NamedTextColor.GREEN)
+                    )
+                }
         }
     }
 
