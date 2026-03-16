@@ -1,7 +1,7 @@
 package com.hacklab.minecraft.notoriety.crime
 
 enum class CrimeType(val displayKey: String, val defaultPenalty: Int) {
-    THEFT("crime.theft", 50),
+    THEFT("crime.theft", 5),
     DESTROY("crime.destroy", 5),
     ATTACK("crime.attack", 1),
     PK("crime.pk", 50),  // PKCountも増加

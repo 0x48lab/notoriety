@@ -123,7 +123,7 @@ inspect:
 
 # Warning messages (before crime)
 warning:
-  chest_open: "⚠ Warning: This chest belongs to %s. Taking items will be THEFT! (Alignment -50)"
+  chest_open: "⚠ Warning: This chest belongs to %s. Taking items will be THEFT!"
   block_break: "⚠ Warning: This block belongs to %s. Breaking it will be a CRIME! (Alignment -10)"
   container_break: "⚠ Warning: This container belongs to %s. Breaking it will be an INSTANT CRIME! (Alignment -10)"
   attack_player: "⚠ Warning: Attacking %s will be a CRIME! (Alignment -1)"
@@ -161,7 +161,37 @@ guild:
   error_name_taken: "A guild with this name already exists"
   error_tag_taken: "A guild with this tag already exists"
   error_already_in_guild: "You are already in a guild. Leave your current guild first"
+  error_already_in_civilian_guild: "You are already in a civilian guild. Leave your current guild first"
+  error_already_in_government_guild: "You are already in a government guild"
+  not_in_government_guild: "You are not in a government guild"
+  gov_guild_chat_format: "[Gov]"
+  civilian_guild_chat_format: "[Guild]"
   error_generic: "Failed to create guild: %s"
+
+  # Base (teleport point) messages
+  base_set: "Guild base set (%s: %d, %d, %d)"
+  base_updated: "Guild base updated (%s: %d, %d, %d)"
+  base_removed: "Guild base removed"
+  base_not_set: "No base has been set"
+  base_not_master: "Only the guild master can set the base"
+  base_not_master_remove: "Only the guild master can remove the base"
+  base_teleported: "Teleported to guild base (%s: %d, %d, %d)"
+  base_cooldown: "Teleport on cooldown (%ds remaining)"
+  base_world_not_found: "Base world not found"
+  base_no_safe_location: "No safe teleport location found"
+  base_info_header: "=== Guild Base Info ==="
+  base_info_location: "Location: %s (%d, %d, %d)"
+  base_info_set_by: "Set by: %s"
+  base_info_set_at: "Set at: %s"
+  base_not_in_guild: "You are not in a guild"
+  base_usage: "Usage: /guild base <set|remove|info>"
+  base_tp_hint: "Use /guild home base to teleport"
+
+  # Home/Teleport list messages
+  home_no_destinations: "No teleport destinations available"
+  home_base_tag: "[Base]"
+  home_base_keyword: "base"
+  home_available_destinations: "Available destinations:"
 
   # Application messages
   application_submitted: "Applied to join %s"
@@ -174,6 +204,10 @@ guild:
   error_already_applied: "You have already applied to this guild"
   error_application_not_found: "Application not found"
   error_application_expired: "Application has expired"
+
+# Sigil messages
+sigil:
+  reserved_name: "This name is reserved"
 
 # Territory messages
 territory:
@@ -361,6 +395,39 @@ territory_hazard:
   lava_blocked: "⚠ You cannot use lava buckets in this territory"
   water_blocked: "⚠ You cannot use water buckets in this territory"
   tnt_blocked: "⚠ You cannot place TNT in this territory"
+
+# Zone protection messages
+zone:
+  created: "Protected zone '%s' created (%s: %d,%d,%d - %d,%d,%d)"
+  removed: "Protected zone '%s' removed"
+  not_found: "Protected zone '%s' not found"
+  duplicate_name: "A protected zone with that name already exists"
+  invalid_name: "Zone name must be 1-32 characters"
+  protected_break: "You cannot modify blocks here"
+  protected_place: "You cannot modify blocks here"
+  protected_container: "You cannot take items here"
+  enter_admin: "▶ Entered protected zone [%s]"
+  leave_admin: "◀ Left protected zone [%s]"
+  pos1_set: "Position 1 set (%d, %d, %d)"
+  pos2_set: "Position 2 set (%d, %d, %d)"
+  no_selection: "No selection made. Use the zone tool to select two points"
+  tool_given: "Zone tool acquired"
+  list_header: "=== Protected Zones (%d) ==="
+  list_empty: "No protected zones"
+  list_item: "- %s [%s: %d,%d,%d - %d,%d,%d]"
+  info_header: "=== Protected Zone: %s ==="
+  info_world: "World: %s"
+  info_coords: "Coords: %d,%d,%d - %d,%d,%d"
+  info_creator: "Creator: %s"
+  info_created_at: "Created: %s"
+  usage: |
+    === Zone Commands ===
+    /noty zone create <name> - Create zone from selection
+    /noty zone create <name> <x1> <y1> <z1> <x2> <y2> <z2> - Create with coords
+    /noty zone remove <name> - Remove zone
+    /noty zone list - List zones
+    /noty zone info <name> - Zone details
+    /noty zone tool - Get zone tool
 
 # Admin messages
 admin:

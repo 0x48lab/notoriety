@@ -63,6 +63,30 @@ class ConfigManager(private val plugin: JavaPlugin) {
     val territoryNotificationsEnabled: Boolean
         get() = config.getBoolean("territory.notifications-enabled", true)
 
+    // === Theft Settings ===
+
+    /**
+     * Base penalty for theft (per container session).
+     * Default: 5
+     */
+    val theftBasePenalty: Int
+        get() = config.getInt("theft.base-penalty", 5)
+
+    /**
+     * Escalation penalties for repeated theft against the same victim.
+     * Applied in order: 1st theft = base, 2nd = escalation[0], 3rd = escalation[1], etc.
+     * Default: [10, 20, 50]
+     */
+    val theftEscalationPenalties: List<Int>
+        get() = config.getIntegerList("theft.escalation-penalties").ifEmpty { listOf(10, 20, 50) }
+
+    /**
+     * Time in seconds before theft escalation resets for a given victim.
+     * Default: 3600 (1 hour)
+     */
+    val theftEscalationResetSeconds: Long
+        get() = config.getLong("theft.escalation-reset-seconds", 3600)
+
     // === Indirect PK Settings ===
 
     /**

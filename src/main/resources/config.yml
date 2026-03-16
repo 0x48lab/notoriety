@@ -21,6 +21,19 @@ territory:
   # Number of members required per chunk (10 = 1 chunk per 10 members)
   members-per-chunk: 10
 
+# Theft settings
+theft:
+  # Base alignment penalty per theft (per container session)
+  base-penalty: 5
+  # Escalation penalties for repeated theft against the same victim (within reset window)
+  # 1st theft = base-penalty, 2nd = 10, 3rd = 20, 4th+ = 50
+  escalation-penalties:
+    - 10
+    - 20
+    - 50
+  # Time in seconds before escalation resets (default: 1 hour)
+  escalation-reset-seconds: 3600
+
 # Indirect PK prevention settings
 indirect-pk:
   # Enable/disable indirect PK detection

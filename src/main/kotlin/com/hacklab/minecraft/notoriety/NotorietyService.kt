@@ -54,6 +54,37 @@ class NotorietyService(
     private val warningCooldowns = ConcurrentHashMap<WarningKey, Instant>()
     private val WARNING_COOLDOWN_SECONDS = 10L
 
+    // 窃盗セッション管理（コンテナ開閉で1回の窃盗として統合）
+    // key: プレイヤーUUID -> コンテナ位置文字列 のセット（現在開いているセッション中に窃盗確定済み）
+    private val activeTheftSessions = ConcurrentHashMap<UUID, MutableSet<String>>()
+
+    // 窃盗エスカレーション管理（同一被害者への繰り返し窃盗）
+    private data class TheftEscalationKey(val criminalUuid: UUID, val victimUuid: UUID)
+    private data class TheftEscalationData(val count: Int, val lastTheftAt: Instant)
+    private val theftEscalations = ConcurrentHashMap<TheftEscalationKey, TheftEscalationData>()
+
+    /**
+     * プレイヤー関連の警告クールダウンを削除
+     */
+    fun cleanupPlayer(playerUuid: UUID) {
+        warningCooldowns.keys.removeIf { it.playerUuid == playerUuid }
+        activeTheftSessions.remove(playerUuid)
+        theftEscalations.keys.removeIf { it.criminalUuid == playerUuid }
+    }
+
+    /**
+     * 期限切れの警告クールダウンエントリを削除
+     */
+    fun cleanupExpiredWarnings() {
+        val threshold = Instant.now().minusSeconds(WARNING_COOLDOWN_SECONDS * 2)
+        warningCooldowns.values.removeIf { it.isBefore(threshold) }
+
+        // 期限切れの窃盗エスカレーションデータをクリーンアップ
+        val escalationResetSeconds = configManager.theftEscalationResetSeconds
+        val escalationThreshold = Instant.now().minusSeconds(escalationResetSeconds)
+        theftEscalations.values.removeIf { it.lastTheftAt.isBefore(escalationThreshold) }
+    }
+
     // ========== 称号取得（一元化） ==========
 
     /**
@@ -426,7 +457,64 @@ class NotorietyService(
             sendWarning(player, "warning.chest_open", ownerName)
         }
 
-        return CrimeCheckResult.IsCrime(owner, 50)
+        return CrimeCheckResult.IsCrime(owner, configManager.theftBasePenalty)
+    }
+
+    // ========== 窃盗セッション管理 ==========
+
+    /**
+     * 窃盗セッション中かどうかをチェック（同一コンテナを開いている間の重複窃盗を防ぐ）
+     * @return true: 既にこのセッションで窃盗確定済み（追加ペナルティなし）
+     */
+    fun isTheftAlreadyCommittedInSession(playerUuid: UUID, containerLocationKey: String): Boolean {
+        val sessions = activeTheftSessions[playerUuid] ?: return false
+        return containerLocationKey in sessions
+    }
+
+    /**
+     * 窃盗セッションを記録（このコンテナで窃盗確定済みとマーク）
+     */
+    fun markTheftInSession(playerUuid: UUID, containerLocationKey: String) {
+        activeTheftSessions.computeIfAbsent(playerUuid) { mutableSetOf() }.add(containerLocationKey)
+    }
+
+    /**
+     * コンテナセッション終了時にセッションデータをクリア
+     */
+    fun clearTheftSession(playerUuid: UUID, containerLocationKey: String) {
+        activeTheftSessions[playerUuid]?.remove(containerLocationKey)
+    }
+
+    /**
+     * 窃盗エスカレーションを考慮したペナルティ量を計算
+     * 同一被害者に対する繰り返し窃盗で段階的にペナルティが増加する
+     */
+    fun calculateTheftPenalty(criminalUuid: UUID, victimUuid: UUID): Int {
+        val key = TheftEscalationKey(criminalUuid, victimUuid)
+        val now = Instant.now()
+        val resetSeconds = configManager.theftEscalationResetSeconds
+        val basePenalty = configManager.theftBasePenalty
+        val escalationPenalties = configManager.theftEscalationPenalties
+
+        val existing = theftEscalations[key]
+
+        // エスカレーションリセット判定
+        val count = if (existing == null || Duration.between(existing.lastTheftAt, now).seconds >= resetSeconds) {
+            0  // リセット: 初回窃盗
+        } else {
+            existing.count
+        }
+
+        // エスカレーション記録を更新
+        theftEscalations[key] = TheftEscalationData(count + 1, now)
+
+        // ペナルティ計算: 初回=base, 2回目以降=escalation配列から
+        return if (count == 0) {
+            basePenalty
+        } else {
+            val escalationIndex = (count - 1).coerceAtMost(escalationPenalties.size - 1)
+            escalationPenalties[escalationIndex]
+        }
     }
 
     // ========== プレイヤー攻撃の犯罪判定・警告 ==========

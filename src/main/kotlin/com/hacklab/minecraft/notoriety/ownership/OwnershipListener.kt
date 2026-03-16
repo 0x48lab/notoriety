@@ -17,6 +17,7 @@ import org.bukkit.event.block.BlockDamageEvent
 import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.inventory.InventoryOpenEvent
 import org.bukkit.plugin.java.JavaPlugin
 import java.time.Instant
@@ -174,13 +175,40 @@ class OwnershipListener(
         // TRUSTまたは同じギルドメンバーの場合は犯罪なし
         if (guildService.isAccessAllowed(owner, player.uniqueId)) return
 
-        // 未設定の場合: 取り出せるが窃盗として犯罪確定（名声マイナス）
+        // セッション統合: 同一コンテナセッション内では1回の窃盗として扱う
+        val containerKey = "${location.world.name}:${location.blockX}:${location.blockY}:${location.blockZ}"
+        if (notorietyService.isTheftAlreadyCommittedInSession(player.uniqueId, containerKey)) {
+            // 既にこのセッションで窃盗確定済み - 追加ペナルティなし
+            return
+        }
+
+        // 窃盗セッションをマーク
+        notorietyService.markTheftInSession(player.uniqueId, containerKey)
+
+        // エスカレーションを考慮したペナルティ計算
+        val penalty = notorietyService.calculateTheftPenalty(player.uniqueId, owner)
+
+        // 窃盗として犯罪確定（セッションあたり1回のみ）
         notorietyService.commitCrime(
             criminal = player.uniqueId,
             crimeType = CrimeType.THEFT,
-            alignmentPenalty = 50,
+            alignmentPenalty = penalty,
             victim = owner,
             location = location
         )
+    }
+
+    /**
+     * コンテナを閉じた時にセッションをクリア
+     */
+    @EventHandler(priority = EventPriority.MONITOR)
+    fun onInventoryClose(event: InventoryCloseEvent) {
+        val player = event.player as? Player ?: return
+        val holder = event.inventory.holder
+        if (holder !is Container) return
+
+        val location = holder.block.location
+        val containerKey = "${location.world.name}:${location.blockX}:${location.blockY}:${location.blockZ}"
+        notorietyService.clearTheftSession(player.uniqueId, containerKey)
     }
 }

@@ -123,7 +123,7 @@ inspect:
 
 # Warning messages (before crime)
 warning:
-  chest_open: "⚠ 警告: このチェストは %s の所有物です。アイテムを取ると窃盗になります！ (Alignment -50)"
+  chest_open: "⚠ 警告: このチェストは %s の所有物です。アイテムを取ると窃盗になります！"
   block_break: "⚠ 警告: このブロックは %s の所有物です。破壊すると犯罪になります！ (Alignment -10)"
   container_break: "⚠ 警告: このコンテナは %s の所有物です。破壊すると即座に犯罪になります！ (Alignment -10)"
   attack_player: "⚠ 警告: %s を攻撃すると犯罪になります！ (Alignment -1)"
@@ -161,7 +161,37 @@ guild:
   error_name_taken: "この名前のギルドは既に存在します"
   error_tag_taken: "このタグのギルドは既に存在します"
   error_already_in_guild: "既にギルドに所属しています。先に現在のギルドを脱退してください"
+  error_already_in_civilian_guild: "既に民間ギルドに所属しています。先に現在のギルドを脱退してください"
+  error_already_in_government_guild: "既に政府ギルドに所属しています"
+  not_in_government_guild: "政府ギルドに所属していません"
+  gov_guild_chat_format: "[Gov]"
+  civilian_guild_chat_format: "[Guild]"
   error_generic: "ギルドの作成に失敗しました: %s"
+
+  # Base (teleport point) messages
+  base_set: "ギルド拠点を設定しました (%s: %d, %d, %d)"
+  base_updated: "ギルド拠点を更新しました (%s: %d, %d, %d)"
+  base_removed: "ギルド拠点を削除しました"
+  base_not_set: "拠点が設定されていません"
+  base_not_master: "ギルドマスターのみが拠点を設定できます"
+  base_not_master_remove: "ギルドマスターのみが拠点を削除できます"
+  base_teleported: "拠点にテレポートしました (%s: %d, %d, %d)"
+  base_cooldown: "テレポートのクールダウン中です（残り%d秒）"
+  base_world_not_found: "拠点のワールドが見つかりません"
+  base_no_safe_location: "安全なテレポート先が見つかりません"
+  base_info_header: "=== ギルド拠点情報 ==="
+  base_info_location: "場所: %s (%d, %d, %d)"
+  base_info_set_by: "設定者: %s"
+  base_info_set_at: "設定日時: %s"
+  base_not_in_guild: "ギルドに所属していません"
+  base_usage: "使用法: /guild base <set|remove|info>"
+  base_tp_hint: "テレポートは /guild home base を使用してください"
+
+  # Home/Teleport list messages
+  home_no_destinations: "テレポート先がありません"
+  home_base_tag: "[拠点]"
+  home_base_keyword: "拠点"
+  home_available_destinations: "利用可能なテレポート先:"
 
   # Application messages
   application_submitted: "%s に入会申請しました"
@@ -174,6 +204,10 @@ guild:
   error_already_applied: "既に入会申請中です"
   error_application_not_found: "入会申請が見つかりません"
   error_application_expired: "入会申請の期限が切れています"
+
+# Sigil messages
+sigil:
+  reserved_name: "この名前は予約されています"
 
 # Territory messages
 territory:
@@ -361,6 +395,39 @@ territory_hazard:
   lava_blocked: "⚠ この領地内では溶岩バケツを使用できません"
   water_blocked: "⚠ この領地内では水バケツを使用できません"
   tnt_blocked: "⚠ この領地内ではTNTを設置できません"
+
+# Zone protection messages
+zone:
+  created: "保護エリア '%s' を作成しました (%s: %d,%d,%d - %d,%d,%d)"
+  removed: "保護エリア '%s' を削除しました"
+  not_found: "保護エリア '%s' が見つかりません"
+  duplicate_name: "同じ名前の保護エリアが既に存在します"
+  invalid_name: "エリア名は1〜32文字で指定してください"
+  protected_break: "ここではブロックを操作できません"
+  protected_place: "ここではブロックを操作できません"
+  protected_container: "ここではアイテムを取り出せません"
+  enter_admin: "▶ 保護エリア [%s] に入りました"
+  leave_admin: "◀ 保護エリア [%s] から出ました"
+  pos1_set: "第1座標を設定しました (%d, %d, %d)"
+  pos2_set: "第2座標を設定しました (%d, %d, %d)"
+  no_selection: "座標が選択されていません。ゾーンツールで2点を選択してください"
+  tool_given: "ゾーンツールを取得しました"
+  list_header: "=== 保護エリア一覧 (%d件) ==="
+  list_empty: "保護エリアはありません"
+  list_item: "- %s [%s: %d,%d,%d - %d,%d,%d]"
+  info_header: "=== 保護エリア: %s ==="
+  info_world: "ワールド: %s"
+  info_coords: "座標: %d,%d,%d - %d,%d,%d"
+  info_creator: "作成者: %s"
+  info_created_at: "作成日時: %s"
+  usage: |
+    === Zone Commands ===
+    /noty zone create <名前> - 選択範囲で保護エリア作成
+    /noty zone create <名前> <x1> <y1> <z1> <x2> <y2> <z2> - 座標指定で作成
+    /noty zone remove <名前> - 保護エリア削除
+    /noty zone list - 一覧表示
+    /noty zone info <名前> - 詳細表示
+    /noty zone tool - ゾーンツール取得
 
 # Admin messages
 admin:
